@@ -108,4 +108,14 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
+# Open Loop
 
+Before attempting to tune open loop fueling, you really need to have KRKTE and and closed loop fueling nailed down. You also need a wide-band O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
+
+### Algorithm
+
+The error from estimated airflow based on measured AFR + STFT + LTFT at each voltage for MLHFM are calculated and then applied to the transformation.
+
+The raw AFR is calculated as wideband **AFR / ((100 - (LTFT + STFT)) / 100)**. 
+
+The AFR % error is calculated as **(raw AFR - interpolated AFR) / interpolated AFR * 100)**, where interpolated AFR is interpolated from **(raw AFR - ECU Target AFR) / ECU Target AFR * 100)**.
