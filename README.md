@@ -26,7 +26,7 @@ My experience with this approach when significantly increasing the diamater of t
 * Solid Line - Scaling based on a constand derived from the change in housing diameter
 * Broken Line - Estimated airflow based on fuel consumption and air-fuel ratio
 
-You can see a 100mm housing scaled with a constant based on a diameter increase (solid lines) vs a relatively accurate estimation of airflow (broken lines). Note that at lower measurements of airflow the measurements are similar while at higher measurements of airflow there is a significant discrepancy.
+You can see a 100mm housing scaled with a constant based on a diameter increase (solid lines) vs a relatively accurate estimation of airflow (broken lines). Note that at lower values of airflow the measurements are similar while at higher values of airflow there is a significant discrepancy.
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
