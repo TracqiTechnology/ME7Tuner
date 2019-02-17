@@ -102,9 +102,13 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 * Click the "Std Dev" tab at the bottom of the screen. This displays the standard deviation of the filtered data used to calcuate the corrections. Remember that a smaller standard deviation is better because the MAF's rate of change smaller (more stable).
 
-![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.13.26-PM.png "Filtered Closed Looop Std Dev")
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.13.26-PM.png "Filtered Closed Loop Std Dev")
 
 * Click the "AFR Correction %" tab at the bottom of the screen. This displays the raw point cloud of Correction Errors with the Mean, Mode and Final AFR correction plotted ontop of the point cloud. Note how noisy the Correction Errors are.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.08.32-PM.png "Filtered Closed Loop AFR Corection%")
+
+
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
