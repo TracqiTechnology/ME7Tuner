@@ -55,6 +55,25 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
 
+When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if changed KRKTE by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
+
+# Closed Loop
+
+This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
+
+### Algorithm
+
+The average of your LTFT and STFT corrections at each voltage for MLHFM are calculated and then applied to the transformation.
+
+The Correction Error is calculated as LTFT + STFT at each measured voltage for MLHFM.
+
+The Total Correction is the average of the mean and mode of them Correction Errors at each measured voltage for MLHFM.
+
+The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * ((tot_corr% / 100) + 1)**.
+
+
+
+
 
 
 
