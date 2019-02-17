@@ -161,6 +161,5 @@ Unlike closed loop corrections, open loop logs must be contained a single ME7Log
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.06.34-PM.png "Open Loop MLHFM AFR Correction%")
 
-
-
+* Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
