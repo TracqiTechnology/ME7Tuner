@@ -114,6 +114,8 @@ Before attempting to tune open loop fueling, you really need to have KRKTE and a
 
 ### Algorithm
 
+This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
+
 The error from estimated airflow based on measured AFR + STFT + LTFT at each voltage for MLHFM are calculated and then applied to the transformation.
 
 The raw AFR is calculated as wideband **AFR / ((100 - (LTFT + STFT)) / 100)**. 
