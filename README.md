@@ -180,6 +180,7 @@ The algorithm takes an **absolute** pressure request (don't forget to account fo
 * Enter your desired absolute pressure request
 * Select a value for KFURL (volumetric efficiency) that is typical for open loop WOT
 * Select a minimum torque request to apply the calcuated load request
+* Copy paste KFMIRL directly into TunerPro
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.33.38-PM.png "KFMIRL")
 
@@ -197,6 +198,13 @@ Specifically these two points:
 
 * Any part of KFMIOP (load/RPM range) that can only be reached above ~60% wped_w is unrestricted and can be raised to keep mimax high such that requested load does not get capped.
 * Ensure that mibas remains below miszul to avoid intervention (which you will see in mizsolv) by lowering KFMIOP in areas reachable by actual measured load. This mainly becomes a concern in the middle of KFMIOP.
+
+### Useage
+
+* Copy and paste your KFMIRL and the algorithm will generate KFMIOP
+* Copy and paste KFMIOP directly into TunerPro.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.52.51-PM.png "KFMIOP")
 
 
 
