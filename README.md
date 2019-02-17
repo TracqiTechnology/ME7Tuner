@@ -67,7 +67,7 @@ The average of your LTFT and STFT corrections at each voltage for MLHFM are calc
 
 The Correction Error is calculated as LTFT + STFT at each measured voltage for MLHFM.
 
-The Total Correction is the average of the mean and mode of them Correction Errors at each measured voltage for MLHFM.
+The Total Correction is the average of the mean and mode of the Correction Errors at each measured voltage for MLHFM.
 
 The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * ((tot_corr% / 100) + 1)**.
 
