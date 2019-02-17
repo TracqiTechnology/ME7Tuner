@@ -92,10 +92,13 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 * Click the "ME7 Logs" tab on the left hand side of the screen and click the "Load Logs" button at the bottom. Select the directory that contains your closed loop logs from ME7Logger. The standard deviation of the logged MAF voltages should plot on the screen. The vertical lines represent clusters of data at different standard deviations (rates of change, delta, etc...) for a given MAF voltage. You want to select the data under the smallest standard deviation possible while also including the largest voltage range as possible. I find 0.15 to be a good standard deviation to start with.
 
-![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.59.31-PM.png "Close Loop Std Dev")
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.59.31-PM.png "Closed Loop Std Dev")
 
+* Click "Configure Filter" in the bottom left hand corner of the screen. This is where you can configure the filter for the incoming data. You can filter data by a minimum throttle angle, a minimum RPM, a maximum standard deviation (as discussed 0.15 is usually a good start) and a window size to calculate the standard deviation (ME7Logger is usually 20Hz, so a window size of 20 results in a window of one second. A window size of 40 would be window of two seconds.).
 
+* Click the "Correction" tab on the left side of the screen. You will see the current MLHFM plotted in blue and the corrected MLHFM plotted in red. The corrected MLHFM is also displayed in a table on the right hand side of the screen and can be copied directly into TunerPro. Clicking "Save MLFHM" will allow you to save MLFHM to a .csv file which can be loaded for the next set of corrections.
 
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.08.05-PM.png "Corrected closed loop MLHFM")
 
 
 
