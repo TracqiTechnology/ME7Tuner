@@ -82,6 +82,20 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 * Stay out of open-loop fueling. We don't care about it (right now). Like inconsistent MAF deltas, ME7Tuner will filter out open-loop data.
 * Get at least 30 minutes of driving on a highway. Vary gears and throttle positions often to get measurements at as many throttle angles and RPM combinations as possible. Finding a highway with a long, consistent incline is ideal since you can 'load' the engine resulting in higher MAF voltages without going into open-loop fueling. Remember to slowly roll on and off the throttle. Sudden changes will result in less usuable data.
 * Get at least 30 minutes of typical 'city' driving. Stop lights, slower city speeds, lots of gears and throttle positions. Remember to be as consistent as possible rolling on and off of the throttle.
+* Get at least 15 minutes of parking lot data. Drive slowly around the parking lot in 1st and 2nd gear. Stop and start often. Vary the throttle plate and RPM as much as possible.
+* Save your log and put it into a directory (along with other closed-loop logs from the same tune if desired).
+* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header.
+* Open ME7Tuner and click on the "Close Loop Fueling" tab at the top
+* Click the MLFHM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.52.22-PM.png "MLHFM")
+
+* Click the "ME7 Logs" tab on the left hand side of the screen and click the "Load Logs" button at the bottom. Select the directory that contains your closed loop logs from ME7Logger. The standard deviation of the logged MAF voltages should plot on the screen. The vertical lines represent clusters of data at different standard deviations (rates of change, delta, etc...) for a given MAF voltage. You want to select the data under the smallest standard deviation possible while also including the largest voltage range as possible. I find 0.15 to be a good standard deviation to start with.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.59.31-PM.png "Close Loop Std Dev")
+
+
+
 
 
 
