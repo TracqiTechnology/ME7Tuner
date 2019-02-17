@@ -167,3 +167,20 @@ Unlike closed loop corrections, open loop logs must be contained a single ME7Log
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your AFR at WOT.
 
+# KFMIRL (Torque request to Load/Fill request)
+
+If you are using sigificantly more airflow than a stock engine you will need to modify KFMIRL in some way since your newly calibrated MAF has probably increased actual load (rl_w). How you modify is subjective and up to you, but I have provided a KFMIRL generator that I find useful. Don't forget to address LDRXN as well. Remeber that if you are running a stock MAP without the 5120 hack you will risk maxing out ps_w.
+
+### Algorithm
+
+The algorithm takes an **absolute** pressure request (don't forget to account for your altitude!) and KFURL (volumetric efficiency) to estimate a desired maximum load. The algorithm builds in some overhead like the stock KFMIRL seems to have. It also scales the load request in the same way that the stock KFMIRL does. You can choose the minimum torque request at which to apply the new load request. I find a minimum of 70%-80% torque request to be ideal. In general, you want to keep KFMIRL stock in all areas reachable under closed loop fueling. Use LDRXN to limit torque request in areas reachable under open loop fueling.
+
+### Usage
+
+* Enter your desired absolute pressure request
+* Select a value for KFURL (volumetric efficiency) that is typical for open loop WOT
+* Select a minimum torque request to apply the calcuated load request
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.33.38-PM.png "KFMIRL")
+
+
