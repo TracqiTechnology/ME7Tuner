@@ -112,6 +112,8 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 Before attempting to tune open loop fueling, you really need to have KRKTE and and closed loop fueling nailed down. You also need a wide-band O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
 
+Note that ME7Tuner is designed to be used with Zeitronix logs, but logs from any wideband can be modified to use the expected headers.
+
 ### Algorithm
 
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
@@ -123,3 +125,19 @@ The raw AFR is calculated as wideband **AFR / ((100 - (LTFT + STFT)) / 100)**.
 The AFR % error is calculated as **(raw AFR - interpolated AFR) / interpolated AFR * 100)**, where interpolated AFR is interpolated from **(raw AFR - ECU Target AFR) / ECU Target AFR * 100)**.
 
 The corrected kg/hr transformation for MLHFM is calculated as current_kg/hr * ((AFRerror% / 100) + 1).
+
+### Usage
+
+Unlike closed loop corrections, open loop logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. ME7Tuner correlates the ME7Logger logs and Zeitronix logs based on throttle position so both sets of logs need to contain the same number of pulls.
+
+* Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
+* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba), Lambda Control Active (B_lr), MAF g/sec (mshfm_w), Requested Lambda (lamsbg_w) and Fuel Injector On-Time (ti_bl).
+* Start both ME7Logger and the Zeitronix Logger and do as many WOT pulls as possible. Do pulls in 2nd and 3rd gear from 2000 RPM if possible. Stop both loggers when you are finished.
+* Save your logs and put them into a directory
+* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/mlhfm.csv)
+* Open ME7Tuner and click on the "Open Loop Fueling" tab at the top
+* Click the MLFHM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.52.22-PM.png "MLHFM")
+
+
