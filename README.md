@@ -121,3 +121,5 @@ The error from estimated airflow based on measured AFR + STFT + LTFT at each vol
 The raw AFR is calculated as wideband **AFR / ((100 - (LTFT + STFT)) / 100)**. 
 
 The AFR % error is calculated as **(raw AFR - interpolated AFR) / interpolated AFR * 100)**, where interpolated AFR is interpolated from **(raw AFR - ECU Target AFR) / ECU Target AFR * 100)**.
+
+The corrected kg/hr transformation for MLHFM is calculated as current_kg/hr * ((AFRerror% / 100) + 1).
