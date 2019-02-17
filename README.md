@@ -13,6 +13,7 @@ Non-linearities in the intake airflow and fuel system are then compenstated via 
 
 My experience with this approach when significantly increasing the diamater of the MAF housing (83mm housing to a 100mm housing) did not result in an optimal curve. While values that were reachable under closed-loop conditions had expected values, the values that were reachable under open-loop conditions (wide-open throttle) were notably underscaled.
 
+You can see a 100mm housing scaled with a constant based on a diameter increase (solid lines) vs a relatively accurate estimation of airflow (broken lines). Note that at lower measurements of airflow the measurements are similar while at higher measurements of airflow there is a significant discrepancy.
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
