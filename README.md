@@ -183,4 +183,20 @@ The algorithm takes an **absolute** pressure request (don't forget to account fo
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.33.38-PM.png "KFMIRL")
 
+# KFMIOP (Load/Fill to Torque)
+
+If you modify you KFMIRL you probably want to regenerate KFMIOP as the inverse of KFMIRL to keep torque monitoring sane.
+
+### Algorithm
+
+The algorithm simply creates the inverse of KFMIRL to generate KFMIOP and provides a new KFMIOP axis. Don't forget to interpolate KFZWOP/KFMDS if you change KFMIOP axis. Note that simply generating the inverse is not enough and KFMIOP will need more work to get the torque monitoring right. KFMIRL and KFMIOP technically have nothing to do with each other, but using the inverse of KFMIRL to generate KFMIOP seems to be a good starting point.
+
+* [See Torque Monitoring](https://s4wiki.com/wiki/Tuning#Torque_monitoring)
+
+Specifically these two points:
+
+* Any part of KFMIOP (load/RPM range) that can only be reached above ~60% wped_w is unrestricted and can be raised to keep mimax high such that requested load does not get capped.
+* Ensure that mibas remains below miszul to avoid intervention (which you will see in mizsolv) by lowering KFMIOP in areas reachable by actual measured load. This mainly becomes a concern in the middle of KFMIOP.
+
+
 
