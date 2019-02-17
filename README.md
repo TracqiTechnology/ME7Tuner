@@ -15,8 +15,12 @@ My experience with this approach when significantly increasing the diamater of t
 
 ### Example of MAF underscaling
 
+* Same fuel system
 * Same KRKTE (primary fueling)
 * Same 100mm housing w/Hitachi sensor
+* Same boost
+* Same fuel
+* Same weather
 * Solid Line - Scaling based on a constand derived from the change in housing diameter
 * Broken Line - Estimated airflow based on fuel consumption and air-fuel ratio
 
@@ -24,4 +28,16 @@ You can see a 100mm housing scaled with a constant based on a diameter increase 
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
-The result of scaling the MAF based on a constand derived from the change in housing diameter was low LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle. In other words, the car would idle fine at a lambda of 1, but WOT (wide open throttle) actual fueling lambda was lean compared to requested fueling lambda.
+The result of scaling the MAF based on a constand derived from the change in housing diameter was low LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle. In other words, the car would idle fine at a lambda of 1, but WOT (wide open throttle) actual fueling lambda was lean compared to requested fueling lambda. Presumably, this leads to wildly a different KFKHFM and/or FKKVS compared to stock to compenstate for lean open-loop fueling.
+
+### Example of MAF underscaling
+
+The PMAS HPX slot sensor comes with a transfer function which I also found to be underscaled. This [Nefarious Motosports topic](http://nefariousmotorsports.com/forum/index.php?topic=382.0) also provides what is presumably and older version of the transfer function. I found both transfer functions to be underscaled in the open-loop areas similiar to the 100mm housing with a Hitachi sensor.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/hpx_curve.png "Underscaled 87mm housing")
+
+### Summary of Examples
+
+The underscaled transfer functions can possibly be attributed to the specific properties of my open element intake or to any number of other factors. The point is simply that you may want to calibrate your MAF.
+
+
