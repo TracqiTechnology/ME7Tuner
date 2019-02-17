@@ -55,7 +55,7 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
 
-When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if changed KRKTE by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
+When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
 
 # Closed Loop
 
