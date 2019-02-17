@@ -143,8 +143,13 @@ Unlike closed loop corrections, open loop logs must be contained a single ME7Log
 * Click the "ME7 Logs" tab on the left side of the screen.
 * Click "Load ME7 Logs" and select the ME7Logger .csv file
 * Click "Load AFR Logs" and select the Zeitronix .csv file
-* You should see the requested AFR from ME7 plotted in blue and the estimated airflow based on AFR in red
+* You should see the requested AFR from ME7 plotted in blue and the actual AFR from Zeitronix in red. If the requested AFR doesn't match the actual AFR the MAF scaling is incorrect.
 
 ![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.55.57-PM.png "Open Loop Fueling")
+
+* Click the "Airflow" tab at the bottom of the screen. You will see the airflow measured by the MAF in blue and the estimated airflow from the AFR in red. The measured airflow and estimated airflow should be the same or there the MAF scaling is incorrect.
+
+![alt text](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.59.26-PM.png "Open Loop Airflow")
+
 
 
