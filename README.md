@@ -13,7 +13,7 @@ Non-linearities in the intake airflow and fuel system are then compenstated via 
 * [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
 * [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
 
-My experience with this approach when significantly increasing the diamater of the MAF housing (83mm housing to a 100mm housing) did not result in an optimal curve. While values that were reachable under closed-loop conditions had expected values, the values that were reachable under open-loop conditions (wide-open throttle) were notably underscaled.
+My experience with this approach when significantly increasing the diamater of the MAF housing (83mm housing to a 100mm housing) was that ot did not result in an optimal curve. While values that were reachable under closed-loop conditions had expected values, the values that were reachable under open-loop conditions (part and wide-open throttle) were notably underscaled.
 
 ### Example of MAF underscaling
 
