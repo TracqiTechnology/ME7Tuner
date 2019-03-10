@@ -45,7 +45,7 @@ public class OpenLoopFuelingLogFilterPreferences {
     }
 
     public static double getMaxAfrPreference() {
-        return Integer.valueOf(prefs.get(MAX_AFR, String.valueOf(16)));
+        return Double.valueOf(prefs.get(MAX_AFR, String.valueOf(16)));
     }
 
     public static void setMaxAfrPreference(double maxAfr) {

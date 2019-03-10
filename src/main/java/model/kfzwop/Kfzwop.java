@@ -10,7 +10,6 @@ public class Kfzwop {
         return new Double[] {440d, 720d, 1000d, 1240d, 1520d, 1760d, 2000d, 2520d, 3000d, 3520d, 4000d, 4520d, 5000d, 5520d, 6000d, 7000d };
     }
 
-
     public static Double[][] getStockMap() {
         return new Double[][]{
                 {25.500, 25.500, 19.500, 15.750, 14.250, 12.750, 9.750, 6.750, 5.250, 3.000, 2.250},
