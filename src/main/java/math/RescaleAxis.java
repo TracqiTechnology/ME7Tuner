@@ -10,7 +10,7 @@ public class RescaleAxis {
 
         Double[] output = Arrays.copyOf(axis, axis.length);
 
-        for (int i = 0; i < output.length; i++) {
+        for (int i = 1; i < output.length; i++) {
             output[i] = Precision.round(output[i] * scalar, 2);
         }
 

@@ -3,7 +3,7 @@ package model.kfzwop;
 public class Kfzwop {
 
     public static Double[] getStockXAxis() {
-        return new Double[]{9d, 18d, 27d, 50d, 62d, 75d, 97d, 120d, 144d, 168d, 191d};
+        return new Double[]{9.75d, 18d, 27d, 50.25d, 62.25d, 74.25d, 97.50d, 120.75d, 144.75d, 168d, 191.25d};
     }
 
     public static Double[] getStockYAxis() {
