@@ -1,16 +1,24 @@
 package ui.map.axis;
 
 
+import io.reactivex.subjects.PublishSubject;
 import ui.map.ExcelAdapter;
+import ui.map.map.MapTable;
+import util.Debouncer;
+import util.Util;
 
 import javax.swing.*;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
+import java.util.concurrent.TimeUnit;
 
 public class MapAxis {
 
@@ -19,12 +27,23 @@ public class MapAxis {
     private DefaultTableModel tableModel;
     private Double[][] data;
 
+    private PublishSubject<Double[][]> publishSubject;
+    private Debouncer debouncer;
+
+    private int rollOverRowIndex = -1;
+    private int rollOverColumnIndex = -1;
 
     private MapAxis(Double[][] data) {
         this.table = this.createAxis(data);
         this.data = data;
+        this.debouncer = new Debouncer();
 
-        scrollPane = new JScrollPane(table);
+        this.scrollPane = new JScrollPane(table);
+        this.publishSubject = PublishSubject.create();
+    }
+
+    public PublishSubject<Double[][]> getPublishSubject() {
+        return publishSubject;
     }
 
     public void setTableData(Double[][] data) {
@@ -44,10 +63,27 @@ public class MapAxis {
             }
         };
 
-        final JTable table = new JTable(tableModel);
-        table.getTableHeader().setReorderingAllowed(false);
+
+        final JTable table = new JTable(tableModel)
+        {
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
+            {
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                if(row == rollOverRowIndex && column == rollOverColumnIndex) {
+                    c.setBackground(Color.BLUE);
+                }
+
+                return c;
+            }
+        };
+
+        RollOverListener rollOverListener = new RollOverListener();
+        table.addMouseListener(rollOverListener);
+        table.addMouseMotionListener(rollOverListener);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setGridColor(Color.BLACK);
+        table.setRowSelectionAllowed(false);
 
         table.setTableHeader(null);
 
@@ -68,6 +104,13 @@ public class MapAxis {
                 }
 
                 MapAxis.this.data = values;
+
+                debouncer.debounce(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        publishSubject.onNext(values);
+                    }
+                }, 100, TimeUnit.MILLISECONDS);
             }
         });
 
@@ -99,20 +142,52 @@ public class MapAxis {
         }
     }
 
+    private class RollOverListener extends MouseInputAdapter {
+        @Override
+        public void mouseExited(MouseEvent e) {
+            rollOverRowIndex = -1;
+            rollOverColumnIndex = -1;
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            rollOverRowIndex = table.rowAtPoint(e.getPoint());
+            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            rollOverRowIndex = table.rowAtPoint(e.getPoint());
+            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
+        }
+    }
+
     private class DecimalFormatRenderer extends DefaultTableCellRenderer {
 
-        private final DecimalFormat formatter = new DecimalFormat( "#.##" );
+        private final DecimalFormat formatter = new DecimalFormat("#.00");
 
         public Component getTableCellRendererComponent(
                 JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-            if(value != null) {
+            if (value != null) {
                 value = formatter.format(value);
             } else {
                 value = 0.0;
             }
 
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column );
+            boolean hasSelection = table.getSelectedColumns().length > 0;
+
+            if (hasSelection) {
+                if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
+                    setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
+                } else {
+                    setBackground(null);
+                }
+            } else {
+                setBackground(null);
+            }
+
+            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
     }
 }

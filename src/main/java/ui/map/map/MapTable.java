@@ -125,7 +125,7 @@ public class MapTable extends JList implements TableModelListener {
     /*
      *  Use the data row header properties to render each cell
      */
-    class ColumnHeaderRenderer extends JLabel implements TableCellRenderer {
+    private class ColumnHeaderRenderer extends JLabel implements TableCellRenderer {
 
         ColumnHeaderRenderer() {
             setBorder(BorderFactory.createRaisedBevelBorder());

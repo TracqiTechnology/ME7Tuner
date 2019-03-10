@@ -3,6 +3,7 @@ package ui.view;
 import ui.view.closedloopfueling.ClosedLoopFuelingUiManager;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
+import ui.view.kfzwop.KfzwopUiManager;
 import ui.view.krkte.KrkteUiManager;
 import ui.view.openloopfueling.OpenLoopFuelingUiManager;
 
@@ -25,6 +26,7 @@ public class MainManager {
         tabbedPane.addTab("KRKTE", null, new KrkteUiManager().getKrkteCalculationPanel(), "KRKTE Calculator");
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getKfmirlCalculationPanel(), "KFMIRL Calculator");
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getKfmiopCalculationPanel(), "KFMIOP Calculator");
+        tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getKfzwopCalculationPanel(), "KFZWOP Calculator");
 
         return tabbedPane;
     }
