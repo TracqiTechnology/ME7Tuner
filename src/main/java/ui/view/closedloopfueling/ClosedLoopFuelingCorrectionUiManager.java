@@ -90,7 +90,7 @@ public class ClosedLoopFuelingCorrectionUiManager {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         tabbedPane.addTab("MLHFM", null, getMlhfmChartPanel(), "Voltage to Kg/Hr");
-        tabbedPane.addTab("Std Dev", null, getStdDevChartPanel(), "Standard Deviation");
+        tabbedPane.addTab("dMAFv/dt", null, getStdDevChartPanel(), "Derivative");
         tabbedPane.addTab("AFR Correction %", null, getAfrCorrectionChartPanel(), "AFR Correction");
 
         return tabbedPane;
@@ -321,7 +321,7 @@ public class ClosedLoopFuelingCorrectionUiManager {
 
         List<Double> voltages = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
 
-        XYSeries series = new XYSeries("Std Dev");
+        XYSeries series = new XYSeries("dMAFv/dt");
 
         for (Double voltage : voltages) {
             List<Double> values = stdDev.get(voltage);
