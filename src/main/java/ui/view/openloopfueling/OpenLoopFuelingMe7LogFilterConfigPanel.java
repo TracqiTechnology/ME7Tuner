@@ -37,6 +37,8 @@ public class OpenLoopFuelingMe7LogFilterConfigPanel extends JPanel {
         GridBagConstraints gbc;
 
         NumberFormat integerFormat = NumberFormat.getIntegerInstance();
+        integerFormat.setGroupingUsed(false);
+
         NumberFormatter integerFormatter = new NumberFormatter(integerFormat);
         integerFormatter.setValueClass(Integer.class);
         integerFormatter.setAllowsInvalid(false);
