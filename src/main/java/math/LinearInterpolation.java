@@ -24,7 +24,6 @@ public class LinearInterpolation {
                 x[i + 1] += x[i + 1] * 0.01;
             }
             if (dx[i] < 0) {
-                System.out.println(Arrays.toString(x));
                 throw new IllegalArgumentException("X must be sorted " + x[i + 1] + " " + x[i]);
             }
 

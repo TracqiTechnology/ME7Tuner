@@ -33,12 +33,10 @@ public class OpenLoopFuelingMe7LogViewModel {
     }
 
     public void loadFile(File file) {
-        CompletableFuture.runAsync(() -> {
-            Map<String, List<Double>> me7LogMap = me7LogParser.parseLogFile(Me7LogParser.LogType.OPEN_LOOP, file);
+        Map<String, List<Double>> me7LogMap = me7LogParser.parseLogFile(Me7LogParser.LogType.OPEN_LOOP, file);
 
-            if (me7LogMap != null) {
-                publishSubject.onNext(me7LogMap);
-            }
-        });
+        if (me7LogMap != null) {
+            publishSubject.onNext(me7LogMap);
+        }
     }
 }

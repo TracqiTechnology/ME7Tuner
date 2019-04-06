@@ -15,7 +15,7 @@ public class ClosedLoopFuelingMe7LogFilterConfigPanel extends JPanel {
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
     enum FieldTitle {
-        MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MAX_STD_DEV("Max Std Dev"), STD_DEV_SAMPLE_WINDOW("Std Dev Window Size");
+        MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MAX_VOLTAGE_DT("Max dMAFv/dt");
         private String title;
 
         FieldTitle(String title) {
@@ -67,13 +67,9 @@ public class ClosedLoopFuelingMe7LogFilterConfigPanel extends JPanel {
                     textField = new JFormattedTextField(integerFormatter);
                     textField.setValue(ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference());
                     break;
-                case MAX_STD_DEV:
+                case MAX_VOLTAGE_DT:
                     textField = new JFormattedTextField(decimalFormatter);
-                    textField.setValue(ClosedLoopFuelingLogFilterPreferences.getMaxStdDevPreference());
-                    break;
-                case STD_DEV_SAMPLE_WINDOW:
-                    textField = new JFormattedTextField(integerFormatter);
-                    textField.setValue(ClosedLoopFuelingLogFilterPreferences.getStdDevSampleWindowPreference());
+                    textField.setValue(ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
                     break;
             }
 

@@ -12,7 +12,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
-import stddev.Derivative;
+import derivative.Derivative;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 import ui.viewmodel.MlhfmViewModel;
 
@@ -20,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -167,11 +166,8 @@ public class ClosedLoopFuelingMe7LogUiManager {
                         case MIN_RPM:
                             ClosedLoopFuelingLogFilterPreferences.setMinRpmPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
                             break;
-                        case MAX_STD_DEV:
-                            ClosedLoopFuelingLogFilterPreferences.setMaxStdDevPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
-                            break;
-                        case STD_DEV_SAMPLE_WINDOW:
-                            ClosedLoopFuelingLogFilterPreferences.setStdDevSampleWindowPreference(Integer.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                        case MAX_VOLTAGE_DT:
+                            ClosedLoopFuelingLogFilterPreferences.setMaxVoltageDtPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                     }
 
@@ -213,7 +209,7 @@ public class ClosedLoopFuelingMe7LogUiManager {
 
         chart = ChartFactory.createScatterPlot(
                 "Derivative",
-                "Voltage", "Derivative", dataset);
+                "MAF Voltage", "dMAFv/dt", dataset);
 
         XYPlot plot = (XYPlot)chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
@@ -236,8 +232,6 @@ public class ClosedLoopFuelingMe7LogUiManager {
 
         for (Double voltage : voltages) {
             List<Double> values = dtMap.get(voltage);
-
-            System.out.println(Arrays.toString(values.toArray()));
 
             for (Double value : values) {
                 series.add(voltage, value);

@@ -22,7 +22,7 @@ public class OpenLoopFuelingAirflowViewModel {
     private PublishSubject<AirflowEstimation> publishSubject;
 
     public static OpenLoopFuelingAirflowViewModel getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new OpenLoopFuelingAirflowViewModel();
         }
 
@@ -40,13 +40,16 @@ public class OpenLoopFuelingAirflowViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         OpenLoopFuelingAfrLogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
@@ -57,7 +60,8 @@ public class OpenLoopFuelingAirflowViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
             public void onError(Throwable throwable) {
@@ -72,16 +76,14 @@ public class OpenLoopFuelingAirflowViewModel {
     }
 
     private void generateAirflowEstimation() {
-        if(me7LogMap != null && afrLogMap != null) {
-            CompletableFuture.runAsync(() -> {
-                AirflowEstimationManager airflowEstimationManager = new AirflowEstimationManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference(), PrimaryFuelingPreferences.getFuelInjectorSizePreference(), PrimaryFuelingPreferences.getNumFuelInjectorPreference(), PrimaryFuelingPreferences.getMethanolNozzleSizePreference(), PrimaryFuelingPreferences.getNumMethanolNozzlePreference(), PrimaryFuelingPreferences.getGasolineGramsPerCubicCentimeterPreference(), PrimaryFuelingPreferences.getMethanolGramsPerCubicCentimeterPreference());
-                airflowEstimationManager.estimate(me7LogMap, afrLogMap);
-                AirflowEstimation airflowEstimation = airflowEstimationManager.getAirflowEstimation();
+        if (me7LogMap != null && afrLogMap != null) {
+            AirflowEstimationManager airflowEstimationManager = new AirflowEstimationManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference(), PrimaryFuelingPreferences.getFuelInjectorSizePreference(), PrimaryFuelingPreferences.getNumFuelInjectorPreference(), PrimaryFuelingPreferences.getMethanolNozzleSizePreference(), PrimaryFuelingPreferences.getNumMethanolNozzlePreference(), PrimaryFuelingPreferences.getGasolineGramsPerCubicCentimeterPreference(), PrimaryFuelingPreferences.getMethanolGramsPerCubicCentimeterPreference());
+            airflowEstimationManager.estimate(me7LogMap, afrLogMap);
+            AirflowEstimation airflowEstimation = airflowEstimationManager.getAirflowEstimation();
 
-                if(airflowEstimation != null) {
-                    publishSubject.onNext(airflowEstimation);
-                }
-            });
+            if (airflowEstimation != null) {
+                publishSubject.onNext(airflowEstimation);
+            }
         }
     }
 

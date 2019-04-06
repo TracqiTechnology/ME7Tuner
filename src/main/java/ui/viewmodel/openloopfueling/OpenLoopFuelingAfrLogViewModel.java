@@ -33,12 +33,10 @@ public class OpenLoopFuelingAfrLogViewModel {
     }
 
     public void loadFile(File file) {
-        CompletableFuture.runAsync(() -> {
-            Map<String, List<Double>> afrLogMap = afrLogParser.parse(file);
+        Map<String, List<Double>> afrLogMap = afrLogParser.parse(file);
 
-            if (afrLogMap != null) {
-                publishSubject.onNext(afrLogMap);
-            }
-        });
+        if (afrLogMap != null) {
+            publishSubject.onNext(afrLogMap);
+        }
     }
 }

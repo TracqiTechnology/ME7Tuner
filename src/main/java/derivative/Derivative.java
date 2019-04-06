@@ -1,14 +1,13 @@
-package stddev;
+package derivative;
 
 import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
-import util.Util;
 
 import java.util.*;
 
 public class Derivative {
 
-    public static Map<Double, List<Double>> getDtMap(Map<String, List<Double>> me7Logs, Map<String, List<Double>> mlhfm) {
+    public static Map<Double, List<Double>> getDtMap(Map<String, List<Double>> me7Logs, Map<String, List<Double>> mlhfm) { ;
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
         for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
@@ -43,6 +42,8 @@ public class Derivative {
 
             result.add(dt);
         }
+
+        result.add(result.get(result.size() -1));
 
         return result;
     }

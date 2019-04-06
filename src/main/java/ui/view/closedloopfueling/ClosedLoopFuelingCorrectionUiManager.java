@@ -46,7 +46,7 @@ public class ClosedLoopFuelingCorrectionUiManager {
             public void onNext(ClosedLoopFuelingCorrection closedLoopFuelingCorrection) {
                 ClosedLoopFuelingCorrectionUiManager.this.closedLoopFuelingCorrection = closedLoopFuelingCorrection;
                 drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm, closedLoopFuelingCorrection.correctedMlhfm);
-                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageStdDev, closedLoopFuelingCorrection.correctedMlhfm);
+                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctedMlhfm);
                 drawMapTable(closedLoopFuelingCorrection.correctedMlhfm);
                 drawAfrCorrectionChart(closedLoopFuelingCorrection.correctionsAfrMap, closedLoopFuelingCorrection.meanAfrMap, closedLoopFuelingCorrection.modeAfrMap, closedLoopFuelingCorrection.correctedAfrMap);
             }
@@ -213,8 +213,8 @@ public class ClosedLoopFuelingCorrectionUiManager {
         XYSeriesCollection dataset = new XYSeriesCollection();
 
         stdDevChart = ChartFactory.createScatterPlot(
-                "Standard Deviation",
-                "Voltage", "Std Dev", dataset);
+                "Derivative",
+                "Voltage", "dMAFv/dt", dataset);
 
         XYPlot plot = (XYPlot)stdDevChart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);

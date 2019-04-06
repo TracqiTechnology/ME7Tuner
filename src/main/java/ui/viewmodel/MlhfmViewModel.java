@@ -17,7 +17,7 @@ public class MlhfmViewModel {
     private static MlhfmViewModel instance;
 
     public static MlhfmViewModel getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new MlhfmViewModel();
         }
 
@@ -39,13 +39,12 @@ public class MlhfmViewModel {
     }
 
     public void loadFile(File file) {
-        CompletableFuture.runAsync(() -> {
-            Map<String, List<Double>> mlhfmMap = mlhfmParser.parse(file);
 
-            if(mlhfmMap != null) {
-                mlhfmPublishSubject.onNext(mlhfmMap);
-                filePublishSubject.onNext(file);
-            }
-        });
+        Map<String, List<Double>> mlhfmMap = mlhfmParser.parse(file);
+
+        if (mlhfmMap != null) {
+            mlhfmPublishSubject.onNext(mlhfmMap);
+            filePublishSubject.onNext(file);
+        }
     }
 }

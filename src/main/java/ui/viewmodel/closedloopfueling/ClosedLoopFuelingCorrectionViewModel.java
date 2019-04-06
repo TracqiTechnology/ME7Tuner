@@ -1,16 +1,15 @@
 package ui.viewmodel.closedloopfueling;
 
-import model.closedloopfueling.ClosedLoopFuelingCorrection;
-import model.closedloopfueling.ClosedLoopFuelingCorrectionManager;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
+import model.closedloopfueling.ClosedLoopFuelingCorrection;
+import model.closedloopfueling.ClosedLoopFuelingCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import ui.viewmodel.MlhfmViewModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class ClosedLoopFuelingCorrectionViewModel {
 
@@ -22,7 +21,7 @@ public class ClosedLoopFuelingCorrectionViewModel {
     private PublishSubject<ClosedLoopFuelingCorrection> publishSubject;
 
     public static ClosedLoopFuelingCorrectionViewModel getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new ClosedLoopFuelingCorrectionViewModel();
         }
 
@@ -41,13 +40,16 @@ public class ClosedLoopFuelingCorrectionViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
@@ -59,27 +61,28 @@ public class ClosedLoopFuelingCorrectionViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
     private void generateCorrection() {
-        if(me7LogMap != null && mlhfmMap != null) {
-            CompletableFuture.runAsync(() -> {
-                ClosedLoopFuelingCorrectionManager closedLoopFuelingCorrectionManager = new ClosedLoopFuelingCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxStdDevPreference());
-                closedLoopFuelingCorrectionManager.correct(me7LogMap, mlhfmMap);
-                ClosedLoopFuelingCorrection closedLoopFuelingCorrection = closedLoopFuelingCorrectionManager.getClosedLoopFuelingCorrection();
+        if (me7LogMap != null && mlhfmMap != null) {
+            ClosedLoopFuelingCorrectionManager closedLoopFuelingCorrectionManager = new ClosedLoopFuelingCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
+            closedLoopFuelingCorrectionManager.correct(me7LogMap, mlhfmMap);
+            ClosedLoopFuelingCorrection closedLoopFuelingCorrection = closedLoopFuelingCorrectionManager.getClosedLoopFuelingCorrection();
 
-                if (closedLoopFuelingCorrection != null) {
-                    publishSubject.onNext(closedLoopFuelingCorrection);
-                }
-            });
+            if (closedLoopFuelingCorrection != null) {
+                publishSubject.onNext(closedLoopFuelingCorrection);
+            }
         }
     }
 

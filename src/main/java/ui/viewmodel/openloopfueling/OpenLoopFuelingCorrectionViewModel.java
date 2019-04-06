@@ -23,7 +23,7 @@ public class OpenLoopFuelingCorrectionViewModel {
     private PublishSubject<OpenLoopCorrection> publishSubject;
 
     public static OpenLoopFuelingCorrectionViewModel getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new OpenLoopFuelingCorrectionViewModel();
         }
 
@@ -41,13 +41,16 @@ public class OpenLoopFuelingCorrectionViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         OpenLoopFuelingAfrLogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
@@ -58,7 +61,8 @@ public class OpenLoopFuelingCorrectionViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
             public void onError(Throwable throwable) {
@@ -80,27 +84,28 @@ public class OpenLoopFuelingCorrectionViewModel {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
     private void generateCorrection() {
-        if(me7LogMap != null && afrLogMap != null && mlhfmMap != null) {
-            CompletableFuture.runAsync(() -> {
-                OpenLoopCorrectionManager openLoopCorrectionManager = new OpenLoopCorrectionManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference());
-                openLoopCorrectionManager.correct(me7LogMap, afrLogMap, mlhfmMap);
-                OpenLoopCorrection openLoopCorrection = openLoopCorrectionManager.getOpenLoopCorrection();
+        if (me7LogMap != null && afrLogMap != null && mlhfmMap != null) {
+            OpenLoopCorrectionManager openLoopCorrectionManager = new OpenLoopCorrectionManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference());
+            openLoopCorrectionManager.correct(me7LogMap, afrLogMap, mlhfmMap);
+            OpenLoopCorrection openLoopCorrection = openLoopCorrectionManager.getOpenLoopCorrection();
 
-                if(openLoopCorrection != null) {
-                    publishSubject.onNext(openLoopCorrection);
-                }
-            });
+            if (openLoopCorrection != null) {
+                publishSubject.onNext(openLoopCorrection);
+            }
         }
     }
 

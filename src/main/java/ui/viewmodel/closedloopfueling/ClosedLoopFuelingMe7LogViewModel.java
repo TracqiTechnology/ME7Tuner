@@ -34,13 +34,11 @@ public class ClosedLoopFuelingMe7LogViewModel {
 
     public void loadDirectory(File directory) {
         if (directory.isDirectory()) {
-            CompletableFuture.runAsync(() -> {
-                Map<String, List<Double>> me7LogMap = me7LogParser.parseLogDirectory(Me7LogParser.LogType.CLOSED_LOOP, directory);
+            Map<String, List<Double>> me7LogMap = me7LogParser.parseLogDirectory(Me7LogParser.LogType.CLOSED_LOOP, directory);
 
-                if (me7LogMap != null) {
-                    publishSubject.onNext(me7LogMap);
-                }
-            });
+            if (me7LogMap != null) {
+                publishSubject.onNext(me7LogMap);
+            }
         } else {
             publishSubject.onError(new Throwable("Not a directory!"));
         }

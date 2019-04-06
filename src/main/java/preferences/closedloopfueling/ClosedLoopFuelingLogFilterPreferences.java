@@ -6,8 +6,7 @@ public class ClosedLoopFuelingLogFilterPreferences {
 
     private static final String MIN_THROTTLE_ANGLE_PREFERENCE = "min_throttle_angle_preference";
     private static final String MIN_RPM_PREFERENCE = "min_rpm_preference";
-    private static final String MAX_STD_DEV_PREFERENCE = "max_std_dev_preference";
-    private static final String STD_DEV_SAMPLE_WINDOW_PREFERENCE = "std_dev_sample_window_preference";
+    private static final String MAX_VOLTAGE_DT_PREFERENCE = "max_voltage_dt_preference";
 
     private static Preferences prefs = Preferences.userNodeForPackage(ClosedLoopFuelingLogFilterPreferences.class);
 
@@ -27,19 +26,11 @@ public class ClosedLoopFuelingLogFilterPreferences {
         prefs.put(MIN_RPM_PREFERENCE, String.valueOf(minRpm));
     }
 
-    public static double getMaxStdDevPreference() {
-        return Double.valueOf(prefs.get(MAX_STD_DEV_PREFERENCE, String.valueOf(1)));
+    public static double getMaxVoltageDtPreference() {
+        return Double.valueOf(prefs.get(MAX_VOLTAGE_DT_PREFERENCE, String.valueOf(1)));
     }
 
-    public static void setMaxStdDevPreference(double maxStdDev) {
-        prefs.put(MAX_STD_DEV_PREFERENCE, String.valueOf(maxStdDev));
-    }
-
-    public static int getStdDevSampleWindowPreference() {
-        return Integer.valueOf(prefs.get(STD_DEV_SAMPLE_WINDOW_PREFERENCE, String.valueOf(20)));
-    }
-
-    public static void setStdDevSampleWindowPreference(int stdDevSampleWindow) {
-        prefs.put(STD_DEV_SAMPLE_WINDOW_PREFERENCE, String.valueOf(stdDevSampleWindow));
+    public static void setMaxVoltageDtPreference(double maxDerivative) {
+        prefs.put(MAX_VOLTAGE_DT_PREFERENCE, String.valueOf(maxDerivative));
     }
 }

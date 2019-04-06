@@ -4,7 +4,7 @@ import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
-import stddev.Derivative;
+import derivative.Derivative;
 import util.Util;
 
 import java.util.*;
@@ -14,21 +14,21 @@ public class ClosedLoopFuelingCorrectionManager {
     private final int lambdaControlEnabled = 1;
     private final double minThrottleAngle;
     private final double minRpm;
-    private final double maxStdDev;
+    private final double maxDerivative;
 
     private Map<String, List<Double>> correctedMlhfm = new HashMap<>();
     private Map<Double, List<Double>> correctionsAfrMap = new HashMap<>();
-    private Map<Double, List<Double>> filteredVoltageStdDev = new HashMap<>();
+    private Map<Double, List<Double>> filteredVoltageDt = new HashMap<>();
     private Map<Double, Double> meanAfrMap = new HashMap<>();
     private Map<Double, double[]> modeAfrMap = new HashMap<>();
     private Map<Double, Double> correctedAfrMap = new HashMap<>();
 
     private ClosedLoopFuelingCorrection closedLoopFuelingCorrection;
 
-    public ClosedLoopFuelingCorrectionManager(double minThrottleAngle, double minRpm, double maxStdDev) {
+    public ClosedLoopFuelingCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
         this.minThrottleAngle = minThrottleAngle;
         this.minRpm = minRpm;
-        this.maxStdDev = maxStdDev;
+        this.maxDerivative = maxDerivative;
     }
 
     public ClosedLoopFuelingCorrection getClosedLoopFuelingCorrection() {
@@ -40,7 +40,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
         for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
             correctionErrorMap.put(voltage, new ArrayList<>());
-            filteredVoltageStdDev.put(voltage, new ArrayList<>());
+            filteredVoltageDt.put(voltage, new ArrayList<>());
             correctionsAfrMap.put(voltage, new ArrayList<>());
             meanAfrMap.put(voltage, 0d);
             modeAfrMap.put(voltage, new double[0]);
@@ -59,7 +59,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
         applyCorrections(correctionErrorList, mlhfm);
 
-        closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(mlhfm, correctedMlhfm, filteredVoltageStdDev, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
+        closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(mlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
     private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {
@@ -74,7 +74,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
         for (int i = 0; i < stft.size(); i++) {
             // Closed loop only and not idle
-            if (lambdaControl.get(i) == lambdaControlEnabled && throttleAngle.get(i) > minThrottleAngle && rpm.get(i) > minRpm && me7voltageDt.get(i) < maxStdDev) {
+            if (lambdaControl.get(i) == lambdaControlEnabled && throttleAngle.get(i) > minThrottleAngle && rpm.get(i) > minRpm && me7voltageDt.get(i) < maxDerivative) {
                 // Get every logged voltage
                 double me7Voltage = me7Voltages.get(i);
                 // Look up the corresponding voltage from MLHFM
@@ -90,7 +90,7 @@ public class ClosedLoopFuelingCorrectionManager {
                 correctionError.get(mlhfmVoltageKey).add(afrCorrectionError);
 
                 // Keep track of the dt of the logged voltages relative to the MLHFM voltages
-                filteredVoltageStdDev.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
+                filteredVoltageDt.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
                 correctionsAfrMap.get(mlhfmVoltageKey).add(afrCorrectionError);
             }
         }
