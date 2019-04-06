@@ -12,7 +12,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
-import stddev.StandardDeviation;
+import stddev.Derivative;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 import ui.viewmodel.MlhfmViewModel;
 
@@ -20,6 +20,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -211,8 +212,8 @@ public class ClosedLoopFuelingMe7LogUiManager {
         XYSeriesCollection dataset = new XYSeriesCollection();
 
         chart = ChartFactory.createScatterPlot(
-                "Standard Deviation",
-                "Voltage", "Std Dev", dataset);
+                "Derivative",
+                "Voltage", "Derivative", dataset);
 
         XYPlot plot = (XYPlot)chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
@@ -228,13 +229,15 @@ public class ClosedLoopFuelingMe7LogUiManager {
 
     private void drawChart(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfmMap) {
 
-        Map<Double, List<Double>> stdDev = StandardDeviation.getStandDeviationMap(me7LogMap, mlhfmMap, ClosedLoopFuelingLogFilterPreferences.getStdDevSampleWindowPreference());
+        Map<Double, List<Double>> dtMap = Derivative.getDtMap(me7LogMap, mlhfmMap);
         List<Double> voltages = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
 
-        XYSeries series = new XYSeries("Std Dev");
+        XYSeries series = new XYSeries("Derivative");
 
         for (Double voltage : voltages) {
-            List<Double> values = stdDev.get(voltage);
+            List<Double> values = dtMap.get(voltage);
+
+            System.out.println(Arrays.toString(values.toArray()));
 
             for (Double value : values) {
                 series.add(voltage, value);

@@ -4,8 +4,7 @@ import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
-import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
-import stddev.StandardDeviation;
+import stddev.Derivative;
 import util.Util;
 
 import java.util.*;
@@ -65,7 +64,8 @@ public class ClosedLoopFuelingCorrectionManager {
 
     private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {
         List<Double> me7Voltages = me7LogMap.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> me7voltageStdDev = StandardDeviation.getStandardDeviation(me7Voltages, ClosedLoopFuelingLogFilterPreferences.getStdDevSampleWindowPreference());
+        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
+        List<Double> me7voltageDt = Derivative.getDt(me7Voltages, me7Timestamps);
         List<Double> stft = me7LogMap.get(Me7LogFileContract.STFT_COLUMN_HEADER);
         List<Double> ltft = me7LogMap.get(Me7LogFileContract.LTFT_COLUMN_HEADER);
         List<Double> lambdaControl = me7LogMap.get(Me7LogFileContract.LAMBDA_CONTROL_ACTIVE_HEADER);
@@ -74,7 +74,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
         for (int i = 0; i < stft.size(); i++) {
             // Closed loop only and not idle
-            if (lambdaControl.get(i) == lambdaControlEnabled && throttleAngle.get(i) > minThrottleAngle && rpm.get(i) > minRpm && me7voltageStdDev.get(i) < maxStdDev) {
+            if (lambdaControl.get(i) == lambdaControlEnabled && throttleAngle.get(i) > minThrottleAngle && rpm.get(i) > minRpm && me7voltageDt.get(i) < maxStdDev) {
                 // Get every logged voltage
                 double me7Voltage = me7Voltages.get(i);
                 // Look up the corresponding voltage from MLHFM
@@ -89,8 +89,8 @@ public class ClosedLoopFuelingCorrectionManager {
                 // Record the correction.
                 correctionError.get(mlhfmVoltageKey).add(afrCorrectionError);
 
-                // Keep track of the standard deviation of the logged voltages relative to the MLHFM voltages
-                filteredVoltageStdDev.get(mlhfmVoltageKey).add(me7voltageStdDev.get(i));
+                // Keep track of the dt of the logged voltages relative to the MLHFM voltages
+                filteredVoltageStdDev.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
                 correctionsAfrMap.get(mlhfmVoltageKey).add(afrCorrectionError);
             }
         }
