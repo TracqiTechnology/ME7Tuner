@@ -4,6 +4,7 @@ import model.closedloopfueling.ClosedLoopFuelingCorrection;
 import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import model.mlhfm.MlhfmFitter;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -18,6 +19,8 @@ import writer.MlhfmWriter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.util.List;
@@ -46,8 +49,8 @@ public class ClosedLoopFuelingCorrectionUiManager {
             public void onNext(ClosedLoopFuelingCorrection closedLoopFuelingCorrection) {
                 ClosedLoopFuelingCorrectionUiManager.this.closedLoopFuelingCorrection = closedLoopFuelingCorrection;
                 drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm, closedLoopFuelingCorrection.correctedMlhfm);
-                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctedMlhfm);
                 drawMapTable(closedLoopFuelingCorrection.correctedMlhfm);
+                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctedMlhfm);
                 drawAfrCorrectionChart(closedLoopFuelingCorrection.correctionsAfrMap, closedLoopFuelingCorrection.meanAfrMap, closedLoopFuelingCorrection.modeAfrMap, closedLoopFuelingCorrection.correctedAfrMap);
             }
 
@@ -187,6 +190,11 @@ public class ClosedLoopFuelingCorrectionUiManager {
         JButton button = getFileButton();
         panel.add(button, c);
 
+        c.gridx = 1;
+
+        button = getFitMlhfmButton();
+        panel.add(button, c);
+
         return panel;
     }
 
@@ -269,6 +277,21 @@ public class ClosedLoopFuelingCorrectionUiManager {
 
                 MlhfmWriter mlhfmWriter = new MlhfmWriter();
                 mlhfmWriter.write(selectedFile, closedLoopFuelingCorrection.correctedMlhfm);
+            }
+        });
+
+        return button;
+    }
+
+    private JButton getFitMlhfmButton() {
+        JButton button = new JButton("Fit MLHFM");
+
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopFuelingCorrection.correctedMlhfm, 6);
+                drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm,correctedFitMlhfm);
+                drawMapTable(correctedFitMlhfm);
             }
         });
 
