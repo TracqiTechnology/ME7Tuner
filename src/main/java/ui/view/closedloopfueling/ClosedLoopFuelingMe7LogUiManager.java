@@ -13,6 +13,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import derivative.Derivative;
+import preferences.filechooser.FileChooserPreferences;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 import ui.viewmodel.MlhfmViewModel;
 
@@ -187,12 +188,14 @@ public class ClosedLoopFuelingMe7LogUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(closedLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.me7LogFile = fc.getSelectedFile();
                 loadMe7File(this.me7LogFile);
+                FileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
             }
         });
 

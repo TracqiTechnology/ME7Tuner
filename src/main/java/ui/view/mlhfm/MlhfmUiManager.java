@@ -11,6 +11,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import preferences.filechooser.FileChooserPreferences;
 import ui.map.map.MapTable;
 import ui.viewmodel.MlhfmViewModel;
 
@@ -150,12 +151,14 @@ public class MlhfmUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
+            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(mlhfmPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fc.getSelectedFile();
                 mlhfmViewModel.loadFile(selectedFile);
+                FileChooserPreferences.setDirectory(selectedFile.getParentFile());
             }
         });
 

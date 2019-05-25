@@ -3,6 +3,7 @@ package model.mlhfm;
 import contract.MlhfmFileContract;
 import math.CurveFitter;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +13,11 @@ public class MlhfmFitter {
         List<Double> y = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
 
         double[] coeff = CurveFitter.fitCurve(x, y, degree);
-        mlhfmMap.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, CurveFitter.buildCurve(coeff, x));
 
-        return mlhfmMap;
+        Map<String, List<Double>> fittedMlhfmMap = new HashMap<>();
+        fittedMlhfmMap.put(MlhfmFileContract.MAF_VOLTAGE_HEADER, x);
+        fittedMlhfmMap.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, CurveFitter.buildCurve(coeff, x));
+
+        return fittedMlhfmMap;
     }
 }

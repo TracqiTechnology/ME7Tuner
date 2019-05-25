@@ -3,6 +3,7 @@ package ui.view.openloopfueling;
 import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import model.mlhfm.MlhfmFitter;
 import model.openloopfueling.correction.OpenLoopCorrection;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jfree.chart.ChartFactory;
@@ -18,6 +19,8 @@ import writer.MlhfmWriter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.util.List;
@@ -165,6 +168,11 @@ public class OpenLoopFuelingCorrectionUiManager {
         JButton button = getFileButton();
         panel.add(button, c);
 
+        c.gridx = 1;
+
+        button = getFitMlhfmButton();
+        panel.add(button, c);
+
         return panel;
     }
 
@@ -228,6 +236,21 @@ public class OpenLoopFuelingCorrectionUiManager {
 
                 MlhfmWriter mlhfmWriter = new MlhfmWriter();
                 mlhfmWriter.write(selectedFile, openLoopCorrection.correctedMlhfm);
+            }
+        });
+
+        return button;
+    }
+
+    private JButton getFitMlhfmButton() {
+        JButton button = new JButton("Fit MLHFM");
+
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopCorrection.correctedMlhfm, 6);
+                drawMlhfmChart(openLoopCorrection.inputMlhfm,correctedFitMlhfm);
+                drawMapTable(correctedFitMlhfm);
             }
         });
 
