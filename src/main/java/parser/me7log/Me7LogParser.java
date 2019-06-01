@@ -110,12 +110,12 @@ public class Me7LogParser {
                     map.get(Me7LogFileContract.MAF_VOLTAGE_HEADER).add(Double.parseDouble(record.get(mafVoltageIndex)));
                     map.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER).add(Double.parseDouble(record.get(throttlePlateAngleIndex)));
                     map.get(Me7LogFileContract.LAMBDA_CONTROL_ACTIVE_HEADER).add(Double.parseDouble(record.get(lambdaControlActiveIndex)));
-                    map.get(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER).add(Double.parseDouble(record.get(fuelInjectorOnTimeIndex)));
                     map.get(Me7LogFileContract.ENGINE_LOAD_HEADER).add(Double.parseDouble(record.get(engineLoadIndex)));
 
                     if(logType == LogType.OPEN_LOOP) {
                         map.get(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER).add(Double.parseDouble(record.get(mafGramsPerSecondIndex)));
                         map.get(Me7LogFileContract.REQUESTED_LAMBDA_HEADER).add(Double.parseDouble(record.get(requestedLambdaIndex)));
+                        map.get(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER).add(Double.parseDouble(record.get(fuelInjectorOnTimeIndex)));
                     }
                 }
             }
@@ -142,7 +142,7 @@ public class Me7LogParser {
         if(logType == LogType.OPEN_LOOP) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && mafGramsPerSecondIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && requestedLambdaIndex != -1 && fuelInjectorOnTimeIndex != -1;
         } else {
-            return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && fuelInjectorOnTimeIndex != -1 && engineLoadIndex != -1;
+            return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && engineLoadIndex != -1;
         }
     }
 
@@ -155,12 +155,12 @@ public class Me7LogParser {
         map.put(Me7LogFileContract.MAF_VOLTAGE_HEADER, new ArrayList<>());
         map.put(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER, new ArrayList<>());
         map.put(Me7LogFileContract.LAMBDA_CONTROL_ACTIVE_HEADER, new ArrayList<>());
-        map.put(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER, new ArrayList<>());
         map.put(Me7LogFileContract.ENGINE_LOAD_HEADER, new ArrayList<>());
 
         if(logType == LogType.OPEN_LOOP) {
             map.put(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.REQUESTED_LAMBDA_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER, new ArrayList<>());
         }
 
         return map;
