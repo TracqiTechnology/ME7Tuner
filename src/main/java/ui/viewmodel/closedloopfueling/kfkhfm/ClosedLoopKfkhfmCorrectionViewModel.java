@@ -9,6 +9,7 @@ import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionManager;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
+import ui.viewmodel.KfkhfmViewModel;
 import ui.viewmodel.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
@@ -56,11 +57,11 @@ public class ClosedLoopKfkhfmCorrectionViewModel {
             }
         });
 
-        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        KfkhfmViewModel kfkhfmViewModel = KfkhfmViewModel.getInstance();
+        kfkhfmViewModel.getKfkhfmPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
-            public void onNext(Map<String, List<Double>> mlhfmMap) {
-                ClosedLoopKfkhfmCorrectionViewModel.this.mlhfmMap = mlhfmMap;
+            public void onNext(Map3d kfkhfm) {
+                ClosedLoopKfkhfmCorrectionViewModel.this.kfkhfm = kfkhfm;
                 generateCorrection();
             }
 

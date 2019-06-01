@@ -25,11 +25,13 @@ public class MapTable extends JList implements TableModelListener {
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
 
-    private PublishSubject<Double[][]> publishSubject;
+    private PublishSubject<Map3d> publishSubject;
     private Debouncer debouncer;
 
     private int rollOverRowIndex = -1;
     private int rollOverColumnIndex = -1;
+
+    private Map3d map3d;
 
     @SuppressWarnings("unchecked")
     private MapTable(Double[] rowHeaders, Object[] columnHeaders, Double[][] data) {
@@ -38,6 +40,13 @@ public class MapTable extends JList implements TableModelListener {
         this.columnHeaders = columnHeaders;
         this.data = data;
         this.debouncer = new Debouncer();
+
+        map3d = new Map3d();
+        if(columnHeaders instanceof Double[]) {
+            map3d.xAxis = (Double[]) columnHeaders;
+        }
+        map3d.yAxis = rowHeaders;
+        map3d.data = data;
 
         this.publishSubject = PublishSubject.create();
 
@@ -59,7 +68,7 @@ public class MapTable extends JList implements TableModelListener {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
     }
 
-    public PublishSubject<Double[][]> getPublishSubject() {
+    public PublishSubject<Map3d> getPublishSubject() {
         return publishSubject;
     }
 
@@ -82,10 +91,15 @@ public class MapTable extends JList implements TableModelListener {
         return rowHeaders;
     }
 
-    public void setMap(Map3d map) {
-        setColumnHeaders(map.xAxis);
-        setRowHeaders(map.yAxis);
-        setTableData(map.data);
+    public void setMap(Map3d map3d) {
+        this.map3d = map3d;
+        setColumnHeaders(map3d.xAxis);
+        setRowHeaders(map3d.yAxis);
+        setTableData(map3d.data);
+    }
+
+    public Map3d getMap3d() {
+        return this.map3d;
     }
 
     /*
@@ -307,7 +321,12 @@ public class MapTable extends JList implements TableModelListener {
                 debouncer.debounce(this, new Runnable() {
                     @Override
                     public void run() {
-                        publishSubject.onNext(values);
+
+                        map3d.xAxis = (Double[]) getColumnHeaders();
+                        map3d.yAxis = getRowHeaders();
+                        map3d.data = values;
+
+                        publishSubject.onNext(map3d);
                     }
                 }, 100, TimeUnit.MILLISECONDS);
             }

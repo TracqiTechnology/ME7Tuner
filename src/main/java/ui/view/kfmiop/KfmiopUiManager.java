@@ -193,10 +193,10 @@ public class KfmiopUiManager {
 
     private void initKfmirlMap() {
         kfmirl = MapTable.getMapTable(Kfmirl.getStockKfmirlYAxis(), Kfmirl.getStockKfmirlXAxis(), Kfmirl.getStockKfmirlMap());
-        kfmirl.getPublishSubject().subscribe(new Observer<Double[][]>() {
+        kfmirl.getPublishSubject().subscribe(new Observer<Map3d>() {
 
             @Override
-            public void onNext(Double[][] doubles) {
+            public void onNext(Map3d map3d) {
                 viewModel.recalcuateKfmiopXAxis(kfmirl.getData());
             }
 

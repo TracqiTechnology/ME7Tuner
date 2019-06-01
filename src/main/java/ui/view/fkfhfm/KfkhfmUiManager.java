@@ -1,8 +1,12 @@
 package ui.view.fkfhfm;
 
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfkhfm.Kfkhfm;
 import ui.map.map.MapTable;
+import ui.viewmodel.KfkhfmViewModel;
+import ui.viewmodel.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionViewModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,6 +42,29 @@ public class KfkhfmUiManager {
         GridBagConstraints c = new GridBagConstraints();
 
         kfkhfm = MapTable.getMapTable(Kfkhfm.getStockYAxis(), Kfkhfm.getStockXAxis(), Kfkhfm.getStockMap());
+        KfkhfmViewModel.getInstance().setKfkhfm(kfkhfm.getMap3d());
+
+        kfkhfm.getPublishSubject().subscribe(new Observer<Map3d>() {
+            @Override
+            public void onSubscribe(Disposable disposable) {
+
+            }
+
+            @Override
+            public void onNext(Map3d map3d) {
+                KfkhfmViewModel.getInstance().setKfkhfm(map3d);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
 
         c.weightx = 1;
         c.gridx = 0;
@@ -46,7 +73,7 @@ public class KfkhfmUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("KFKHFM"),c);
+        panel.add(new JLabel("KFKHFM"), c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -56,9 +83,9 @@ public class KfkhfmUiManager {
         c.anchor = GridBagConstraints.CENTER;
 
         JScrollPane scrollPane = kfkhfm.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(930, 295));
+        scrollPane.setPreferredSize(new Dimension(820, 245));
 
-        panel.add(scrollPane ,c);
+        panel.add(scrollPane, c);
 
         return panel;
     }

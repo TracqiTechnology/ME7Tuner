@@ -193,14 +193,10 @@ public class KfzwopUiManager {
     private void initKfmirlMap() {
         kfzwopIn = MapTable.getMapTable(Kfzwop.getStockYAxis(), Kfzwop.getStockXAxis(), Kfzwop.getStockMap());
 
-        kfzwopIn.getPublishSubject().subscribe(new Observer<Double[][]>() {
+        kfzwopIn.getPublishSubject().subscribe(new Observer<Map3d>() {
 
             @Override
-            public void onNext(Double[][] data) {
-                Map3d map3d = new Map3d();
-                map3d.xAxis = Kfzwop.getStockXAxis();
-                map3d.yAxis = kfzwopIn.getRowHeaders();
-                map3d.data = data;
+            public void onNext(Map3d map3d) {
                 viewModel.cacluateKfzwop(map3d, kfzwopXAxis.getData()[0]);
             }
 
