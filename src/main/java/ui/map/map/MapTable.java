@@ -1,6 +1,7 @@
 package ui.map.map;
 
 import io.reactivex.subjects.PublishSubject;
+import math.map.Map3d;
 import ui.map.ExcelAdapter;
 import util.Debouncer;
 import util.Util;
@@ -79,6 +80,12 @@ public class MapTable extends JList implements TableModelListener {
 
     public Double[] getRowHeaders() {
         return rowHeaders;
+    }
+
+    public void setMap(Map3d map) {
+        setColumnHeaders(map.xAxis);
+        setRowHeaders(map.yAxis);
+        setTableData(map.data);
     }
 
     /*

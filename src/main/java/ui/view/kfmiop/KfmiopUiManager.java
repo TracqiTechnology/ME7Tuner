@@ -2,7 +2,7 @@ package ui.view.kfmiop;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import math.map.Map;
+import math.map.Map3d;
 import model.kfmiop.Kfmiop;
 import model.kfmirl.Kfmirl;
 import ui.map.axis.MapAxis;
@@ -28,17 +28,17 @@ public class KfmiopUiManager {
             public void onNext(Double[] kfmiopXAxis) {
                 KfmiopUiManager.this.kfmiopXAxis.setTableData(new Double[][]{kfmiopXAxis});
 
-                Map kfmirlMap = new Map();
-                kfmirlMap.xAxis = (Double[]) kfmirl.getColumnHeaders();
-                kfmirlMap.yAxis = kfmirl.getRowHeaders();
-                kfmirlMap.data = kfmirl.getData();
+                Map3d kfmirlMap3d = new Map3d();
+                kfmirlMap3d.xAxis = (Double[]) kfmirl.getColumnHeaders();
+                kfmirlMap3d.yAxis = kfmirl.getRowHeaders();
+                kfmirlMap3d.data = kfmirl.getData();
 
-                Map kfmiopMap = new Map();
-                kfmiopMap.xAxis = kfmiopXAxis;
-                kfmiopMap.yAxis = Kfmiop.getStockKfmiopYAxis();
-                kfmiopMap.data = Kfmiop.getStockKfmiopMap();
+                Map3d kfmiopMap3d = new Map3d();
+                kfmiopMap3d.xAxis = kfmiopXAxis;
+                kfmiopMap3d.yAxis = Kfmiop.getStockKfmiopYAxis();
+                kfmiopMap3d.data = Kfmiop.getStockKfmiopMap();
 
-                viewModel.cacluateKfmiop(kfmirlMap, kfmiopMap);
+                viewModel.cacluateKfmiop(kfmirlMap3d, kfmiopMap3d);
             }
 
             @Override
@@ -51,12 +51,12 @@ public class KfmiopUiManager {
             public void onComplete() {}
         });
 
-        viewModel.getKfmiopMapPublishSubject().subscribe(new Observer<Map>() {
+        viewModel.getKfmiopMapPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
-            public void onNext(Map map) {
-                kfmiop.setColumnHeaders(map.xAxis);
-                kfmiop.setRowHeaders(map.yAxis);
-                kfmiop.setTableData(map.data);
+            public void onNext(Map3d map3d) {
+                kfmiop.setColumnHeaders(map3d.xAxis);
+                kfmiop.setRowHeaders(map3d.yAxis);
+                kfmiop.setTableData(map3d.data);
             }
 
             @Override

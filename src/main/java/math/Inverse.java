@@ -1,10 +1,10 @@
 package math;
 
-import math.map.Map;
+import math.map.Map3d;
 
 public class Inverse {
 
-    public static Map calculateInverse(Map input, Map output) {
+    public static Map3d calculateInverse(Map3d input, Map3d output) {
         for(int i = 0; i < input.yAxis.length; i++) {
             for(int j = 0; j < output.xAxis.length; j++) {
                 Double[] x = input.data[i];

@@ -1,30 +1,24 @@
 package ui.viewmodel.kfzwop;
 
 import io.reactivex.subjects.PublishSubject;
-import math.FindMax;
-import math.Inverse;
-import math.RescaleAxis;
-import math.map.Map;
-import model.kfmiop.Kfmiop;
-import model.kfzwop.Kfzwop;
+import math.map.Map3d;
 import model.kfzwop.KfzwopManager;
-import ui.map.axis.MapAxis;
 
 public class KfzwopViewModel {
 
-    private PublishSubject<Map> kfzwopMapPublishSubject;
+    private PublishSubject<Map3d> kfzwopMapPublishSubject;
 
     public KfzwopViewModel() {
         kfzwopMapPublishSubject = PublishSubject.create();
     }
 
-    public PublishSubject<Map> getKfzwopMapPublishSubject() {
+    public PublishSubject<Map3d> getKfzwopMapPublishSubject() {
         return kfzwopMapPublishSubject;
     }
 
-    public void cacluateKfzwop(Map kfzwop, Double[] newXAxis) {
+    public void cacluateKfzwop(Map3d kfzwop, Double[] newXAxis) {
 
-        Map newKfzwop = new Map();
+        Map3d newKfzwop = new Map3d();
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
         newKfzwop.data = KfzwopManager.generateKfzwop(kfzwop.xAxis, kfzwop.data, newXAxis);

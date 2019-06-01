@@ -11,4 +11,5 @@ public class Me7LogFileContract {
     public static final String LAMBDA_CONTROL_ACTIVE_HEADER = "B_lr";
     public static final String REQUESTED_LAMBDA_HEADER = "lamsbg_w";
     public static final String FUEL_INJECTOR_ON_TIME_HEADER = "ti_b1";
+    public static final String ENGINE_LOAD_HEADER = "rl_w";
 }

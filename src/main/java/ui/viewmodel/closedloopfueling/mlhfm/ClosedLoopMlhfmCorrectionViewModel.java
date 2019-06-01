@@ -1,41 +1,42 @@
-package ui.viewmodel.closedloopfueling;
+package ui.viewmodel.closedloopfueling.mlhfm;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
-import model.closedloopfueling.ClosedLoopFuelingCorrection;
-import model.closedloopfueling.ClosedLoopFuelingCorrectionManager;
+import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
+import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopFuelingCorrectionViewModel {
+public class ClosedLoopMlhfmCorrectionViewModel {
 
-    private static ClosedLoopFuelingCorrectionViewModel instance;
+    private static ClosedLoopMlhfmCorrectionViewModel instance;
 
     private Map<String, List<Double>> mlhfmMap;
     private Map<String, List<Double>> me7LogMap;
 
-    private PublishSubject<ClosedLoopFuelingCorrection> publishSubject;
+    private PublishSubject<ClosedLoopMlhfmCorrection> publishSubject;
 
-    public static ClosedLoopFuelingCorrectionViewModel getInstance() {
+    public static ClosedLoopMlhfmCorrectionViewModel getInstance() {
         if (instance == null) {
-            instance = new ClosedLoopFuelingCorrectionViewModel();
+            instance = new ClosedLoopMlhfmCorrectionViewModel();
         }
 
         return instance;
     }
 
-    private ClosedLoopFuelingCorrectionViewModel() {
+    private ClosedLoopMlhfmCorrectionViewModel() {
         publishSubject = PublishSubject.create();
 
         ClosedLoopFuelingMe7LogViewModel closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
         closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(Map<String, List<Double>> me7LogMap) {
-                ClosedLoopFuelingCorrectionViewModel.this.me7LogMap = me7LogMap;
+                ClosedLoopMlhfmCorrectionViewModel.this.me7LogMap = me7LogMap;
                 generateCorrection();
             }
 
@@ -56,7 +57,7 @@ public class ClosedLoopFuelingCorrectionViewModel {
         mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(Map<String, List<Double>> mlhfmMap) {
-                ClosedLoopFuelingCorrectionViewModel.this.mlhfmMap = mlhfmMap;
+                ClosedLoopMlhfmCorrectionViewModel.this.mlhfmMap = mlhfmMap;
                 generateCorrection();
             }
 
@@ -76,17 +77,17 @@ public class ClosedLoopFuelingCorrectionViewModel {
 
     private void generateCorrection() {
         if (me7LogMap != null && mlhfmMap != null) {
-            ClosedLoopFuelingCorrectionManager closedLoopFuelingCorrectionManager = new ClosedLoopFuelingCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
-            closedLoopFuelingCorrectionManager.correct(me7LogMap, mlhfmMap);
-            ClosedLoopFuelingCorrection closedLoopFuelingCorrection = closedLoopFuelingCorrectionManager.getClosedLoopFuelingCorrection();
+            ClosedLoopMlhfmCorrectionManager closedLoopMlhfmCorrectionManager = new ClosedLoopMlhfmCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
+            closedLoopMlhfmCorrectionManager.correct(me7LogMap, mlhfmMap);
+            ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection = closedLoopMlhfmCorrectionManager.getClosedLoopMlhfmCorrection();
 
-            if (closedLoopFuelingCorrection != null) {
-                publishSubject.onNext(closedLoopFuelingCorrection);
+            if (closedLoopMlhfmCorrection != null) {
+                publishSubject.onNext(closedLoopMlhfmCorrection);
             }
         }
     }
 
-    public PublishSubject<ClosedLoopFuelingCorrection> getPublishSubject() {
+    public PublishSubject<ClosedLoopMlhfmCorrection> getPublishSubject() {
         return publishSubject;
     }
 }

@@ -1,6 +1,6 @@
-package ui.view.closedloopfueling;
+package ui.view.closedloopfueling.mlhfm;
 
-import model.closedloopfueling.ClosedLoopFuelingCorrection;
+import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -14,7 +14,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import ui.map.map.MapTable;
-import ui.viewmodel.closedloopfueling.ClosedLoopFuelingCorrectionViewModel;
+import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmCorrectionViewModel;
 import writer.MlhfmWriter;
 
 import javax.swing.*;
@@ -26,7 +26,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopFuelingCorrectionUiManager {
+public class ClosedLoopMlhfmCorrectionUiManager {
 
     private static final int AFR_CORRECTION_POINT_SERIES_INDEX = 1;
     private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
@@ -35,23 +35,23 @@ public class ClosedLoopFuelingCorrectionUiManager {
     private JFreeChart stdDevChart;
     private JFreeChart afrCorrectionChart;
     private JPanel correctionPanel;
-    private ClosedLoopFuelingCorrection closedLoopFuelingCorrection;
+    private ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection;
     private MapTable mapTable;
 
     private XYSeriesCollection afrCorrectionPointDataSet;
     private XYSeriesCollection afrCorrectionLineDataSet;
 
-    ClosedLoopFuelingCorrectionUiManager() {
-        ClosedLoopFuelingCorrectionViewModel closedLoopFuelingCorrectionViewModel = ClosedLoopFuelingCorrectionViewModel.getInstance();
-        closedLoopFuelingCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopFuelingCorrection>() {
+    ClosedLoopMlhfmCorrectionUiManager() {
+        ClosedLoopMlhfmCorrectionViewModel closedLoopMlhfmCorrectionViewModel = ClosedLoopMlhfmCorrectionViewModel.getInstance();
+        closedLoopMlhfmCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopMlhfmCorrection>() {
 
             @Override
-            public void onNext(ClosedLoopFuelingCorrection closedLoopFuelingCorrection) {
-                ClosedLoopFuelingCorrectionUiManager.this.closedLoopFuelingCorrection = closedLoopFuelingCorrection;
-                drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm, closedLoopFuelingCorrection.correctedMlhfm);
-                drawMapTable(closedLoopFuelingCorrection.correctedMlhfm);
-                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctedMlhfm);
-                drawAfrCorrectionChart(closedLoopFuelingCorrection.correctionsAfrMap, closedLoopFuelingCorrection.meanAfrMap, closedLoopFuelingCorrection.modeAfrMap, closedLoopFuelingCorrection.correctedAfrMap);
+            public void onNext(ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection) {
+                ClosedLoopMlhfmCorrectionUiManager.this.closedLoopMlhfmCorrection = closedLoopMlhfmCorrection;
+                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, closedLoopMlhfmCorrection.correctedMlhfm);
+                drawMapTable(closedLoopMlhfmCorrection.correctedMlhfm);
+                drawStdDevChart(closedLoopMlhfmCorrection.filteredVoltageDt, closedLoopMlhfmCorrection.correctedMlhfm);
+                drawAfrCorrectionChart(closedLoopMlhfmCorrection.correctionsAfrMap, closedLoopMlhfmCorrection.meanAfrMap, closedLoopMlhfmCorrection.modeAfrMap, closedLoopMlhfmCorrection.correctedAfrMap);
             }
 
             @Override
@@ -276,7 +276,7 @@ public class ClosedLoopFuelingCorrectionUiManager {
                 File selectedFile = fc.getSelectedFile();
 
                 MlhfmWriter mlhfmWriter = new MlhfmWriter();
-                mlhfmWriter.write(selectedFile, closedLoopFuelingCorrection.correctedMlhfm);
+                mlhfmWriter.write(selectedFile, closedLoopMlhfmCorrection.correctedMlhfm);
             }
         });
 
@@ -289,8 +289,8 @@ public class ClosedLoopFuelingCorrectionUiManager {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopFuelingCorrection.correctedMlhfm, 6);
-                drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm,correctedFitMlhfm);
+                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, 6);
+                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm,correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }
         });

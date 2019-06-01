@@ -4,7 +4,7 @@ package ui.view.kfzwop;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
-import math.map.Map;
+import math.map.Map3d;
 import model.kfzwop.Kfzwop;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
@@ -25,12 +25,12 @@ public class KfzwopUiManager {
     public KfzwopUiManager() {
         viewModel = new KfzwopViewModel();
 
-        viewModel.getKfzwopMapPublishSubject().subscribe(new Observer<Map>() {
+        viewModel.getKfzwopMapPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
-            public void onNext(Map map) {
-                kfzwopOut.setColumnHeaders(map.xAxis);
-                kfzwopOut.setRowHeaders(map.yAxis);
-                kfzwopOut.setTableData(map.data);
+            public void onNext(Map3d map3d) {
+                kfzwopOut.setColumnHeaders(map3d.xAxis);
+                kfzwopOut.setRowHeaders(map3d.yAxis);
+                kfzwopOut.setTableData(map3d.data);
             }
 
             @Override
@@ -172,11 +172,11 @@ public class KfzwopUiManager {
 
             @Override
             public void onNext(Double[][] data) {
-                Map map = new Map();
-                map.xAxis = Kfzwop.getStockXAxis();
-                map.yAxis = kfzwopIn.getRowHeaders();
-                map.data = kfzwopIn.getData();
-                viewModel.cacluateKfzwop(map, data[0]);
+                Map3d map3d = new Map3d();
+                map3d.xAxis = Kfzwop.getStockXAxis();
+                map3d.yAxis = kfzwopIn.getRowHeaders();
+                map3d.data = kfzwopIn.getData();
+                viewModel.cacluateKfzwop(map3d, data[0]);
             }
 
             @Override
@@ -197,11 +197,11 @@ public class KfzwopUiManager {
 
             @Override
             public void onNext(Double[][] data) {
-                Map map = new Map();
-                map.xAxis = Kfzwop.getStockXAxis();
-                map.yAxis = kfzwopIn.getRowHeaders();
-                map.data = data;
-                viewModel.cacluateKfzwop(map, kfzwopXAxis.getData()[0]);
+                Map3d map3d = new Map3d();
+                map3d.xAxis = Kfzwop.getStockXAxis();
+                map3d.yAxis = kfzwopIn.getRowHeaders();
+                map3d.data = data;
+                viewModel.cacluateKfzwop(map3d, kfzwopXAxis.getData()[0]);
             }
 
             @Override

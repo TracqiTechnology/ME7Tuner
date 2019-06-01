@@ -1,6 +1,7 @@
 package ui.view;
 
-import ui.view.closedloopfueling.ClosedLoopFuelingUiManager;
+import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
+import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmUiManager;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
 import ui.view.kfzwop.KfzwopUiManager;
@@ -21,7 +22,8 @@ public class MainManager {
 
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Closed Loop Fueling", null, new ClosedLoopFuelingUiManager().getClosedLoopPanel(), "Closed Loop Fueling Compensation");
+        tabbedPane.addTab("Closed Loop MLHFM", null, new ClosedLoopMlhfmUiManager().getPanel(), "Closed Loop MLFHM Compensation");
+        tabbedPane.addTab("Closed Loop KFKHFM", null, new ClosedLoopKfkhfmUiManager().getPanel(), "Closed Loop KFKHFM Compensation");
         tabbedPane.addTab("Open Loop Fueling", null, new OpenLoopFuelingUiManager().getOpenLoopPanel(), "Open Loop Fueling Compensation");
         tabbedPane.addTab("KRKTE", null, new KrkteUiManager().getKrkteCalculationPanel(), "KRKTE Calculator");
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getKfmirlCalculationPanel(), "KFMIRL Calculator");

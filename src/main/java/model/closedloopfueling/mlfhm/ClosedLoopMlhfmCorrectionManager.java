@@ -1,4 +1,4 @@
-package model.closedloopfueling;
+package model.closedloopfueling.mlfhm;
 
 import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
@@ -9,7 +9,7 @@ import util.Util;
 
 import java.util.*;
 
-public class ClosedLoopFuelingCorrectionManager {
+public class ClosedLoopMlhfmCorrectionManager {
 
     private final int lambdaControlEnabled = 1;
     private final double minThrottleAngle;
@@ -23,16 +23,16 @@ public class ClosedLoopFuelingCorrectionManager {
     private Map<Double, double[]> modeAfrMap = new HashMap<>();
     private Map<Double, Double> correctedAfrMap = new HashMap<>();
 
-    private ClosedLoopFuelingCorrection closedLoopFuelingCorrection;
+    private ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection;
 
-    public ClosedLoopFuelingCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
+    public ClosedLoopMlhfmCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
         this.minThrottleAngle = minThrottleAngle;
         this.minRpm = minRpm;
         this.maxDerivative = maxDerivative;
     }
 
-    public ClosedLoopFuelingCorrection getClosedLoopFuelingCorrection() {
-        return closedLoopFuelingCorrection;
+    public ClosedLoopMlhfmCorrection getClosedLoopMlhfmCorrection() {
+        return closedLoopMlhfmCorrection;
     }
 
     public void correct(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {
@@ -59,7 +59,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
         applyCorrections(correctionErrorList, mlhfm);
 
-        closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(mlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
+        closedLoopMlhfmCorrection = new ClosedLoopMlhfmCorrection(mlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
     private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {

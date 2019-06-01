@@ -24,7 +24,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopFuelingMe7LogUiManager {
+public class ClosedLoopMe7LogUiManager {
 
     private JFreeChart chart;
     private JPanel closedLoopLogPanel;
@@ -34,7 +34,7 @@ public class ClosedLoopFuelingMe7LogUiManager {
     private Map<String, List<Double>> mlhfmMap;
     private File me7LogFile;
 
-    ClosedLoopFuelingMe7LogUiManager() {
+    public ClosedLoopMe7LogUiManager() {
         closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
         closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
@@ -58,7 +58,7 @@ public class ClosedLoopFuelingMe7LogUiManager {
         mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(Map<String, List<Double>> mlhfmMap) {
-                ClosedLoopFuelingMe7LogUiManager.this.mlhfmMap = mlhfmMap;
+                ClosedLoopMe7LogUiManager.this.mlhfmMap = mlhfmMap;
             }
 
             @Override
@@ -72,7 +72,7 @@ public class ClosedLoopFuelingMe7LogUiManager {
         });
     }
 
-    JPanel getMe7LogPanel() {
+    public JPanel getMe7LogPanel() {
         initChart();
         closedLoopLogPanel = new JPanel();
         closedLoopLogPanel.setLayout(new GridBagLayout());
@@ -153,13 +153,13 @@ public class ClosedLoopFuelingMe7LogUiManager {
         JButton button = new JButton("Configure Filter");
 
         button.addActionListener(e -> {
-            ClosedLoopFuelingMe7LogFilterConfigPanel filterConfigPane = new ClosedLoopFuelingMe7LogFilterConfigPanel();
+            ClosedLoopMe7LogFilterConfigPanel filterConfigPane = new ClosedLoopMe7LogFilterConfigPanel();
 
             int result = JOptionPane.showConfirmDialog(closedLoopLogPanel, filterConfigPane,
                     "", JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE);
             if (result == JOptionPane.OK_OPTION) {
-                for (ClosedLoopFuelingMe7LogFilterConfigPanel.FieldTitle fieldTitle : ClosedLoopFuelingMe7LogFilterConfigPanel.FieldTitle.values()) {
+                for (ClosedLoopMe7LogFilterConfigPanel.FieldTitle fieldTitle : ClosedLoopMe7LogFilterConfigPanel.FieldTitle.values()) {
                     switch (fieldTitle) {
                         case MIN_THROTTLE_ANGLE:
                             ClosedLoopFuelingLogFilterPreferences.setMinThrottleAnglePreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));

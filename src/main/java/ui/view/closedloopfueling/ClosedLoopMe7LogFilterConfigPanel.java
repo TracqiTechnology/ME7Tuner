@@ -10,11 +10,11 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClosedLoopFuelingMe7LogFilterConfigPanel extends JPanel {
+class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
     private static final Insets WEST_INSETS = new Insets(5, 0, 5, 5);
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
-    enum FieldTitle {
+    public enum FieldTitle {
         MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MAX_VOLTAGE_DT("Max dMAFv/dt");
         private String title;
 
@@ -29,7 +29,7 @@ public class ClosedLoopFuelingMe7LogFilterConfigPanel extends JPanel {
 
     private Map<FieldTitle, JTextField> fieldMap = new HashMap<FieldTitle, JTextField>();
 
-    ClosedLoopFuelingMe7LogFilterConfigPanel() {
+    ClosedLoopMe7LogFilterConfigPanel() {
         setLayout(new GridBagLayout());
         setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Configure Closed Loop Filter"),
