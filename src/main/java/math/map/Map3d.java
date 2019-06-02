@@ -15,10 +15,10 @@ public class Map3d {
         this.xAxis = Arrays.copyOf(map3d.xAxis, map3d.xAxis.length);
         this.yAxis = Arrays.copyOf(map3d.yAxis, map3d.yAxis.length);
 
-        this.data = new Double[data.length][];
+        this.data = new Double[map3d.data.length][];
 
         for(int i = 0; i < data.length; i++) {
-            data[i] = Arrays.copyOf(data[i], data[i].length);
+            data[i] = Arrays.copyOf(map3d.data[i], map3d.data[i].length);
         }
     }
 }

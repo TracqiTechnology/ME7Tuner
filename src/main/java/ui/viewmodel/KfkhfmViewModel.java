@@ -1,11 +1,12 @@
 package ui.viewmodel;
 
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 
 public class KfkhfmViewModel {
 
-    private PublishSubject<Map3d> kfkhfmPublishSubject;
+    private BehaviorSubject<Map3d> kfkhfmBehaviorSubject;
 
     private static KfkhfmViewModel instance;
 
@@ -18,16 +19,16 @@ public class KfkhfmViewModel {
     }
 
     private KfkhfmViewModel() {
-        kfkhfmPublishSubject = PublishSubject.create();
+        kfkhfmBehaviorSubject = BehaviorSubject.create();
     }
 
-    public PublishSubject<Map3d> getKfkhfmPublishSubject() {
-        return kfkhfmPublishSubject;
+    public BehaviorSubject<Map3d> getKfkhfmBehaviorSubject() {
+        return kfkhfmBehaviorSubject;
     }
 
     public void setKfkhfm(Map3d kfkhfm) {
         if (kfkhfm != null) {
-            kfkhfmPublishSubject.onNext(kfkhfm);
+            kfkhfmBehaviorSubject.onNext(kfkhfm);
         }
     }
 }

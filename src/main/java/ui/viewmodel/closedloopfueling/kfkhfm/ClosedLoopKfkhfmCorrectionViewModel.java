@@ -58,7 +58,7 @@ public class ClosedLoopKfkhfmCorrectionViewModel {
         });
 
         KfkhfmViewModel kfkhfmViewModel = KfkhfmViewModel.getInstance();
-        kfkhfmViewModel.getKfkhfmPublishSubject().subscribe(new Observer<Map3d>() {
+        kfkhfmViewModel.getKfkhfmBehaviorSubject().subscribe(new Observer<Map3d>() {
             @Override
             public void onNext(Map3d kfkhfm) {
                 ClosedLoopKfkhfmCorrectionViewModel.this.kfkhfm = kfkhfm;

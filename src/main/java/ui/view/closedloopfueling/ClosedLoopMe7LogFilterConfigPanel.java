@@ -10,7 +10,7 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
+public class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
     private static final Insets WEST_INSETS = new Insets(5, 0, 5, 5);
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
@@ -29,7 +29,7 @@ class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
 
     private Map<FieldTitle, JTextField> fieldMap = new HashMap<FieldTitle, JTextField>();
 
-    ClosedLoopMe7LogFilterConfigPanel() {
+    public ClosedLoopMe7LogFilterConfigPanel() {
         setLayout(new GridBagLayout());
         setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Configure Closed Loop Filter"),

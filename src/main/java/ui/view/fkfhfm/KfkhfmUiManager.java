@@ -14,9 +14,29 @@ import java.awt.*;
 public class KfkhfmUiManager {
 
     private MapTable kfkhfm;
+    private JPanel panel;
+
+    public KfkhfmUiManager() {
+        initPanel();
+    }
+
+    public KfkhfmUiManager(boolean shouldNotifyOnChange) {
+        initPanel();
+        if(shouldNotifyOnChange) {
+            shouldNotifyOnChange();
+        }
+    }
 
     public JPanel getPanel() {
-        JPanel panel = new JPanel();
+     return panel;
+    }
+
+    public void setMap(Map3d map) {
+        kfkhfm.setMap(map);
+    }
+
+    private void initPanel() {
+        panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
         GridBagConstraints c = new GridBagConstraints();
@@ -25,23 +45,9 @@ public class KfkhfmUiManager {
         c.gridy = 0;
 
         panel.add(getMapPanel(), c);
-
-        return panel;
     }
 
-    public void setMap(Map3d map) {
-        kfkhfm.setMap(map);
-    }
-
-    private JPanel getMapPanel() {
-
-        JPanel panel = new JPanel();
-
-        panel.setLayout(new GridBagLayout());
-
-        GridBagConstraints c = new GridBagConstraints();
-
-        kfkhfm = MapTable.getMapTable(Kfkhfm.getStockYAxis(), Kfkhfm.getStockXAxis(), Kfkhfm.getStockMap());
+    private void shouldNotifyOnChange() {
         KfkhfmViewModel.getInstance().setKfkhfm(kfkhfm.getMap3d());
 
         kfkhfm.getPublishSubject().subscribe(new Observer<Map3d>() {
@@ -65,6 +71,17 @@ public class KfkhfmUiManager {
 
             }
         });
+    }
+
+    private JPanel getMapPanel() {
+
+        JPanel panel = new JPanel();
+
+        panel.setLayout(new GridBagLayout());
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        kfkhfm = MapTable.getMapTable(Kfkhfm.getStockYAxis(), Kfkhfm.getStockXAxis(), Kfkhfm.getStockMap());
 
         c.weightx = 1;
         c.gridx = 0;

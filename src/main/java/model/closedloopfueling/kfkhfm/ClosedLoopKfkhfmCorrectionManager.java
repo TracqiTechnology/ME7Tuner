@@ -70,7 +70,7 @@ public class ClosedLoopKfkhfmCorrectionManager {
                 double engineLoadValue = engineLoad.get(i);
                 double rpmValue = rpm.get(i);
 
-                // Look up the corresponding voltage from MLHFM
+                // Look up the corresponding load from KFKHFM
                 int kvkhfmLoadIndex = Math.abs(Arrays.binarySearch(kfkhfm.xAxis, engineLoadValue));
                 int kvkhfmRpmIndex = Math.abs(Arrays.binarySearch(kfkhfm.yAxis, rpmValue));
 
@@ -81,7 +81,8 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
                 // Record the correction.
                 corrections.get(kvkhfmLoadIndex).get(kvkhfmRpmIndex).add(afrCorrectionError);
-                filteredLoadDt.get(kfkhfm.xAxis[kvkhfmLoadIndex]).add(afrCorrectionError);
+                filteredLoadDt.get(kfkhfm.xAxis[kvkhfmLoadIndex]).add(me7voltageDt.get(i));
+                correctionsAfrMap.get(kfkhfm.xAxis[kvkhfmLoadIndex]).add(afrCorrectionError);
             }
         }
     }
@@ -93,7 +94,7 @@ public class ClosedLoopKfkhfmCorrectionManager {
                 // Get the mean of the correction set
                 double meanValue = mean.evaluate(Util.toDoubleArray(corrections.get(i).get(j).toArray(new Double[0])), 0, corrections.get(i).get(j).size());
                 // Get the mode of the correction set
-                double[] mode = StatUtils.mode(Util.toDoubleArray(corrections.toArray(new Double[0])));
+                double[] mode = StatUtils.mode(Util.toDoubleArray(corrections.get(i).get(j).toArray(new Double[0])));
 
                 meanAfrMap.put(kfkhfm.xAxis[i], meanValue);
                 modeAfrMap.put(kfkhfm.xAxis[i], mode);
@@ -107,11 +108,9 @@ public class ClosedLoopKfkhfmCorrectionManager {
                 // Get the average of the mean and the mode
                 correction /= 1 + mode.length;
 
-                correctionsAfrMap.get(kfkhfm.xAxis[i]).add(correction);
-
                 // Keep track of the largest index a correction was made at
                 if (!Double.isNaN(correction)) {
-                    kfkhfm.data[i][j] *= correction;
+                    kfkhfm.data[i][j] *= 1 + correction;
                 }
             }
         }

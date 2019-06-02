@@ -1,9 +1,10 @@
-package ui.view.closedloopfueling;
+package ui.view.closedloopfueling.kfkhfm;
 
 
-import contract.MlhfmFileContract;
+import derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import math.map.Map3d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -12,10 +13,10 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
-import derivative.Derivative;
 import preferences.filechooser.FileChooserPreferences;
+import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
+import ui.viewmodel.KfkhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
-import ui.viewmodel.MlhfmViewModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,23 +25,23 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopMe7LogUiManager {
+public class ClosedLoopKfkhfmMe7LogUiManager {
 
     private JFreeChart chart;
     private JPanel closedLoopLogPanel;
     private JLabel fileLabel;
     private ClosedLoopFuelingMe7LogViewModel closedLoopViewModel;
 
-    private Map<String, List<Double>> mlhfmMap;
+    private Map3d kfkhfm;
     private File me7LogFile;
 
-    public ClosedLoopMe7LogUiManager() {
+    public ClosedLoopKfkhfmMe7LogUiManager() {
         closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
         closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(Map<String, List<Double>> me7LogMap) {
-                if(mlhfmMap != null) {
-                    drawChart(me7LogMap, mlhfmMap);
+                if(kfkhfm != null) {
+                    drawChart(me7LogMap, kfkhfm);
                 }
             }
 
@@ -54,11 +55,11 @@ public class ClosedLoopMe7LogUiManager {
             public void onComplete() {}
         });
 
-        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        KfkhfmViewModel kfkhfmViewModel = KfkhfmViewModel.getInstance();
+        kfkhfmViewModel.getKfkhfmBehaviorSubject().subscribe(new Observer<Map3d>() {
             @Override
-            public void onNext(Map<String, List<Double>> mlhfmMap) {
-                ClosedLoopMe7LogUiManager.this.mlhfmMap = mlhfmMap;
+            public void onNext(Map3d kfkhfm) {
+                ClosedLoopKfkhfmMe7LogUiManager.this.kfkhfm = kfkhfm;
             }
 
             @Override
@@ -212,7 +213,7 @@ public class ClosedLoopMe7LogUiManager {
 
         chart = ChartFactory.createScatterPlot(
                 "Derivative",
-                "MAF Voltage", "dMAFv/dt", dataset);
+                "Engine Load", "dMAFv/dt", dataset);
 
         XYPlot plot = (XYPlot)chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
@@ -226,18 +227,18 @@ public class ClosedLoopMe7LogUiManager {
         plot.getRenderer().setSeriesPaint(0, Color.BLUE);
     }
 
-    private void drawChart(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfmMap) {
+    private void drawChart(Map<String, List<Double>> me7LogMap, Map3d kfkhfm) {
 
-        Map<Double, List<Double>> dtMap = Derivative.getDtMap(me7LogMap, mlhfmMap);
-        List<Double> voltages = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        Map<Double, List<Double>> dtMap = Derivative.getDtMap(me7LogMap, kfkhfm);
+        Double[] loads = kfkhfm.xAxis;
 
         XYSeries series = new XYSeries("Derivative");
 
-        for (Double voltage : voltages) {
-            List<Double> values = dtMap.get(voltage);
+        for (Double load : loads) {
+            List<Double> values = dtMap.get(load);
 
             for (Double value : values) {
-                series.add(voltage, value);
+                series.add(load, value);
             }
         }
 

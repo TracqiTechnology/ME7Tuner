@@ -14,6 +14,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import ui.view.fkfhfm.KfkhfmUiManager;
 import ui.viewmodel.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionViewModel;
+import util.Util;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,20 +29,22 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
 
     private JFreeChart stdDevChart;
     private JFreeChart afrCorrectionChart;
-    private JPanel correctionPanel;
-    private JPanel kfkhfmPanel;
+
+    private KfkhfmUiManager kfkhfmUiManager;
 
     private XYSeriesCollection afrCorrectionPointDataSet;
     private XYSeriesCollection afrCorrectionLineDataSet;
 
     ClosedLoopKfkhfmCorrectionUiManager() {
-        kfkhfmPanel = new KfkhfmUiManager().getPanel();
+        kfkhfmUiManager = new KfkhfmUiManager();
 
         ClosedLoopKfkhfmCorrectionViewModel closedLoopKfkhfmCorrectionViewModel = ClosedLoopKfkhfmCorrectionViewModel .getInstance();
         closedLoopKfkhfmCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopKfkhfmCorrection>() {
 
             @Override
             public void onNext(ClosedLoopKfkhfmCorrection closedLoopKfkhfmCorrection) {
+                Util.printDoubleArray(closedLoopKfkhfmCorrection.correctedKfkhfm.data);
+                kfkhfmUiManager.setMap(closedLoopKfkhfmCorrection.correctedKfkhfm);
                 drawStdDevChart(closedLoopKfkhfmCorrection.filteredLoadDt, closedLoopKfkhfmCorrection.inputKfkhfm);
                 drawAfrCorrectionChart(closedLoopKfkhfmCorrection.correctionsAfrMap, closedLoopKfkhfmCorrection.meanAfrMap, closedLoopKfkhfmCorrection.modeAfrMap);
             }
@@ -58,7 +61,7 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
     }
 
     JPanel getCorrectionPanel() {
-        correctionPanel = new JPanel();
+        JPanel correctionPanel = new JPanel();
         correctionPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints c = new GridBagConstraints();
@@ -78,7 +81,7 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
-        tabbedPane.addTab("KFKHFM", null, kfkhfmPanel, "Corrected KFKHFM");
+        tabbedPane.addTab("KFKHFM", null, kfkhfmUiManager.getPanel(), "Corrected KFKHFM");
         tabbedPane.addTab("dMAFv/dt", null, getStdDevChartPanel(), "Derivative");
         tabbedPane.addTab("AFR Correction %", null, getAfrCorrectionChartPanel(), "AFR Correction");
 
@@ -241,15 +244,5 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
         }
 
         afrCorrectionLineDataSet.addSeries(modeAfrCorrectionSeries);
-    }
-
-    private void generateFinalAfrCorrectionSeries(Map<Double, Double> correctedAfrMap) {
-        XYSeries afrCorrectionSeries = new XYSeries("Final AFR Correction %");
-
-        for(Double voltage: correctedAfrMap.keySet()) {
-            afrCorrectionSeries.add(voltage, correctedAfrMap.get(voltage));
-        }
-
-        afrCorrectionLineDataSet.addSeries(afrCorrectionSeries);
     }
 }
