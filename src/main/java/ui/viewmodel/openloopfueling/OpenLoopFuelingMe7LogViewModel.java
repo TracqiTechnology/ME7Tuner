@@ -6,7 +6,6 @@ import parser.me7log.Me7LogParser;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class OpenLoopFuelingMe7LogViewModel {
 

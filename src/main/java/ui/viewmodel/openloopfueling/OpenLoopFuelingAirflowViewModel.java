@@ -10,7 +10,6 @@ import preferences.primaryfueling.PrimaryFuelingPreferences;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class OpenLoopFuelingAirflowViewModel {
 

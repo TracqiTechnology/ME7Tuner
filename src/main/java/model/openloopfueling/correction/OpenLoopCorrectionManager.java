@@ -2,7 +2,6 @@ package model.openloopfueling.correction;
 
 import contract.AfrLogFileContract;
 import contract.Me7LogFileContract;
-import contract.MlhfmFileContract;
 import math.map.Map2d;
 import model.openloopfueling.util.AfrLogUtil;
 import model.openloopfueling.util.Me7LogUtil;

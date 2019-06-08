@@ -1,7 +1,6 @@
 package ui.view.mlhfm;
 
 
-import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map2d;
@@ -22,7 +21,6 @@ import java.awt.*;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 
 public class MlhfmUiManager {

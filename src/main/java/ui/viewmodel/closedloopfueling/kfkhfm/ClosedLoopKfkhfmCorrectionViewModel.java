@@ -6,11 +6,8 @@ import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrection;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionManager;
-import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
-import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import ui.viewmodel.KfkhfmViewModel;
-import ui.viewmodel.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import java.util.List;

@@ -3,7 +3,6 @@ package ui.view.kfzwop;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-
 import math.map.Map3d;
 import model.kfzwop.Kfzwop;
 import ui.map.axis.MapAxis;

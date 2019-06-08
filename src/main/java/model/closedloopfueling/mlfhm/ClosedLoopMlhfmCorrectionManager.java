@@ -1,11 +1,10 @@
 package model.closedloopfueling.mlfhm;
 
 import contract.Me7LogFileContract;
-import contract.MlhfmFileContract;
+import derivative.Derivative;
 import math.map.Map2d;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
-import derivative.Derivative;
 import util.Util;
 
 import java.util.*;

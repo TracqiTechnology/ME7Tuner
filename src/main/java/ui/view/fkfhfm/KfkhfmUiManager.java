@@ -6,7 +6,6 @@ import math.map.Map3d;
 import model.kfkhfm.Kfkhfm;
 import ui.map.map.MapTable;
 import ui.viewmodel.KfkhfmViewModel;
-import ui.viewmodel.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionViewModel;
 
 import javax.swing.*;
 import java.awt.*;

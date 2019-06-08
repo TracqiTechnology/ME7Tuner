@@ -5,8 +5,6 @@ import math.map.Map2d;
 import parser.mlhfm.MlhfmParser;
 
 import java.io.File;
-import java.util.List;
-import java.util.Map;
 
 public class MlhfmViewModel {
 

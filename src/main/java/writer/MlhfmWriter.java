@@ -3,7 +3,6 @@ package writer;
 import math.map.Map2d;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import contract.MlhfmFileContract;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class MlhfmWriter {
     public void write(File file, Map2d mlhfmMap) {

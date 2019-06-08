@@ -5,7 +5,10 @@ import contract.Me7LogFileContract;
 import model.openloopfueling.util.AfrLogUtil;
 import model.openloopfueling.util.Me7LogUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class AirflowEstimationManager {
 

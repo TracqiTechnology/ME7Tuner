@@ -1,7 +1,6 @@
 package util;
 
 import java.awt.*;
-import java.util.Arrays;
 
 public class Util {
     public static double[] toDoubleArray(Double[] array) {

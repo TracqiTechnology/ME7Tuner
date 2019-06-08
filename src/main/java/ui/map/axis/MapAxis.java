@@ -3,7 +3,6 @@ package ui.map.axis;
 
 import io.reactivex.subjects.PublishSubject;
 import ui.map.ExcelAdapter;
-import ui.map.map.MapTable;
 import util.Debouncer;
 import util.Util;
 

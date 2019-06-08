@@ -7,7 +7,9 @@ import util.Debouncer;
 import util.Util;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.MouseInputAdapter;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;

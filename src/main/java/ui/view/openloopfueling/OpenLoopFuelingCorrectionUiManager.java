@@ -1,6 +1,5 @@
 package ui.view.openloopfueling;
 
-import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map2d;

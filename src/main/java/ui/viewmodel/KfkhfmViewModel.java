@@ -1,7 +1,6 @@
 package ui.viewmodel;
 
 import io.reactivex.subjects.BehaviorSubject;
-import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 
 public class KfkhfmViewModel {

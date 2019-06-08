@@ -6,7 +6,6 @@ import parser.afrLog.AfrLogParser;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class OpenLoopFuelingAfrLogViewModel {
 

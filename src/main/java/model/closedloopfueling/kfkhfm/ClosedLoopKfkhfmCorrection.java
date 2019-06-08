@@ -3,7 +3,6 @@ package model.closedloopfueling.kfkhfm;
 import math.map.Map3d;
 
 import java.util.List;
-import java.util.Map;
 
 public class ClosedLoopKfkhfmCorrection {
     public final Map3d inputKfkhfm;
