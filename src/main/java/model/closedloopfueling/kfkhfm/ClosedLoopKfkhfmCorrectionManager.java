@@ -18,10 +18,10 @@ public class ClosedLoopKfkhfmCorrectionManager {
     private final double minRpm;
     private final double maxDerivative;
 
-    private Map<Double, List<Double>> filteredLoadDt = new HashMap<>();
-    private Map<Double, List<Double>> correctionsAfrMap = new HashMap<>();
-    private Map<Double, Double> meanAfrMap = new HashMap<>();
-    private Map<Double, double[]> modeAfrMap = new HashMap<>();
+    private List<List<List<Double>>>filteredLoadDt = new ArrayList<>();
+    private List<List<List<Double>>> correctionsAfr = new ArrayList<>();
+    private List<List<List<Double>>> meanAfr = new ArrayList<>();
+    private List<List<List<double[]>>> modeAfr = new ArrayList<>();
 
     public ClosedLoopKfkhfmCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
         this.minThrottleAngle = minThrottleAngle;
@@ -31,11 +31,17 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
     public ClosedLoopKfkhfmCorrection correct(Map<String, List<Double>> me7LogMap, Map3d kfkhfm) {
 
-        for(int i = 0; i < kfkhfm.xAxis.length; i++) {
-            filteredLoadDt.put(kfkhfm.xAxis[i], new ArrayList<>());
-            correctionsAfrMap.put(kfkhfm.xAxis[i], new ArrayList<>());
-            meanAfrMap.put(kfkhfm.xAxis[i], 0d);
-            modeAfrMap.put(kfkhfm.xAxis[i], new double[0]);
+        for (int i = 0; i < kfkhfm.xAxis.length; i++) {
+            filteredLoadDt.add(new ArrayList<>());
+            correctionsAfr.add(new ArrayList<>());
+            meanAfr.add(new ArrayList<>());
+            modeAfr.add(new ArrayList<>());
+            for (int j = 0; j < kfkhfm.yAxis.length; j++) {
+                filteredLoadDt.get(i).add(new ArrayList<>());
+                correctionsAfr.get(i).add(new ArrayList<>());
+                meanAfr.get(i).add(new ArrayList<>());
+                modeAfr.get(i).add(new ArrayList<>());
+            }
         }
 
         Map3d kfkhfmCorrected = new Map3d(kfkhfm);
@@ -51,7 +57,7 @@ public class ClosedLoopKfkhfmCorrectionManager {
         calculateCorrections(me7LogMap, kfkhfmCorrected, corrections);
         processCorrections(corrections, kfkhfmCorrected);
 
-        return new ClosedLoopKfkhfmCorrection(kfkhfm, kfkhfmCorrected, filteredLoadDt, correctionsAfrMap, meanAfrMap, modeAfrMap);
+        return new ClosedLoopKfkhfmCorrection(kfkhfm, kfkhfmCorrected, filteredLoadDt, correctionsAfr, meanAfr, modeAfr);
     }
 
     private void calculateCorrections(Map<String, List<Double>> me7LogMap, Map3d kfkhfm, List<List<List<Double>>> corrections) {
@@ -73,50 +79,50 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             // Closed loop only and not idle
-            if (lambdaControl.get(i + 1) == lambdaControlEnabled && throttleAngle.get(i +1) > minThrottleAngle && rpm.get(i + 1) > minRpm && me7voltageDt.get(i) < maxDerivative) {
+            if (lambdaControl.get(i + 1) == lambdaControlEnabled && throttleAngle.get(i + 1) > minThrottleAngle && rpm.get(i + 1) > minRpm && me7voltageDt.get(i) < maxDerivative) {
                 // Get every logged voltage
                 double engineLoadValue = engineLoad.get(i + 1);
                 double rpmValue = rpm.get(i + 1);
 
-                if(rpmValue > maxRpm) {
+                if (rpmValue > maxRpm) {
                     maxRpm = rpmValue;
                 }
 
-                if(engineLoadValue > maxLoad) {
+                if (engineLoadValue > maxLoad) {
                     maxLoad = engineLoadValue;
                 }
 
                 // Look up the corresponding load from KFKHFM
                 int kfkhfmLoadIndex = Arrays.binarySearch(kfkhfm.xAxis, engineLoadValue);
-                if(kfkhfmLoadIndex < 0) {
+                if (kfkhfmLoadIndex < 0) {
                     kfkhfmLoadIndex = Math.abs(kfkhfmLoadIndex + 1);
                 }
 
                 int kfkhfmRpmIndex = Arrays.binarySearch(kfkhfm.yAxis, rpmValue);
-                if(kfkhfmRpmIndex < 0) {
+                if (kfkhfmRpmIndex < 0) {
                     kfkhfmRpmIndex = Math.abs(kfkhfmRpmIndex + 1);
                 }
 
-                if(kfkhfmLoadIndex > maxLoadIndex) {
+                if (kfkhfmLoadIndex > maxLoadIndex) {
                     maxLoadIndex = kfkhfmLoadIndex;
                 }
 
-                if(kfkhfmRpmIndex > maxRpmIndex) {
+                if (kfkhfmRpmIndex > maxRpmIndex) {
                     maxRpmIndex = kfkhfmRpmIndex;
                 }
 
-                double loadScaler = engineLoadValue/kfkhfm.xAxis[kfkhfmLoadIndex];
-                double rpmScaler = rpmValue/kfkhfm.yAxis[kfkhfmRpmIndex];
+                double loadScaler = engineLoadValue / kfkhfm.xAxis[kfkhfmLoadIndex];
+                double rpmScaler = rpmValue / kfkhfm.yAxis[kfkhfmRpmIndex];
 
                 // Calculate the error based on LTFT and STFT
-                double stftValue = (stft.get(i + 1) - 1)*loadScaler*rpmScaler;
-                double ltftValue = (ltft.get(i + 1) - 1)*loadScaler*rpmScaler;
+                double stftValue = (stft.get(i + 1) - 1) * loadScaler * rpmScaler;
+                double ltftValue = (ltft.get(i + 1) - 1) * loadScaler * rpmScaler;
                 double afrCorrectionError = stftValue + ltftValue;
 
                 // Record the correction.
                 corrections.get(kfkhfmRpmIndex).get(kfkhfmLoadIndex).add(afrCorrectionError);
-                filteredLoadDt.get(kfkhfm.xAxis[kfkhfmLoadIndex]).add(me7voltageDt.get(i));
-                correctionsAfrMap.get(kfkhfm.xAxis[kfkhfmLoadIndex]).add(afrCorrectionError);
+                filteredLoadDt.get(kfkhfmLoadIndex).get(kfkhfmRpmIndex).add(me7voltageDt.get(i));
+                correctionsAfr.get(kfkhfmLoadIndex).get(kfkhfmRpmIndex).add(afrCorrectionError);
             }
         }
     }
@@ -132,10 +138,8 @@ public class ClosedLoopKfkhfmCorrectionManager {
                     // Get the mode of the correction set
                     double[] mode = StatUtils.mode(Util.toDoubleArray(corrections.get(i).get(j).toArray(new Double[0])));
 
-                    meanAfrMap.put(kfkhfm.xAxis[j], meanValue);
-                    modeAfrMap.put(kfkhfm.xAxis[j], mode);
-
-                    System.out.println("Load: " + kfkhfm.xAxis[j] + " Mean: " + meanValue);
+                    meanAfr.get(j).get(i).add(meanValue);
+                    modeAfr.get(j).get(i).add(mode);
 
                     double correction = meanValue;
 
@@ -145,8 +149,6 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
                     // Get the average of the mean and the mode
                     correction /= 1 + mode.length;
-
-                    System.out.println("Correction: " + correction);
 
                     // Keep track of the largest index a correction was made at
                     if (!Double.isNaN(correction)) {

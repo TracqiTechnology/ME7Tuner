@@ -8,7 +8,7 @@ import java.util.*;
 
 public class Derivative {
 
-    public static Map<Double, List<Double>> getDtMap(Map<String, List<Double>> me7Logs, Map<String, List<Double>> mlhfm) { ;
+    public static Map<Double, List<Double>> getDtMap2d(Map<String, List<Double>> me7Logs, Map<String, List<Double>> mlhfm) { ;
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
         for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
@@ -34,7 +34,7 @@ public class Derivative {
         return rawVoltageDt;
     }
 
-    public static Map<Double, List<Double>> getDtMap(Map<String, List<Double>> me7Logs, Map3d kfkhfm) { ;
+    public static Map<Double, List<Double>> getDtMap2d(Map<String, List<Double>> me7Logs, Map3d kfkhfm) { ;
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
         for (Double load : kfkhfm.xAxis) {
@@ -60,6 +60,50 @@ public class Derivative {
 
             double kfkhfmLoadKey = kfkhfm.xAxis[kfkhfmLoadIndex];
             rawVoltageDt.get(kfkhfmLoadKey).add(me7voltageDt.get(i));
+        }
+
+        return rawVoltageDt;
+    }
+
+    public static List<List<List<Double>>> getDtMap3d(Map<String, List<Double>> me7Logs, Map3d kfkhfm) { ;
+        List<List<List<Double>>> rawVoltageDt = new ArrayList<>();
+
+        for (int i = 0; i < kfkhfm.xAxis.length; i++) {
+            rawVoltageDt.add(new ArrayList<>());
+
+            for (int j = 0; j < kfkhfm.yAxis.length; j++) {
+                rawVoltageDt.get(i).add(new ArrayList<>());
+            }
+        }
+
+        List<Double> me7Loads = me7Logs.get(Me7LogFileContract.ENGINE_LOAD_HEADER);
+        List<Double> me7Rpms = me7Logs.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+        List<Double> me7Voltages = me7Logs.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
+        List<Double> me7Timestamps = me7Logs.get(Me7LogFileContract.TIME_COLUMN_HEADER);
+        List<Double> me7voltageDt = getDt(me7Voltages, me7Timestamps);
+
+        for (int i = 0; i < me7voltageDt.size(); i++) {
+            double me7Load = me7Loads.get(i + 1);
+            double rpmValue = me7Rpms.get(i + 1);
+            int kfkhfmLoadIndex = Arrays.binarySearch(kfkhfm.xAxis, me7Load);
+            if(kfkhfmLoadIndex < 0) {
+                kfkhfmLoadIndex = Math.abs(kfkhfmLoadIndex + 1);
+            }
+
+            if(kfkhfmLoadIndex >= kfkhfm.xAxis.length) {
+                kfkhfmLoadIndex = kfkhfm.xAxis.length - 1;
+            }
+
+            int kfkhfmRpmIndex = Arrays.binarySearch(kfkhfm.yAxis, rpmValue);
+            if (kfkhfmRpmIndex < 0) {
+                kfkhfmRpmIndex = Math.abs(kfkhfmRpmIndex + 1);
+            }
+
+            if(kfkhfmRpmIndex >= kfkhfm.yAxis.length) {
+                kfkhfmRpmIndex = kfkhfm.yAxis.length - 1;
+            }
+
+            rawVoltageDt.get(kfkhfmLoadIndex).get(kfkhfmRpmIndex).add(me7voltageDt.get(i));
         }
 
         return rawVoltageDt;

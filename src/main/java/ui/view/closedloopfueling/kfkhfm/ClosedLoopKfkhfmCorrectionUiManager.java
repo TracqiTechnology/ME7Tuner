@@ -2,60 +2,67 @@ package ui.view.closedloopfueling.kfkhfm;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrection;
+import model.kfkhfm.Kfkhfm;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
+import org.jzy3d.chart.Chart;
+import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
+import org.jzy3d.chart.factories.AWTChartComponentFactory;
+import org.jzy3d.chart.factories.IChartComponentFactory;
+import org.jzy3d.colors.ColorMapper;
+import org.jzy3d.colors.colormaps.ColorMapRainbow;
+import org.jzy3d.maths.Coord3d;
+import org.jzy3d.plot3d.primitives.Scatter;
+import org.jzy3d.plot3d.primitives.ScatterMultiColor;
+import org.jzy3d.plot3d.rendering.canvas.Quality;
+import ui.view.closedloopfueling.kfkhfm.colormap.ColorMapTransparent;
 import ui.view.fkfhfm.KfkhfmUiManager;
 import ui.viewmodel.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionViewModel;
-import util.Util;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Random;
 
 public class ClosedLoopKfkhfmCorrectionUiManager {
 
-    private static final int AFR_CORRECTION_POINT_SERIES_INDEX = 1;
-    private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
+    private Chart stdDevChart3d;
+    private Chart afrCorrectionChart3d;
 
-    private JFreeChart stdDevChart;
-    private JFreeChart afrCorrectionChart;
+    private ScatterMultiColor scatterStdDev;
+
+    private ScatterMultiColor scatterAfr;
+    private Scatter scatterMeanAfr;
+    private Scatter scatterModeAfr;
 
     private KfkhfmUiManager kfkhfmUiManager;
 
-    private XYSeriesCollection afrCorrectionPointDataSet;
-    private XYSeriesCollection afrCorrectionLineDataSet;
 
     ClosedLoopKfkhfmCorrectionUiManager() {
         kfkhfmUiManager = new KfkhfmUiManager();
 
-        ClosedLoopKfkhfmCorrectionViewModel closedLoopKfkhfmCorrectionViewModel = ClosedLoopKfkhfmCorrectionViewModel .getInstance();
+        ClosedLoopKfkhfmCorrectionViewModel closedLoopKfkhfmCorrectionViewModel = ClosedLoopKfkhfmCorrectionViewModel.getInstance();
         closedLoopKfkhfmCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopKfkhfmCorrection>() {
 
             @Override
             public void onNext(ClosedLoopKfkhfmCorrection closedLoopKfkhfmCorrection) {
                 kfkhfmUiManager.setMap(closedLoopKfkhfmCorrection.correctedKfkhfm);
-                drawStdDevChart(closedLoopKfkhfmCorrection.filteredLoadDt, closedLoopKfkhfmCorrection.inputKfkhfm);
-                drawAfrCorrectionChart(closedLoopKfkhfmCorrection.correctionsAfrMap, closedLoopKfkhfmCorrection.meanAfrMap, closedLoopKfkhfmCorrection.modeAfrMap);
+                drawStdDevChart(closedLoopKfkhfmCorrection.filteredLoadDt);
+                drawAfrCorrectionChart(closedLoopKfkhfmCorrection.correctionsAfr, closedLoopKfkhfmCorrection.meanAfr, closedLoopKfkhfmCorrection.modeAfr);
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() { }
+            public void onComplete() {
+            }
         });
     }
 
@@ -102,13 +109,14 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
         c.weightx = 1.0;
         c.weighty = 1.0;
 
-        panel.add(new ChartPanel(stdDevChart), c);
+        panel.add((Component)stdDevChart3d.getCanvas(), c);
 
         return panel;
     }
 
     private JPanel getAfrCorrectionChartPanel() {
-        initAfrCorrectionChart();
+        init3dAfrCorrectionChart();
+
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
@@ -122,126 +130,252 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
         c.weightx = 1.0;
         c.weighty = 1.0;
 
-        panel.add(new ChartPanel(afrCorrectionChart), c);
+        //panel.add(new ChartPanel(afrCorrectionChart), c);
+        panel.add((Component)afrCorrectionChart3d.getCanvas(), c);
 
         return panel;
     }
 
     private void initStdDevChart() {
-        XYSeriesCollection dataset = new XYSeriesCollection();
+        // Create a chart and add scatterAfr
+        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        stdDevChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
+        stdDevChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
+        stdDevChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
+        stdDevChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
+        stdDevChart3d.getAxeLayout().setZAxeLabel("dMAFv/dt");
 
-        stdDevChart = ChartFactory.createScatterPlot(
-                "Derivative",
-                "Load", "dMAFv/dt", dataset);
+        AWTCameraMouseController controller = new AWTCameraMouseController(stdDevChart3d);
+        Component canvas = (Component) stdDevChart3d.getCanvas();
+        canvas.addMouseListener(controller);
+        canvas.addMouseMotionListener(controller);
+        canvas.addMouseWheelListener(controller);
 
-        XYPlot plot = (XYPlot)stdDevChart.getPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.BLACK);
-        plot.setRangeGridlinePaint(Color.BLACK);
+        int size = 10;
+        float x;
+        float y;
+        float z;
 
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
-        plot.setRenderer(renderer);
+        Coord3d[] points = new Coord3d[size];
 
-        plot.getRenderer().setSeriesShape(0, new Ellipse2D.Double(0,0,1,1));
-        plot.getRenderer().setSeriesPaint(0, Color.BLUE);
+        Random r = new Random();
+        r.setSeed(0);
+
+        for(int i=0; i<size; i++){
+            x = r.nextFloat() - 0.5f;
+            y = r.nextFloat() - 0.5f;
+            z = r.nextFloat() - 0.5f;
+            points[i] = new Coord3d(x, y, z);
+        }
+
+        scatterStdDev = new ScatterMultiColor(points, new ColorMapper(new ColorMapTransparent(), 0, 0));
+
+        stdDevChart3d.getScene().add(scatterStdDev, true);
     }
 
-    private void initAfrCorrectionChart() {
-        afrCorrectionPointDataSet = new XYSeriesCollection();
-        afrCorrectionLineDataSet = new XYSeriesCollection();
 
-        afrCorrectionChart = ChartFactory.createScatterPlot(
-                "AFR Correction %",
-                "Load", "Correction %", new XYSeriesCollection());
+    private void init3dAfrCorrectionChart() {
 
-        XYPlot plot = (XYPlot) afrCorrectionChart.getPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.BLACK);
-        plot.setRangeGridlinePaint(Color.BLACK);
+        // Create a chart and add scatterAfr
+        afrCorrectionChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        afrCorrectionChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
+        afrCorrectionChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
+        afrCorrectionChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
+        afrCorrectionChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
+        afrCorrectionChart3d.getAxeLayout().setZAxeLabel("Correction %");
 
-        XYLineAndShapeRenderer afrCorrectionLineRenderer = new XYLineAndShapeRenderer(true, false);
-        afrCorrectionLineRenderer.setSeriesPaint(0, Color.RED);
-        afrCorrectionLineRenderer.setSeriesPaint(1, Color.GREEN);
-        afrCorrectionLineRenderer.setSeriesPaint(2, Color.MAGENTA);
+        AWTCameraMouseController controller = new AWTCameraMouseController(afrCorrectionChart3d);
+        Component canvas = (Component) afrCorrectionChart3d.getCanvas();
+        canvas.addMouseListener(controller);
+        canvas.addMouseMotionListener(controller);
+        canvas.addMouseWheelListener(controller);
 
-        plot.setRenderer(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
+        int size = 10;
+        float x;
+        float y;
+        float z;
 
-        XYLineAndShapeRenderer afrCorrectionPointRenderer = new XYLineAndShapeRenderer(false, true);
-        afrCorrectionPointRenderer.setAutoPopulateSeriesShape(false);
-        afrCorrectionPointRenderer.setDefaultShape(new Ellipse2D.Double(0, 0, 1, 1));
-        afrCorrectionPointRenderer.setSeriesPaint(0, Color.BLUE);
+        Coord3d[] points = new Coord3d[size];
 
-        plot.setRenderer(AFR_CORRECTION_POINT_SERIES_INDEX, afrCorrectionPointRenderer);
+        Random r = new Random();
+        r.setSeed(0);
+
+        for(int i=0; i<size; i++){
+            x = r.nextFloat() - 0.5f;
+            y = r.nextFloat() - 0.5f;
+            z = r.nextFloat() - 0.5f;
+            points[i] = new Coord3d(x, y, z);
+        }
+
+        scatterAfr = new ScatterMultiColor(points, new ColorMapper(new ColorMapTransparent(), 0, 0));
+
+        afrCorrectionChart3d.getScene().add(scatterStdDev, true);
     }
 
-    private void drawStdDevChart(Map<Double, List<Double>> stdDev, Map3d kfkhfm) {
+    private void drawStdDevChart(List<List<List<Double>>> filteredLoadDt) {
 
-        Double[] loads = kfkhfm.xAxis;
+        if(scatterStdDev != null) {
+            stdDevChart3d.getScene().remove(scatterStdDev, true);
+        }
 
-        XYSeries series = new XYSeries("dMAFv/dt");
+        float x;
+        float y;
+        float z;
+        List<Coord3d> points = new ArrayList<>();
 
-        for (Double load : loads) {
-            List<Double> values = stdDev.get(load);
+        float max = 0;
+        float min = 0;
 
-            for (Double value : values) {
-                series.add(load, value);
+        // Create scatterAfr points
+        for (int i = 0; i < filteredLoadDt.size(); i++) {
+            for (int j = 0; j < filteredLoadDt.get(i).size(); j++) {
+                for (int k = 0; k < filteredLoadDt.get(i).get(j).size(); k++) {
+                    x = Kfkhfm.getStockXAxis()[i].floatValue();
+                    y = Kfkhfm.getStockYAxis()[j].floatValue();
+                    z = filteredLoadDt.get(i).get(j).get(k).floatValue();
+
+                    if(z > max) {
+                        max = z;
+                    }
+
+                    if(z < min) {
+                        min = z;
+                    }
+
+                    points.add(new Coord3d(x, y, z));
+                }
             }
         }
 
-        XYPlot plot = (XYPlot)stdDevChart.getPlot();
-        ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection)plot.getDataset()).addSeries(series);
+        float minMax;
+
+        if(Math.abs(max) > Math.abs(min)) {
+            minMax = Math.abs(max);
+        } else {
+            minMax = Math.abs(min);
+        }
+
+        // Create a drawable scatterAfr with a colormap
+        scatterStdDev = new ScatterMultiColor(points.toArray(new Coord3d[0]), new ColorMapper(new ColorMapRainbow(), -minMax, minMax));
+        scatterStdDev.setWidth(3);
+
+        stdDevChart3d.getScene().add(scatterStdDev, true);
     }
 
-    private void drawAfrCorrectionChart(Map<Double, List<Double>> correctionsAfrMap, Map<Double, Double> meanAfrMap, Map<Double, double[]> modeAfrMap) {
-
-        XYPlot plot = (XYPlot) afrCorrectionChart.getPlot();
-
-        afrCorrectionPointDataSet.removeAllSeries();
-        afrCorrectionLineDataSet.removeAllSeries();
-
-        generateModeAfrCorrectionSeries(modeAfrMap);
-        generateMeanAfrCorrectionSeries(meanAfrMap);
-        plot.setDataset(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineDataSet);
-
-        generateRawAfrCorrections(correctionsAfrMap);
-        plot.setDataset(AFR_CORRECTION_POINT_SERIES_INDEX, afrCorrectionPointDataSet);
+    private void drawAfrCorrectionChart(List<List<List<Double>>> correctionsAfr, List<List<List<Double>>> meanAfr, List<List<List<double[]>>> modeAfr) {
+        addArfCorrectionsScatter(correctionsAfr);
+        addMeanArfCorrectionsScatter(meanAfr);
+        addModeArfCorrectionsScatter(modeAfr);
     }
 
-    private void generateRawAfrCorrections(Map<Double, List<Double>> correctionsAfrMap) {
-        XYSeries afrCorrectionsSeries = new XYSeries("AFR Corrections %");
+    private void addArfCorrectionsScatter(List<List<List<Double>>> correctionsAfr) {
+        if(scatterAfr != null) {
+            afrCorrectionChart3d.getScene().remove(scatterAfr, true);
+        }
 
-        for (Double voltage : correctionsAfrMap.keySet()) {
-            List<Double> values = correctionsAfrMap.get(voltage);
+        float x;
+        float y;
+        float z;
+        List<Coord3d> points = new ArrayList<>();
 
-            for (Double value : values) {
-                afrCorrectionsSeries.add(voltage, value);
+        float max = 0;
+        float min = 0;
+
+        // Create scatterAfr points
+        for (int i = 0; i < correctionsAfr.size(); i++) {
+            for (int j = 0; j < correctionsAfr.get(i).size(); j++) {
+                for (int k = 0; k < correctionsAfr.get(i).get(j).size(); k++) {
+                    x = Kfkhfm.getStockXAxis()[i].floatValue();
+                    y = Kfkhfm.getStockYAxis()[j].floatValue();
+                    z = correctionsAfr.get(i).get(j).get(k).floatValue();
+
+                    if(z > max) {
+                        max = z;
+                    }
+
+                    if(z < min) {
+                        min = z;
+                    }
+
+                    points.add(new Coord3d(x, y, z));
+                }
             }
         }
 
-        afrCorrectionPointDataSet.addSeries(afrCorrectionsSeries);
-    }
+        float minMax;
 
-    private void generateMeanAfrCorrectionSeries(Map<Double, Double> meanAfrMap) {
-        XYSeries meanAfrCorrectionSeries = new XYSeries("Mean AFR Correction %");
-
-        for(Double load: meanAfrMap.keySet()) {
-            meanAfrCorrectionSeries.add(load, meanAfrMap.get(load));
+        if(Math.abs(max) > Math.abs(min)) {
+            minMax = Math.abs(max);
+        } else {
+            minMax = Math.abs(min);
         }
 
-        afrCorrectionLineDataSet.addSeries(meanAfrCorrectionSeries);
+        // Create a drawable scatterAfr with a colormap
+        scatterAfr = new ScatterMultiColor(points.toArray(new Coord3d[0]), new ColorMapper(new ColorMapRainbow(), -minMax, minMax));
+        scatterAfr.setWidth(2);
+
+        afrCorrectionChart3d.getScene().add(scatterAfr, true);
     }
 
-    private void generateModeAfrCorrectionSeries(Map<Double, double[]> modeAfrMap) {
+    private void addMeanArfCorrectionsScatter(List<List<List<Double>>> meanAfr) {
+        if(scatterMeanAfr != null) {
+            afrCorrectionChart3d.getScene().remove(scatterMeanAfr, true);
+        }
+
+        float x;
+        float y;
+        float z;
+        List<Coord3d> points = new ArrayList<>();
+
+        // Create scatterAfr points
+        for (int i = 0; i < meanAfr.size(); i++) {
+            for (int j = 0; j < meanAfr.get(i).size(); j++) {
+                for (int k = 0; k < meanAfr.get(i).get(j).size(); k++) {
+                    x = Kfkhfm.getStockXAxis()[i].floatValue();
+                    y = Kfkhfm.getStockYAxis()[j].floatValue();
+                    z = meanAfr.get(i).get(j).get(k).floatValue();
+
+                    points.add(new Coord3d(x, y, z));
+                }
+            }
+        }
+
+        // Create a drawable scatterAfr with a colormap
+        scatterMeanAfr = new Scatter(points.toArray(new Coord3d[0]), org.jzy3d.colors.Color.RED);
+        scatterMeanAfr.setWidth(5);
+
+        afrCorrectionChart3d.getScene().add(scatterMeanAfr, true);
+    }
+
+    private void addModeArfCorrectionsScatter(List<List<List<double[]>>> modeAfr) {
+        if(scatterModeAfr != null) {
+            afrCorrectionChart3d.getScene().remove(scatterModeAfr, true);
+        }
+
+        float x;
+        float y;
+        float z;
+        List<Coord3d> points = new ArrayList<>();
+
         Mean mean = new Mean();
 
-        XYSeries modeAfrCorrectionSeries = new XYSeries("Mode AFR Correction %");
+        // Create scatterAfr points
+        for (int i = 0; i < modeAfr.size(); i++) {
+            for (int j = 0; j < modeAfr.get(i).size(); j++) {
+                for (int k = 0; k < modeAfr.get(i).get(j).size(); k++) {
+                    x = Kfkhfm.getStockXAxis()[i].floatValue();
+                    y = Kfkhfm.getStockYAxis()[j].floatValue();
+                    z = (float) mean.evaluate(modeAfr.get(i).get(j).get(k), 0, modeAfr.get(i).get(j).get(k).length) ;
 
-        for(Double load: modeAfrMap.keySet()) {
-            double[] mode = modeAfrMap.get(load);
-            modeAfrCorrectionSeries.add(load.doubleValue(), mean.evaluate(mode, 0, mode.length));
+                    points.add(new Coord3d(x, y, z));
+                }
+            }
         }
 
-        afrCorrectionLineDataSet.addSeries(modeAfrCorrectionSeries);
+        // Create a drawable scatterAfr with a colormap
+        scatterModeAfr = new Scatter(points.toArray(new Coord3d[0]), org.jzy3d.colors.Color.BLUE);
+        scatterModeAfr.setWidth(5);
+
+        afrCorrectionChart3d.getScene().add(scatterModeAfr, true);
     }
 }

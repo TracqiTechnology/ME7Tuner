@@ -18,6 +18,8 @@ import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmCorrectionViewModel;
 import writer.MlhfmWriter;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,6 +42,8 @@ public class ClosedLoopMlhfmCorrectionUiManager {
 
     private XYSeriesCollection afrCorrectionPointDataSet;
     private XYSeriesCollection afrCorrectionLineDataSet;
+
+    private int polynomialDegree = 6;
 
     ClosedLoopMlhfmCorrectionUiManager() {
         ClosedLoopMlhfmCorrectionViewModel closedLoopMlhfmCorrectionViewModel = ClosedLoopMlhfmCorrectionViewModel.getInstance();
@@ -190,13 +194,13 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         c.gridx = 0;
         c.gridy = 0;
 
-        JButton button = getFileButton();
-        panel.add(button, c);
+        panel.add(getFitMlhfmPanel(), c);
 
-        c.gridx = 1;
+        c.gridx = 0;
+        c.gridy = 1;
+        c.insets = new Insets(10, 0, 0 , 0);
 
-        button = getFitMlhfmButton();
-        panel.add(button, c);
+        panel.add(getFileButton(), c);
 
         return panel;
     }
@@ -286,13 +290,45 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         return button;
     }
 
+    private JPanel getFitMlhfmPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+        c.gridy = 0;
+
+        panel.add(getFitMlhfmButton(), c);
+
+        JLabel label = new JLabel("Polynomial Degree: ");
+
+        c.gridx = 1;
+        panel.add(label, c);
+
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(6, 1, 100, 1));
+
+        spinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                polynomialDegree = (int) spinner.getValue();
+            }
+        });
+
+        c.gridx = 2;
+
+        panel.add(spinner, c);
+
+        return panel;
+    }
+
     private JButton getFitMlhfmButton() {
         JButton button = new JButton("Fit MLHFM");
 
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, 6);
+                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
                 drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }

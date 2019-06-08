@@ -5,29 +5,39 @@ import derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
+import model.kfkhfm.Kfkhfm;
+import org.jzy3d.chart.Chart;
+import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
+import org.jzy3d.chart.factories.AWTChartComponentFactory;
+import org.jzy3d.chart.factories.IChartComponentFactory;
+import org.jzy3d.colors.Color;
+import org.jzy3d.colors.ColorMapper;
+import org.jzy3d.colors.colormaps.AbstractColorMap;
+import org.jzy3d.colors.colormaps.ColorMapRainbow;
+import org.jzy3d.maths.Coord3d;
+import org.jzy3d.plot3d.primitives.ScatterMultiColor;
+import org.jzy3d.plot3d.rendering.canvas.Quality;
+import org.jzy3d.plot3d.rendering.legends.colorbars.AWTColorbarLegend;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
+import ui.view.closedloopfueling.kfkhfm.colormap.ColorMapTransparent;
 import ui.viewmodel.KfkhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class ClosedLoopKfkhfmMe7LogUiManager {
 
-    private JFreeChart chart;
+    private Chart stdDevChart3d;
+    private ScatterMultiColor scatterStdDev;
+
     private JPanel closedLoopLogPanel;
     private JLabel fileLabel;
     private ClosedLoopFuelingMe7LogViewModel closedLoopViewModel;
@@ -41,7 +51,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
             @Override
             public void onNext(Map<String, List<Double>> me7LogMap) {
                 if(kfkhfm != null) {
-                    drawChart(me7LogMap, kfkhfm);
+                    drawChart(Derivative.getDtMap3d(me7LogMap, kfkhfm));
                 }
             }
 
@@ -74,19 +84,23 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
     }
 
     public JPanel getMe7LogPanel() {
-        initChart();
+
         closedLoopLogPanel = new JPanel();
         closedLoopLogPanel.setLayout(new GridBagLayout());
 
         GridBagConstraints c = new GridBagConstraints();
 
-        c.weightx = 1.0;
+        c.fill = GridBagConstraints.BOTH;
+
+        c.gridwidth = 1;
         c.gridheight = 1;
 
-        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 0.95;
+
         c.gridx = 0;
         c.gridy = 0;
-        c.weighty = 0.95;
+
         closedLoopLogPanel.add(getChartPanel(), c);
 
         c.fill = GridBagConstraints.BOTH;
@@ -99,6 +113,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
     }
 
     private JPanel getChartPanel() {
+        initChart();
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
@@ -112,7 +127,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
         c.weightx = 1.0;
         c.weighty = 1.0;
 
-        panel.add(new ChartPanel(chart), c);
+        panel.add((Component)stdDevChart3d.getCanvas(), c);
 
         return panel;
     }
@@ -209,41 +224,88 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
     }
 
     private void initChart() {
-        XYSeriesCollection dataset = new XYSeriesCollection();
+        // Create a chart and add scatterAfr
+        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        stdDevChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
+        stdDevChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
+        stdDevChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
+        stdDevChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
+        stdDevChart3d.getAxeLayout().setZAxeLabel("dMAFv/dt");
 
-        chart = ChartFactory.createScatterPlot(
-                "Derivative",
-                "Engine Load", "dMAFv/dt", dataset);
+        AWTCameraMouseController controller = new AWTCameraMouseController(stdDevChart3d);
+        Component canvas = (Component) stdDevChart3d.getCanvas();
+        canvas.addMouseListener(controller);
+        canvas.addMouseMotionListener(controller);
+        canvas.addMouseWheelListener(controller);
 
-        XYPlot plot = (XYPlot)chart.getPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.BLACK);
-        plot.setRangeGridlinePaint(Color.BLACK);
+        int size = 10;
+        float x;
+        float y;
+        float z;
 
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
-        plot.setRenderer(renderer);
+        Coord3d[] points = new Coord3d[size];
 
-        plot.getRenderer().setSeriesShape(0, new Ellipse2D.Double(0,0,1,1));
-        plot.getRenderer().setSeriesPaint(0, Color.BLUE);
+        Random r = new Random();
+        r.setSeed(0);
+
+        for(int i=0; i<size; i++){
+            x = r.nextFloat() - 0.5f;
+            y = r.nextFloat() - 0.5f;
+            z = r.nextFloat() - 0.5f;
+            points[i] = new Coord3d(x, y, z);
+        }
+
+        scatterStdDev = new ScatterMultiColor(points, new ColorMapper(new ColorMapTransparent(), 0, 0));
+
+        stdDevChart3d.getScene().add(scatterStdDev, true);
     }
 
-    private void drawChart(Map<String, List<Double>> me7LogMap, Map3d kfkhfm) {
+    private void drawChart(List<List<List<Double>>> filteredLoadDt) {
+        if(scatterStdDev != null) {
+            stdDevChart3d.getScene().remove(scatterStdDev, true);
+        }
 
-        Map<Double, List<Double>> dtMap = Derivative.getDtMap(me7LogMap, kfkhfm);
-        Double[] loads = kfkhfm.xAxis;
+        float x;
+        float y;
+        float z;
+        List<Coord3d> points = new ArrayList<>();
 
-        XYSeries series = new XYSeries("Derivative");
+        float max = 0;
+        float min = 0;
 
-        for (Double load : loads) {
-            List<Double> values = dtMap.get(load);
+        // Create scatterAfr points
+        for (int i = 0; i < filteredLoadDt.size(); i++) {
+            for (int j = 0; j < filteredLoadDt.get(i).size(); j++) {
+                for (int k = 0; k < filteredLoadDt.get(i).get(j).size(); k++) {
+                    x = Kfkhfm.getStockXAxis()[i].floatValue();
+                    y = Kfkhfm.getStockYAxis()[j].floatValue();
+                    z = filteredLoadDt.get(i).get(j).get(k).floatValue();
 
-            for (Double value : values) {
-                series.add(load, value);
+                    if(z > max) {
+                        max = z;
+                    }
+
+                    if(z < min) {
+                        min = z;
+                    }
+
+                    points.add(new Coord3d(x, y, z));
+                }
             }
         }
 
-        XYPlot plot = (XYPlot)chart.getPlot();
-        ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection)plot.getDataset()).addSeries(series);
+        float minMax;
+
+        if(Math.abs(max) > Math.abs(min)) {
+            minMax = Math.abs(max);
+        } else {
+            minMax = Math.abs(min);
+        }
+
+        // Create a drawable scatterAfr with a colormap
+        scatterStdDev = new ScatterMultiColor(points.toArray(new Coord3d[0]), new ColorMapper(new ColorMapRainbow(), -minMax, minMax));
+        scatterStdDev.setWidth(3);
+
+        stdDevChart3d.getScene().add(scatterStdDev, true);
     }
 }

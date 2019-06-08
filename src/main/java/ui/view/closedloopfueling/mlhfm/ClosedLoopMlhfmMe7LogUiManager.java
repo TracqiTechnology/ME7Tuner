@@ -234,7 +234,7 @@ public class ClosedLoopMlhfmMe7LogUiManager {
 
     private void drawChart(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfmMap) {
 
-        Map<Double, List<Double>> dtMap = Derivative.getDtMap(me7LogMap, mlhfmMap);
+        Map<Double, List<Double>> dtMap = Derivative.getDtMap2d(me7LogMap, mlhfmMap);
         List<Double> voltages = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
 
         XYSeries series = new XYSeries("Derivative");
