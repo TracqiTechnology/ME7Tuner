@@ -11,6 +11,8 @@ import java.util.*;
 
 public class ClosedLoopMlhfmCorrectionManager {
 
+    private static int MIN_SAMPLES_THRESHOLD = 5;
+
     private final int lambdaControlEnabled = 1;
     private final double minThrottleAngle;
     private final double minRpm;
@@ -72,18 +74,23 @@ public class ClosedLoopMlhfmCorrectionManager {
         List<Double> throttleAngle = me7LogMap.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
         List<Double> rpm = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
 
-        for (int i = 0; i < stft.size(); i++) {
+        for (int i = 0; i < me7voltageDt.size(); i++) {
             // Closed loop only and not idle
-            if (lambdaControl.get(i) == lambdaControlEnabled && throttleAngle.get(i) > minThrottleAngle && rpm.get(i) > minRpm && me7voltageDt.get(i) < maxDerivative) {
+            if (lambdaControl.get(i + 1) == lambdaControlEnabled && throttleAngle.get(i + 1) > minThrottleAngle && rpm.get(i + 1) > minRpm && me7voltageDt.get(i) < maxDerivative) {
                 // Get every logged voltage
-                double me7Voltage = me7Voltages.get(i);
+                double me7Voltage = me7Voltages.get(i + 1);
                 // Look up the corresponding voltage from MLHFM
-                int mlhfmVoltageIndex = Math.abs(Collections.binarySearch(mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER), me7Voltage));
+                int mlhfmVoltageIndex = Collections.binarySearch(mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER), me7Voltage);
+                if(mlhfmVoltageIndex < 0) {
+                    mlhfmVoltageIndex = Math.abs(mlhfmVoltageIndex + 1);
+                }
                 double mlhfmVoltageKey = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER).get(mlhfmVoltageIndex);
 
+                double voltageScaler = me7Voltage/mlhfmVoltageKey;
+
                 // Calculate the error based on LTFT and STFT
-                double stftValue = stft.get(i) - 1;
-                double ltftValue = ltft.get(i) - 1;
+                double stftValue = (stft.get(i + 1) - 1)*voltageScaler;
+                double ltftValue = (ltft.get(i + 1) - 1)*voltageScaler;
                 double afrCorrectionError = stftValue + ltftValue;
 
                 // Record the correction.
@@ -102,31 +109,37 @@ public class ClosedLoopMlhfmCorrectionManager {
         Mean mean = new Mean();
         for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
             List<Double> corrections = correctionErrorMap.get(voltage);
-            // Get the mean of the correction set
-            double meanValue = mean.evaluate(Util.toDoubleArray(corrections.toArray(new Double[0])), 0, corrections.size());
-            // Get the mode of the correction set
-            double[] mode = StatUtils.mode(Util.toDoubleArray(corrections.toArray(new Double[0])));
 
-            meanAfrMap.put(voltage, meanValue);
-            modeAfrMap.put(voltage, mode);
+            if (corrections.size() > MIN_SAMPLES_THRESHOLD) {
+                // Get the mean of the correction set
+                double meanValue = mean.evaluate(Util.toDoubleArray(corrections.toArray(new Double[0])), 0, corrections.size());
+                // Get the mode of the correction set
+                double[] mode = StatUtils.mode(Util.toDoubleArray(corrections.toArray(new Double[0])));
 
-            double correction = meanValue;
+                meanAfrMap.put(voltage, meanValue);
+                modeAfrMap.put(voltage, mode);
 
-            for (double v : mode) {
-                correction += v;
+                double correction = meanValue;
+
+                for (double v : mode) {
+                    correction += v;
+                }
+
+                // Get the average of the mean and the mode
+                correction /= 1 + mode.length;
+
+                // Keep track of the largest index a correction was made at
+                if (!Double.isNaN(correction)) {
+                    maxCorrectionIndex = index;
+                }
+
+                correctionErrorList.add(correction);
+
+                index++;
+            } else {
+                correctionErrorList.add(0d);
+                index++;
             }
-
-            // Get the average of the mean and the mode
-            correction /= 1 + mode.length;
-
-            // Keep track of the largest index a correction was made at
-            if (!Double.isNaN(correction)) {
-                maxCorrectionIndex = index;
-            }
-
-            correctionErrorList.add(correction);
-
-            index++;
         }
 
         return maxCorrectionIndex;

@@ -70,7 +70,10 @@ public class AirflowEstimationManager {
             List<Double> afrLog = afrLogList.get(i).get(AfrLogFileContract.AFR_HEADER);
             for(int j = 0; j < dutyCycleLogs.get(i).size(); j++) {
                 double totalFuelGramsPerSecond = ((dutyCycleLog.get(j) * totalFuelFlowGramsPerMinute) + totalMethanolFlowGramsPerMinute)/60;
-                int afrIndex = Math.abs(Collections.binarySearch(afrRpmLog, me7RpmLog.get(j)));
+                int afrIndex = Collections.binarySearch(afrRpmLog, me7RpmLog.get(j));
+                if(afrIndex < 0) {
+                    afrIndex = Math.abs(afrIndex + 1);
+                }
                 double afr = afrLog.get(Math.min(afrIndex, afrLog.size() - 1));
                 double airflowGramsPerSecond = totalFuelGramsPerSecond*afr;
                 estimatedAirflowGramsPerSecondLogs.get(i).add(airflowGramsPerSecond);

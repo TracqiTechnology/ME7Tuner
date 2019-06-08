@@ -43,7 +43,6 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
 
             @Override
             public void onNext(ClosedLoopKfkhfmCorrection closedLoopKfkhfmCorrection) {
-                Util.printDoubleArray(closedLoopKfkhfmCorrection.correctedKfkhfm.data);
                 kfkhfmUiManager.setMap(closedLoopKfkhfmCorrection.correctedKfkhfm);
                 drawStdDevChart(closedLoopKfkhfmCorrection.filteredLoadDt, closedLoopKfkhfmCorrection.inputKfkhfm);
                 drawAfrCorrectionChart(closedLoopKfkhfmCorrection.correctionsAfrMap, closedLoopKfkhfmCorrection.meanAfrMap, closedLoopKfkhfmCorrection.modeAfrMap);
@@ -226,8 +225,8 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
     private void generateMeanAfrCorrectionSeries(Map<Double, Double> meanAfrMap) {
         XYSeries meanAfrCorrectionSeries = new XYSeries("Mean AFR Correction %");
 
-        for(Double voltage: meanAfrMap.keySet()) {
-            meanAfrCorrectionSeries.add(voltage, meanAfrMap.get(voltage));
+        for(Double load: meanAfrMap.keySet()) {
+            meanAfrCorrectionSeries.add(load, meanAfrMap.get(load));
         }
 
         afrCorrectionLineDataSet.addSeries(meanAfrCorrectionSeries);
@@ -238,9 +237,9 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
 
         XYSeries modeAfrCorrectionSeries = new XYSeries("Mode AFR Correction %");
 
-        for(Double voltage: modeAfrMap.keySet()) {
-            double[] mode = modeAfrMap.get(voltage);
-            modeAfrCorrectionSeries.add(voltage.doubleValue(), mean.evaluate(mode, 0, mode.length));
+        for(Double load: modeAfrMap.keySet()) {
+            double[] mode = modeAfrMap.get(load);
+            modeAfrCorrectionSeries.add(load.doubleValue(), mean.evaluate(mode, 0, mode.length));
         }
 
         afrCorrectionLineDataSet.addSeries(modeAfrCorrectionSeries);

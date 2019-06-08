@@ -17,8 +17,4 @@ public class Util {
     public static Color newColorWithAlpha(Color original, int alpha) {
         return new Color(original.getRed(), original.getGreen(), original.getBlue(), alpha);
     }
-
-    public static void printDoubleArray(Double[][] array) {
-        System.out.println(Arrays.toString(array));
-    }
 }

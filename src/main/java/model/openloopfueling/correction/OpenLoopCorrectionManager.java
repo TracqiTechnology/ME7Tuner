@@ -180,7 +180,10 @@ public class OpenLoopCorrectionManager {
                         double targetAfr = me7Log.get(Me7LogFileContract.REQUESTED_LAMBDA_HEADER).get(me7Index);
 
                         // Find the RPM from the ME7 log in the AFR log
-                        int afrIndex = Math.abs(Collections.binarySearch(afrLog.get(AfrLogFileContract.RPM_HEADER), rpm));
+                        int afrIndex = Collections.binarySearch(afrLog.get(AfrLogFileContract.RPM_HEADER), rpm);
+                        if(afrIndex < 0) {
+                            afrIndex = Math.abs(afrIndex + 1);
+                        }
 
                         List<Double> afrList = afrLog.get(AfrLogFileContract.AFR_HEADER);
 

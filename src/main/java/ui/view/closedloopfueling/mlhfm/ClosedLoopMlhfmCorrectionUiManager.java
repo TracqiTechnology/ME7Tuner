@@ -55,13 +55,16 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(Disposable disposable) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() { }
+            public void onComplete() {
+            }
         });
     }
 
@@ -132,7 +135,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         c.gridy = 0;
         c.weightx = 0;
         c.weighty = 0.95;
-        c.insets = new Insets(0, 8, 0 ,0);
+        c.insets = new Insets(0, 8, 0, 0);
         panel.add(getMapTablePanel(), c);
 
         return panel;
@@ -224,7 +227,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
                 "Derivative",
                 "Voltage", "dMAFv/dt", dataset);
 
-        XYPlot plot = (XYPlot)stdDevChart.getPlot();
+        XYPlot plot = (XYPlot) stdDevChart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setDomainGridlinePaint(Color.BLACK);
         plot.setRangeGridlinePaint(Color.BLACK);
@@ -232,7 +235,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
         plot.setRenderer(renderer);
 
-        plot.getRenderer().setSeriesShape(0, new Ellipse2D.Double(0,0,1,1));
+        plot.getRenderer().setSeriesShape(0, new Ellipse2D.Double(0, 0, 1, 1));
         plot.getRenderer().setSeriesPaint(0, Color.BLUE);
     }
 
@@ -290,7 +293,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, 6);
-                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm,correctedFitMlhfm);
+                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }
         });
@@ -307,7 +310,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         List<Double> kghr = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
         Double[][] data = new Double[kghr.size()][1];
 
-        for(int i = 0; i < data.length; i++) {
+        for (int i = 0; i < data.length; i++) {
             data[i][0] = kghr.get(i);
         }
 
@@ -325,8 +328,8 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             inputMlhfmSeries.add(voltage.get(i), kghr.get(i));
         }
 
-       voltage = correctedMlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-         kghr = correctedMlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+        voltage = correctedMlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        kghr = correctedMlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
 
         XYSeries correctedMlhfmSeries = new XYSeries("Corrected MLHFM");
 
@@ -335,9 +338,9 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         }
 
         XYPlot plot = (XYPlot) mlfhmChart.getPlot();
-        ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection)plot.getDataset()).addSeries(inputMlhfmSeries);
-        ((XYSeriesCollection)plot.getDataset()).addSeries(correctedMlhfmSeries);
+        ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
+        ((XYSeriesCollection) plot.getDataset()).addSeries(inputMlhfmSeries);
+        ((XYSeriesCollection) plot.getDataset()).addSeries(correctedMlhfmSeries);
     }
 
     private void drawStdDevChart(Map<Double, List<Double>> stdDev, Map<String, List<Double>> mlhfmMap) {
@@ -354,9 +357,9 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             }
         }
 
-        XYPlot plot = (XYPlot)stdDevChart.getPlot();
-        ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection)plot.getDataset()).addSeries(series);
+        XYPlot plot = (XYPlot) stdDevChart.getPlot();
+        ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
+        ((XYSeriesCollection) plot.getDataset()).addSeries(series);
     }
 
     private void drawAfrCorrectionChart(Map<Double, List<Double>> correctionsAfrMap, Map<Double, Double> meanAfrMap, Map<Double, double[]> modeAfrMap, Map<Double, Double> correctedAfrMap) {
@@ -392,7 +395,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
     private void generateMeanAfrCorrectionSeries(Map<Double, Double> meanAfrMap) {
         XYSeries meanAfrCorrectionSeries = new XYSeries("Mean AFR Correction %");
 
-        for(Double voltage: meanAfrMap.keySet()) {
+        for (Double voltage : meanAfrMap.keySet()) {
             meanAfrCorrectionSeries.add(voltage, meanAfrMap.get(voltage));
         }
 
@@ -404,7 +407,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
 
         XYSeries modeAfrCorrectionSeries = new XYSeries("Mode AFR Correction %");
 
-        for(Double voltage: modeAfrMap.keySet()) {
+        for (Double voltage : modeAfrMap.keySet()) {
             double[] mode = modeAfrMap.get(voltage);
             modeAfrCorrectionSeries.add(voltage.doubleValue(), mean.evaluate(mode, 0, mode.length));
         }
@@ -415,7 +418,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
     private void generateFinalAfrCorrectionSeries(Map<Double, Double> correctedAfrMap) {
         XYSeries afrCorrectionSeries = new XYSeries("Final AFR Correction %");
 
-        for(Double voltage: correctedAfrMap.keySet()) {
+        for (Double voltage : correctedAfrMap.keySet()) {
             afrCorrectionSeries.add(voltage, correctedAfrMap.get(voltage));
         }
 
