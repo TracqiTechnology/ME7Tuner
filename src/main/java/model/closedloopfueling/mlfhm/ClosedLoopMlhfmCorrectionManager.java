@@ -2,6 +2,7 @@ package model.closedloopfueling.mlfhm;
 
 import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
+import math.map.Map2d;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import derivative.Derivative;
@@ -18,7 +19,7 @@ public class ClosedLoopMlhfmCorrectionManager {
     private final double minRpm;
     private final double maxDerivative;
 
-    private Map<String, List<Double>> correctedMlhfm = new HashMap<>();
+    private Map2d correctedMlhfm = new Map2d();
     private Map<Double, List<Double>> correctionsAfrMap = new HashMap<>();
     private Map<Double, List<Double>> filteredVoltageDt = new HashMap<>();
     private Map<Double, Double> meanAfrMap = new HashMap<>();
@@ -37,10 +38,10 @@ public class ClosedLoopMlhfmCorrectionManager {
         return closedLoopMlhfmCorrection;
     }
 
-    public void correct(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {
+    public void correct(Map<String, List<Double>> me7LogMap, Map2d mlhfm) {
         Map<Double, List<Double>> correctionErrorMap = new HashMap<>();
 
-        for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
+        for (Double voltage : mlhfm.axis) {
             correctionErrorMap.put(voltage, new ArrayList<>());
             filteredVoltageDt.put(voltage, new ArrayList<>());
             correctionsAfrMap.put(voltage, new ArrayList<>());
@@ -64,7 +65,7 @@ public class ClosedLoopMlhfmCorrectionManager {
         closedLoopMlhfmCorrection = new ClosedLoopMlhfmCorrection(mlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
-    private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfm) {
+    private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map2d mlhfm) {
         List<Double> me7Voltages = me7LogMap.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
         List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
         List<Double> me7voltageDt = Derivative.getDt(me7Voltages, me7Timestamps);
@@ -80,11 +81,11 @@ public class ClosedLoopMlhfmCorrectionManager {
                 // Get every logged voltage
                 double me7Voltage = me7Voltages.get(i + 1);
                 // Look up the corresponding voltage from MLHFM
-                int mlhfmVoltageIndex = Collections.binarySearch(mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER), me7Voltage);
+                int mlhfmVoltageIndex = Arrays.binarySearch(mlhfm.axis, me7Voltage);
                 if(mlhfmVoltageIndex < 0) {
                     mlhfmVoltageIndex = Math.abs(mlhfmVoltageIndex + 1);
                 }
-                double mlhfmVoltageKey = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER).get(mlhfmVoltageIndex);
+                double mlhfmVoltageKey = mlhfm.axis[mlhfmVoltageIndex];
 
                 double voltageScaler = me7Voltage/mlhfmVoltageKey;
 
@@ -103,11 +104,11 @@ public class ClosedLoopMlhfmCorrectionManager {
         }
     }
 
-    private int processCorrections(List<Double> correctionErrorList, Map<Double, List<Double>> correctionErrorMap, Map<String, List<Double>> mlhfm) {
+    private int processCorrections(List<Double> correctionErrorList, Map<Double, List<Double>> correctionErrorMap, Map2d mlhfm) {
         int maxCorrectionIndex = 0;
         int index = 0;
         Mean mean = new Mean();
-        for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
+        for (Double voltage : mlhfm.axis) {
             List<Double> corrections = correctionErrorMap.get(voltage);
 
             if (corrections.size() > MIN_SAMPLES_THRESHOLD) {
@@ -180,18 +181,18 @@ public class ClosedLoopMlhfmCorrectionManager {
         }
     }
 
-    private void applyCorrections(List<Double> correctionErrorList, Map<String, List<Double>> mlhfm) {
+    private void applyCorrections(List<Double> correctionErrorList, Map2d mlhfm) {
         Map<Double, Double> totalCorrectionError = new HashMap<>();
-        List<Double> voltage = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        List<Double> voltage = Arrays.asList(mlhfm.axis);
 
         for (int i = 0; i < voltage.size(); i++) {
             totalCorrectionError.put(voltage.get(i), correctionErrorList.get(i));
             correctedAfrMap.put(voltage.get(i), correctionErrorList.get(i));
         }
 
-        correctedMlhfm.put(MlhfmFileContract.MAF_VOLTAGE_HEADER, voltage);
+        correctedMlhfm.axis = voltage.toArray(new Double[0]);
 
-        List<Double> oldKgPerHour = mlhfm.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+        List<Double> oldKgPerHour = Arrays.asList(mlhfm.data);
         List<Double> newKgPerHour = new ArrayList<>();
 
         for (int i = 0; i < voltage.size(); i++) {
@@ -201,6 +202,6 @@ public class ClosedLoopMlhfmCorrectionManager {
             newKgPerHour.add(i, oldKgPerHourValue * ((totalCorrectionErrorValue) + 1));
         }
 
-        correctedMlhfm.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, newKgPerHour);
+        correctedMlhfm.data = newKgPerHour.toArray(new Double[0]);
     }
 }

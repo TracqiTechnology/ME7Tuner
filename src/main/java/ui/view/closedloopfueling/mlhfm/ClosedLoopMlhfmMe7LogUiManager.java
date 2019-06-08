@@ -1,9 +1,9 @@
 package ui.view.closedloopfueling.mlhfm;
 
-import contract.MlhfmFileContract;
 import derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import math.map.Map2d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -31,7 +31,7 @@ public class ClosedLoopMlhfmMe7LogUiManager {
     private JLabel fileLabel;
     private ClosedLoopFuelingMe7LogViewModel closedLoopViewModel;
 
-    private Map<String, List<Double>> mlhfmMap;
+    private Map2d mlhfmMap;
     private File me7LogFile;
 
     ClosedLoopMlhfmMe7LogUiManager() {
@@ -58,9 +58,9 @@ public class ClosedLoopMlhfmMe7LogUiManager {
         });
 
         MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
             @Override
-            public void onNext(Map<String, List<Double>> mlhfmMap) {
+            public void onNext(Map2d mlhfmMap) {
                 ClosedLoopMlhfmMe7LogUiManager.this.mlhfmMap = mlhfmMap;
             }
 
@@ -232,10 +232,10 @@ public class ClosedLoopMlhfmMe7LogUiManager {
         plot.getRenderer().setSeriesPaint(0, Color.BLUE);
     }
 
-    private void drawChart(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> mlhfmMap) {
+    private void drawChart(Map<String, List<Double>> me7LogMap, Map2d mlhfmMap) {
 
         Map<Double, List<Double>> dtMap = Derivative.getDtMap2d(me7LogMap, mlhfmMap);
-        List<Double> voltages = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        Double[] voltages = mlhfmMap.axis;
 
         XYSeries series = new XYSeries("Derivative");
 

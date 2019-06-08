@@ -1,17 +1,17 @@
 package derivative;
 
 import contract.Me7LogFileContract;
-import contract.MlhfmFileContract;
+import math.map.Map2d;
 import math.map.Map3d;
 
 import java.util.*;
 
 public class Derivative {
 
-    public static Map<Double, List<Double>> getDtMap2d(Map<String, List<Double>> me7Logs, Map<String, List<Double>> mlhfm) { ;
+    public static Map<Double, List<Double>> getDtMap2d(Map<String, List<Double>> me7Logs, Map2d mlhfm) {
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
-        for (Double voltage : mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)) {
+        for (Double voltage : mlhfm.axis) {
             rawVoltageDt.put(voltage, new ArrayList<>());
         }
 
@@ -21,13 +21,13 @@ public class Derivative {
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             double me7Voltage = me7Voltages.get(i + 1);
-            int mlhfmVoltageIndex = Collections.binarySearch(mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER), me7Voltage);
+            int mlhfmVoltageIndex = Arrays.binarySearch(mlhfm.axis, me7Voltage);
 
             if(mlhfmVoltageIndex < 0) {
                 mlhfmVoltageIndex = Math.abs(mlhfmVoltageIndex + 1);
             }
 
-            double mlhfmVoltageKey = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER).get(mlhfmVoltageIndex);
+            double mlhfmVoltageKey = mlhfm.axis[mlhfmVoltageIndex];
             rawVoltageDt.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
         }
 

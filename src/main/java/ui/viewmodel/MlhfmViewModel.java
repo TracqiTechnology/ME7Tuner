@@ -1,17 +1,17 @@
 package ui.viewmodel;
 
 import io.reactivex.subjects.PublishSubject;
+import math.map.Map2d;
 import parser.mlhfm.MlhfmParser;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class MlhfmViewModel {
 
     private MlhfmParser mlhfmParser;
-    private PublishSubject<Map<String, List<Double>>> mlhfmPublishSubject;
+    private PublishSubject<Map2d> mlhfmPublishSubject;
     private PublishSubject<File> filePublishSubject;
 
     private static MlhfmViewModel instance;
@@ -30,7 +30,7 @@ public class MlhfmViewModel {
         filePublishSubject = PublishSubject.create();
     }
 
-    public PublishSubject<Map<String, List<Double>>> getMlhfmPublishSubject() {
+    public PublishSubject<Map2d> getMlhfmPublishSubject() {
         return mlhfmPublishSubject;
     }
 
@@ -40,7 +40,7 @@ public class MlhfmViewModel {
 
     public void loadFile(File file) {
 
-        Map<String, List<Double>> mlhfmMap = mlhfmParser.parse(file);
+        Map2d mlhfmMap = mlhfmParser.parse(file);
 
         if (mlhfmMap != null) {
             mlhfmPublishSubject.onNext(mlhfmMap);

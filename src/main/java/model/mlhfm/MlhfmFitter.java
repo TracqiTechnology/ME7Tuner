@@ -1,23 +1,18 @@
 package model.mlhfm;
 
-import contract.MlhfmFileContract;
 import math.CurveFitter;
+import math.map.Map2d;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class MlhfmFitter {
-    public static Map<String, List<Double>> fitMlhfm(Map<String, List<Double>> mlhfmMap, int degree) {
-        List<Double> x = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> y = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+    public static Map2d fitMlhfm(Map2d mlhfmMap, int degree) {
+        List<Double> x = Arrays.asList(mlhfmMap.axis);
+        List<Double> y = Arrays.asList(mlhfmMap.data);
 
         double[] coeff = CurveFitter.fitCurve(x, y, degree);
 
-        Map<String, List<Double>> fittedMlhfmMap = new HashMap<>();
-        fittedMlhfmMap.put(MlhfmFileContract.MAF_VOLTAGE_HEADER, x);
-        fittedMlhfmMap.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, CurveFitter.buildCurve(coeff, x));
-
-        return fittedMlhfmMap;
+        return new Map2d(x.toArray(new Double[0]), CurveFitter.buildCurve(coeff, x).toArray(new Double[0]));
     }
 }

@@ -1,5 +1,6 @@
 package writer;
 
+import math.map.Map2d;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import contract.MlhfmFileContract;
@@ -9,15 +10,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class MlhfmWriter {
-    public void write(File file, Map<String, List<Double>> mlhfmMap) {
+    public void write(File file, Map2d mlhfmMap) {
         try {
 
-            List<Double> voltage = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-            List<Double> kgPerHour = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+            List<Double> voltage = Arrays.asList(mlhfmMap.axis);
+            List<Double> kgPerHour = Arrays.asList(mlhfmMap.data);
 
             BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getAbsolutePath()));
 

@@ -3,6 +3,7 @@ package ui.view.openloopfueling;
 import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import math.map.Map2d;
 import model.mlhfm.MlhfmFitter;
 import model.openloopfueling.correction.OpenLoopCorrection;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
@@ -23,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -248,8 +250,8 @@ public class OpenLoopFuelingCorrectionUiManager {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map<String, List<Double>> correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopCorrection.correctedMlhfm, 6);
-                drawMlhfmChart(openLoopCorrection.inputMlhfm,correctedFitMlhfm);
+                Map2d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopCorrection.correctedMlhfm, 6);
+                drawMlhfmChart(openLoopCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }
         });
@@ -261,9 +263,9 @@ public class OpenLoopFuelingCorrectionUiManager {
         mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
     }
 
-    private void drawMapTable(Map<String, List<Double>> mlhfmMap) {
-        List<Double> voltage = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> kghr = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+    private void drawMapTable(Map2d mlhfmMap) {
+        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
+        List<Double> kghr = Arrays.asList(mlhfmMap.data);
         Double[][] data = new Double[kghr.size()][1];
 
         for (int i = 0; i < data.length; i++) {
@@ -274,9 +276,9 @@ public class OpenLoopFuelingCorrectionUiManager {
         mapTable.setTableData(data);
     }
 
-    private void drawMlhfmChart(Map<String, List<Double>> inputMlhfmMap, Map<String, List<Double>> correctedMlhfmMap) {
-        List<Double> voltage = inputMlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> kghr = inputMlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+    private void drawMlhfmChart(Map2d inputMlhfmMap,Map2d correctedMlhfmMap) {
+        List<Double> voltage = Arrays.asList(inputMlhfmMap.axis);
+        List<Double> kghr = Arrays.asList(inputMlhfmMap.data);
 
         XYSeries inputMlhfmSeries = new XYSeries("MLHFM");
 
@@ -284,8 +286,8 @@ public class OpenLoopFuelingCorrectionUiManager {
             inputMlhfmSeries.add(voltage.get(i), kghr.get(i));
         }
 
-        voltage = correctedMlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        kghr = correctedMlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+        voltage = Arrays.asList(correctedMlhfmMap.axis);
+        kghr = Arrays.asList(correctedMlhfmMap.data);
 
         XYSeries correctedMlhfmSeries = new XYSeries("Corrected MLHFM");
 

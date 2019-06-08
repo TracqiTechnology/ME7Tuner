@@ -3,6 +3,7 @@ package ui.viewmodel.closedloopfueling.mlhfm;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
+import math.map.Map2d;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
@@ -16,7 +17,7 @@ public class ClosedLoopMlhfmCorrectionViewModel {
 
     private static ClosedLoopMlhfmCorrectionViewModel instance;
 
-    private Map<String, List<Double>> mlhfmMap;
+    private Map2d mlhfmMap;
     private Map<String, List<Double>> me7LogMap;
 
     private PublishSubject<ClosedLoopMlhfmCorrection> publishSubject;
@@ -54,9 +55,9 @@ public class ClosedLoopMlhfmCorrectionViewModel {
         });
 
         MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
             @Override
-            public void onNext(Map<String, List<Double>> mlhfmMap) {
+            public void onNext(Map2d mlhfmMap) {
                 ClosedLoopMlhfmCorrectionViewModel.this.mlhfmMap = mlhfmMap;
                 generateCorrection();
             }

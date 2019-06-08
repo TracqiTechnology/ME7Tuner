@@ -1,6 +1,7 @@
 package parser.mlhfm;
 
 import contract.MlhfmFileContract;
+import math.map.Map2d;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -14,11 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 public class MlhfmParser {
-    public Map<String, List<Double>> parse(File file) {
+    public Map2d parse(File file) {
 
-        Map<String, List<Double>> map = new HashMap<>();
-        map.put(MlhfmFileContract.MAF_VOLTAGE_HEADER, new ArrayList<>());
-        map.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, new ArrayList<>());
+        List<Double> axis = new ArrayList<>();
+        List<Double> data = new ArrayList<>();
 
         try {
             Reader in = new FileReader(file.getAbsolutePath());
@@ -26,12 +26,12 @@ public class MlhfmParser {
             int index = 0;
             for (CSVRecord record : records) {
                 if(index++ > 0) {
-                    map.get(MlhfmFileContract.MAF_VOLTAGE_HEADER).add(Double.parseDouble(record.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)));
-                    map.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER).add(Double.parseDouble(record.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER)));
+                    axis.add(Double.parseDouble(record.get(MlhfmFileContract.MAF_VOLTAGE_HEADER)));
+                    data.add(Double.parseDouble(record.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER)));
                 }
             }
 
-            return map;
+            return new Map2d(axis.toArray(new Double[0]), data.toArray(new Double[0]));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }

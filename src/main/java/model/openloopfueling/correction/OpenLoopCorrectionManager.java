@@ -3,6 +3,7 @@ package model.openloopfueling.correction;
 import contract.AfrLogFileContract;
 import contract.Me7LogFileContract;
 import contract.MlhfmFileContract;
+import math.map.Map2d;
 import model.openloopfueling.util.AfrLogUtil;
 import model.openloopfueling.util.Me7LogUtil;
 import org.apache.commons.math3.stat.StatUtils;
@@ -18,7 +19,7 @@ public class OpenLoopCorrectionManager {
     private final double minRpm;
     private final double maxAfr;
 
-    private Map<String, List<Double>> correctedMlhfm = new HashMap<>();
+    private Map2d correctedMlhfm = new Map2d();
     private Map<Double, List<Double>> correctionsAfrMap = new HashMap<>();
 
     public final Map<Double, Double> meanAfrMap = new HashMap<>();
@@ -35,7 +36,7 @@ public class OpenLoopCorrectionManager {
         this.maxAfr = maxAfr;
     }
 
-    public void correct(Map<String, List<Double>> me7Log, Map<String, List<Double>> afrLog, Map<String, List<Double>> mlhfm) {
+    public void correct(Map<String, List<Double>> me7Log, Map<String, List<Double>> afrLog, Map2d mlhfm) {
 
         List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7Log, minThrottleAngle, lambdaControlEnabled, minRpm, minPointsMe7);
         List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLog, minThrottleAngle, minRpm, maxAfr, minPointsAfr);
@@ -49,14 +50,14 @@ public class OpenLoopCorrectionManager {
         return openLoopCorrection;
     }
 
-    private void generateMlhfm(Map<String, List<Double>> mlhfm, List<Map<String, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList) {
+    private void generateMlhfm(Map2d mlhfm, List<Map<String, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList) {
         if (me7LogList.size() != afrLogList.size()) {
             throw new IllegalArgumentException("ME7 Log size does not match AFR Log size! " + me7LogList.size() + " AFR: " + afrLogList.size());
         } else if (me7LogList.size() == 0) {
             throw new IllegalArgumentException("Not enough log files! " + "ME7: " + me7LogList.size() + " AFR: " + afrLogList.size());
         }
 
-        List<Double> mlhfmVoltage = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        List<Double> mlhfmVoltage = Arrays.asList(mlhfm.axis);
 
         // Calculate the initial corrections sets
         calculateCorrections(me7LogList, afrLogList, mlhfmVoltage);
@@ -69,18 +70,18 @@ public class OpenLoopCorrectionManager {
         applyCorrections(mlhfm, correctedAfrList);
     }
 
-    private void applyCorrections(Map<String, List<Double>> mlhfm, ArrayList<Double> correctedAfrList) {
+    private void applyCorrections(Map2d mlhfm, ArrayList<Double> correctedAfrList) {
         Map<Double, Double> totalCorrectionError = new HashMap<>();
-        List<Double> voltage = mlhfm.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
+        List<Double> voltage = Arrays.asList(mlhfm.axis);
 
         for (int i = 0; i < voltage.size(); i++) {
             totalCorrectionError.put(voltage.get(i), correctedAfrList.get(i));
             correctedAfrMap.put(voltage.get(i), correctedAfrList.get(i));
         }
 
-        correctedMlhfm.put(MlhfmFileContract.MAF_VOLTAGE_HEADER, voltage);
+        correctedMlhfm.axis = voltage.toArray(new Double[0]);
 
-        List<Double> oldKgPerHour = mlhfm.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+        List<Double> oldKgPerHour = Arrays.asList(mlhfm.data);
         List<Double> newKgPerHour = new ArrayList<>();
 
         for (int i = 0; i < voltage.size(); i++) {
@@ -90,7 +91,7 @@ public class OpenLoopCorrectionManager {
             newKgPerHour.add(i, oldKgPerHourValue * ((totalCorrectionErrorValue) + 1));
         }
 
-        correctedMlhfm.put(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER, newKgPerHour);
+        correctedMlhfm.data = newKgPerHour.toArray(new Double[0]);
     }
 
     private void smooth(ArrayList<Double> correctedAfrList, int window) {

@@ -4,6 +4,7 @@ package ui.view.mlhfm;
 import contract.MlhfmFileContract;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import math.map.Map2d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -19,6 +20,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,9 +35,9 @@ public class MlhfmUiManager {
 
     public MlhfmUiManager() {
         mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
             @Override
-            public void onNext(Map<String, List<Double>> mlhfmMap) {
+            public void onNext(Map2d mlhfmMap) {
                 drawChart(mlhfmMap);
                 drawMapTable(mlhfmMap);
             }
@@ -187,9 +189,9 @@ public class MlhfmUiManager {
         mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
     }
 
-    private void drawMapTable(Map<String, List<Double>> mlhfmMap) {
-        List<Double> voltage = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> kghr = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+    private void drawMapTable(Map2d mlhfmMap) {
+        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
+        List<Double> kghr = Arrays.asList(mlhfmMap.data);
         Double[][] data = new Double[kghr.size()][1];
 
         for(int i = 0; i < data.length; i++) {
@@ -200,9 +202,9 @@ public class MlhfmUiManager {
         mapTable.setTableData(data);
     }
 
-    private void drawChart(Map<String, List<Double>> mlhfmMap) {
-        List<Double> voltage = mlhfmMap.get(MlhfmFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> kghr = mlhfmMap.get(MlhfmFileContract.KILOGRAM_PER_HOUR_HEADER);
+    private void drawChart(Map2d mlhfmMap) {
+        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
+        List<Double> kghr = Arrays.asList(mlhfmMap.data);
 
         XYSeries series = new XYSeries("MLHFM");
 
