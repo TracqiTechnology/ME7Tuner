@@ -29,7 +29,7 @@ public class KfzwopManager {
                     y1 = kwzwopOld[i][j];
                 }
 
-                Double value = Math.max(LinearExtrapolation.extrapolate(new Double[]{x0, x1}, new Double[]{y0, y1}, xAxisNew[j]), 1);
+                Double value = Math.max(LinearExtrapolation.extrapolate(new Double[]{x0, x1}, new Double[]{y0, y1}, xAxisNew[j]), -13.5);
 
                 kwzwopNew[i][j] = value;
             }
