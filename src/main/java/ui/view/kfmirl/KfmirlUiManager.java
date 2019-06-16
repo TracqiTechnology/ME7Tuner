@@ -13,7 +13,7 @@ public class KfmirlUiManager {
     private DesiredLoadCalculatorPanel desiredLoadCalculatorPanel;
     private int minLoadIndex = 6;
 
-    public JPanel getKfmirlCalculationPanel() {
+    public JPanel getPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 

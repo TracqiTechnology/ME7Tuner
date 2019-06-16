@@ -43,7 +43,7 @@ public class KfzwopUiManager {
         });
     }
 
-    public JPanel getKfzwopCalculationPanel() {
+    public JPanel getPanel() {
 
         GridBagConstraints constraints = new GridBagConstraints();
         JPanel mainPanel = new JPanel();

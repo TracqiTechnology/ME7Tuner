@@ -7,7 +7,7 @@ import java.awt.*;
 
 public class OpenLoopFuelingUiManager {
 
-    public JPanel getOpenLoopPanel() {
+    public JPanel getPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
         panel.add(getTabbedPane(), BorderLayout.CENTER);

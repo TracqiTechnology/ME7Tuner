@@ -4,6 +4,7 @@ import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
 import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmUiManager;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
+import ui.view.kfzw.KfzwUiManager;
 import ui.view.kfzwop.KfzwopUiManager;
 import ui.view.krkte.KrkteUiManager;
 import ui.view.openloopfueling.OpenLoopFuelingUiManager;
@@ -24,11 +25,12 @@ public class MainManager {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Closed Loop MLHFM", null, new ClosedLoopMlhfmUiManager().getPanel(), "Closed Loop MLFHM Compensation");
         tabbedPane.addTab("Closed Loop KFKHFM", null, new ClosedLoopKfkhfmUiManager().getPanel(), "Closed Loop KFKHFM Compensation");
-        tabbedPane.addTab("Open Loop Fueling", null, new OpenLoopFuelingUiManager().getOpenLoopPanel(), "Open Loop Fueling Compensation");
-        tabbedPane.addTab("KRKTE", null, new KrkteUiManager().getKrkteCalculationPanel(), "KRKTE Calculator");
-        tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getKfmirlCalculationPanel(), "KFMIRL Calculator");
-        tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getKfmiopCalculationPanel(), "KFMIOP Calculator");
-        tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getKfzwopCalculationPanel(), "KFZWOP Calculator");
+        tabbedPane.addTab("Open Loop Fueling", null, new OpenLoopFuelingUiManager().getPanel(), "Open Loop Fueling Compensation");
+        tabbedPane.addTab("KRKTE", null, new KrkteUiManager().getPanel(), "KRKTE Calculator");
+        tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
+        tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");
+        tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getPanel(), "KFZWOP Calculator");
+        tabbedPane.addTab("KFZW", null, new KfzwUiManager().getPanel(), "KFZW Calculator");
 
         return tabbedPane;
     }

@@ -15,7 +15,7 @@ public class KrkteUiManager {
     private JFormattedTextField outputTextField;
     private DecimalFormat decimalFormat;
 
-    public JPanel getKrkteCalculationPanel() {
+    public JPanel getPanel() {
         decimalFormat = new DecimalFormat("#.####");
 
         JPanel panel = new JPanel();

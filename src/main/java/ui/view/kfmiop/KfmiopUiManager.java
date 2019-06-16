@@ -70,7 +70,7 @@ public class KfmiopUiManager {
         });
     }
 
-    public JPanel getKfmiopCalculationPanel() {
+    public JPanel getPanel() {
 
         GridBagConstraints constraints = new GridBagConstraints();
         JPanel mainPanel = new JPanel();
