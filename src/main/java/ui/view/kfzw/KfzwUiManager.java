@@ -54,7 +54,7 @@ public class KfzwUiManager {
         constraints.gridy = 0;
 
         JPanel kfzwopInPanel = new JPanel();
-        kfzwopInPanel.setPreferredSize(new Dimension(765, 500));
+        kfzwopInPanel.setPreferredSize(new Dimension(710, 500));
 
         kfzwopInPanel.add(getInMapPanel(), new GridBagLayout());
 
@@ -66,7 +66,7 @@ public class KfzwUiManager {
         constraints.gridy = 0;
 
         JPanel kfzwopOutPanel = new JPanel();
-        kfzwopOutPanel.setPreferredSize(new Dimension(765, 500));
+        kfzwopOutPanel.setPreferredSize(new Dimension(710, 500));
 
         kfzwopOutPanel.add(getOutMapPanel(), new GridBagLayout());
 
@@ -95,12 +95,11 @@ public class KfzwUiManager {
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 1;
-        c.ipadx = -50;
         c.fill = GridBagConstraints.EAST;
         c.anchor = GridBagConstraints.EAST;
 
         JScrollPane scrollPane = kfzwIn.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(760, 275));
+        scrollPane.setPreferredSize(new Dimension(710, 275));
 
         panel.add(scrollPane,c);
 
@@ -124,14 +123,13 @@ public class KfzwUiManager {
         constraints.weightx = 1;
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.ipadx = -50;
         constraints.fill = GridBagConstraints.EAST;
         constraints.anchor = GridBagConstraints.EAST;
 
         kfzwOut = MapTable.getMapTable(Kfzw.getStockYAxis(), Kfzw.getStockXAxis(), Kfzw.getStockMap());
 
         JScrollPane kfmiopMapScrollPane = kfzwOut.getScrollPane();
-        kfmiopMapScrollPane.setPreferredSize(new Dimension(760, 275));
+        kfmiopMapScrollPane.setPreferredSize(new Dimension(710, 275));
 
         mapPanel.add(kfmiopMapScrollPane,constraints);
 
