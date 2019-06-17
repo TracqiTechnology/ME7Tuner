@@ -11,6 +11,7 @@ import ui.viewmodel.kfzw.KfzwViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
 
 public class KfzwUiManager {
 
@@ -161,9 +162,9 @@ public class KfzwUiManager {
     }
 
     private void initXAxis() {
-        Double[][] kfmiopXAxisValues = new Double[1][];
-        kfmiopXAxisValues[0] = Kfzw.getStockXAxis();
-        kfzwXAxis = MapAxis.getMapAxis(kfmiopXAxisValues);
+        Double[][] kfmiXAxisValues = new Double[1][];
+        kfmiXAxisValues[0] = Kfzw.getStockXAxis();
+        kfzwXAxis = MapAxis.getMapAxis(kfmiXAxisValues);
 
         kfzwXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
 
@@ -173,7 +174,12 @@ public class KfzwUiManager {
                 map3d.xAxis = Kfzw.getStockXAxis();
                 map3d.yAxis = kfzwIn.getRowHeaders();
                 map3d.data = kfzwIn.getData();
-                viewModel.cacluateKfzw(map3d, data[0]);
+
+                try {
+                    viewModel.calculateKfzw(map3d, data[0]);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                 }
             }
 
             @Override
@@ -194,7 +200,7 @@ public class KfzwUiManager {
 
             @Override
             public void onNext(Map3d map3d) {
-                viewModel.cacluateKfzw(map3d, kfzwXAxis.getData()[0]);
+                viewModel.calculateKfzw(map3d, kfzwXAxis.getData()[0]);
             }
 
             @Override

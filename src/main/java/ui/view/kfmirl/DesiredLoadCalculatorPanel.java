@@ -134,9 +134,11 @@ class DesiredLoadCalculatorPanel extends JPanel {
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
-                    caclulateMaximumDesiredLoad();
-                    listener.onValueChanged(fieldTitle);
+                    if(textField.getText() != null && textField.getText().length() > 0) {
+                        KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
+                        caclulateMaximumDesiredLoad();
+                        listener.onValueChanged(fieldTitle);
+                    }
                 } catch (NumberFormatException exception) {
                     exception.printStackTrace();
                 }
@@ -144,9 +146,11 @@ class DesiredLoadCalculatorPanel extends JPanel {
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
-                    caclulateMaximumDesiredLoad();
-                    listener.onValueChanged(fieldTitle);
+                    if(textField.getText() != null && textField.getText().length() > 0) {
+                        KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
+                        caclulateMaximumDesiredLoad();
+                        listener.onValueChanged(fieldTitle);
+                    }
                 } catch (NumberFormatException exception) {
                     exception.printStackTrace();
                 }

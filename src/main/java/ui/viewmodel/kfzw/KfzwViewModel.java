@@ -17,7 +17,7 @@ public class KfzwViewModel {
         return kfzwMapPublishSubject;
     }
 
-    public void cacluateKfzw(Map3d kfzw, Double[] newXAxis) {
+    public void calculateKfzw(Map3d kfzw, Double[] newXAxis) {
 
         Map3d newKfzw = new Map3d();
         newKfzw.xAxis = newXAxis;
