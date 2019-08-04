@@ -57,7 +57,7 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 
 When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
 
-# Closed Loop
+# Closed Loop MLHFM
 
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
 
@@ -108,9 +108,11 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.08.32-PM.png "Filtered Closed Loop AFR Corection%")
 
-
-
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
+
+# Closed Loop KFKHFM
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/kfkhfm_closed_loop_samples.png "KFKHFM Close Loop Samples")
 
 # Open Loop
 
