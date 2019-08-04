@@ -112,6 +112,20 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 # Closed Loop KFKHFM
 
+This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
+
+### Algorithm
+
+The algorithm for KFKHFM is exactly the same as MLHFM but the correction is applied the unit-less scalar values of KFKHFM instead of the kg/hr values of MLHFM. Notably, the KFKHFM correction is more complex in that it is applied to a three-dimensional map as opposed to the two-dimensional MLHFM map.
+
+The average of your LTFT and STFT corrections at each load and RPM point for KFKHFM are calculated and then applied to the transformation.
+
+The Correction Error is calculated as LTFT + STFT at each measured load and RPM point for KFKHFM.
+
+The Total Correction is the average of the mean and mode of the Correction Errors at each measured load and RPM point for KFKHFM.
+
+The corrected unit-less scalar transformation for KFKHFM is calculated as **scalar_value/hr * ((tot_corr% / 100) + 1)**.
+
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/kfkhfm_closed_loop_samples.png "KFKHFM Close Loop Samples")
 
 # Open Loop
