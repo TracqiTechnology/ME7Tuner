@@ -71,7 +71,6 @@ The Total Correction is the average of the mean and mode of the Correction Error
 
 The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * ((tot_corr% / 100) + 1)**.
 
-
 ### Usage
 
 The key is to get as much data as possible. Narrow band O2 sensors are noisy and slow, so the algorithm depends on lots of data and averaging to estimate corrections. The Closed Loop parser is designed to parse multiple log files at one time so you can compile logs over a period of time. The tune/hardware cannot change between logs. Also, it is advisable to log in consistent weather.
@@ -112,6 +111,10 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 # Closed Loop KFKHFM
 
+After performing a few Closed Loop MLHFM corrections, you may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This is due to non-linearities in the intake tract where, for a given engine load, the velocity of the intake air is causing the MAF to read different values. KFKHFM exists to compensate for these non-linearities.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/mlhfm_lumpy.png "KFKHFM Close Loop Samples")
+
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
 
 ### Algorithm
@@ -127,6 +130,53 @@ The Total Correction is the average of the mean and mode of the Correction Error
 The corrected unit-less scalar transformation for KFKHFM is calculated as **scalar_value/hr * ((tot_corr% / 100) + 1)**.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/kfkhfm_closed_loop_samples.png "KFKHFM Close Loop Samples")
+
+### Usage
+
+If your STFT and LTFT are more or less dialed in and you have a 'bumpy' MLFHM you can use KFKHFM to 'smooth' MLHFM and compenstate for the non-linearities on the intake tract.
+
+This is an example of a 'bumpy' MLHFM after a number of closed loop corrections have been applied.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/mlhfm_lumpy.png "MLHFM bumpy")
+
+First, use the 'Fit MLHFM' button to fit a polynomial of a user defined degree (I find a 6th degree polynomial to work well) to the 'bumpy' MLHFM. This will produce a fitted, smooth curve to your MLHFM. Copy that curve to your binaries MLHFM.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/mlhfm_smoothed.png "MLHFM smoothed")
+
+* Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
+* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba) and Lambda Control Active (B_lr).
+* Log long periods of consistent throttle plate angles and boost. We are trying to capture data where the MAF's rate of change (delta) is as small as possible. You don't have to stop/start logging between peroids of being consistent since ME7Tuner will filter the data for you, but you still want as much of this data as possible.
+* Stay out of open-loop fueling. We don't care about it (right now). Like inconsistent MAF deltas, ME7Tuner will filter out open-loop data.
+* Get at least 30 minutes of driving on a highway. Vary gears and throttle positions often to get measurements at as many throttle angles and RPM combinations as possible. Finding a highway with a long, consistent incline is ideal since you can 'load' the engine resulting in higher MAF voltages without going into open-loop fueling. Remember to slowly roll on and off the throttle. Sudden changes will result in less usuable data.
+* Get at least 30 minutes of typical 'city' driving. Stop lights, slower city speeds, lots of gears and throttle positions. Remember to be as consistent as possible rolling on and off of the throttle.
+* Get at least 15 minutes of parking lot data. Drive slowly around the parking lot in 1st and 2nd gear. Stop and start often. Vary the throttle plate and RPM as much as possible.
+* Save your log and put it into a directory (along with other closed-loop logs from the same tune if desired).
+* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com.23.38-89-161.groveurl.com/wp-content/uploads/2019/02/mlhfm.csv)
+* Open ME7Tuner and click on the "Close Loop Fueling" tab at the top
+* Click the MLFHM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.52.22-PM.png "MLHFM")
+
+* Click the "ME7 Logs" tab on the left hand side of the screen and click the "Load Logs" button at the bottom. Select the directory that contains your closed loop logs from ME7Logger. The derivative (dMAFv/dt) of the logged MAF voltages should plot on the screen. The vertical lines represent clusters of data at different derivative (rates of change, delta, etc...) for a given MAF voltage. You want to select the data under the smallest derivative possible while also including the largest voltage range as possible. I find 1 to be a good derivative to start with.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-2.59.31-PM.png "Closed Loop Std Dev")
+
+* Click "Configure Filter" in the bottom left hand corner of the screen. This is where you can configure the filter for the incoming data. You can filter data by a minimum throttle angle, a minimum RPM, a maximum derivative (as discussed 1 is usually a good start).
+
+* Click the "Correction" tab on the left side of the screen. You will see the current MLHFM plotted in blue and the corrected MLHFM plotted in red. The corrected MLHFM is also displayed in a table on the right hand side of the screen and can be copied directly into TunerPro. Clicking "Save MLFHM" will allow you to save MLFHM to a .csv file which can be loaded for the next set of corrections.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.08.05-PM.png "Corrected closed loop MLHFM")
+
+* Click the "Std Dev" tab at the bottom of the screen. This displays the derivative of the filtered data used to calcuate the corrections. Remember that a smaller derivative is better because the MAF's rate of change smaller (more stable).
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-3.13.26-PM.png "Filtered Closed Loop Std Dev")
+
+* Click the "AFR Correction %" tab at the bottom of the screen. This displays the raw point cloud of Correction Errors with the Mean, Mode and Final AFR correction plotted ontop of the point cloud. Note how noisy the Correction Errors are.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.08.32-PM.png "Filtered Closed Loop AFR Corection%")
+
+* Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
+
 
 # Open Loop
 
