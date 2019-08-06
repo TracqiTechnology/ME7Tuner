@@ -1,5 +1,9 @@
 # General
 
+
+ <a href="http://kircherelectronics.com/files/me7tuner/ME7Tuner_v0.1.jar" rel="ME7Tuner.jar">![Foo](https://img.shields.io/badge/ME7Tuner-v0.1-GREEN)</a>
+ 
+
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
 [Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
