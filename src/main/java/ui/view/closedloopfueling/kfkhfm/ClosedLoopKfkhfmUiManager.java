@@ -53,6 +53,7 @@ public class ClosedLoopKfkhfmUiManager implements OnTabSelectedListener {
         tabbedPane.addTab("KFKHFM", null, new KfkhfmUiManager(true).getPanel(), "Correction map for MAF");
         tabbedPane.addTab("ME7 Logs", null, new ClosedLoopKfkhfmMe7LogUiManager().getMe7LogPanel(), "ME7 Logging");
         tabbedPane.addTab("Correction", null, new ClosedLoopKfkhfmCorrectionUiManager().getCorrectionPanel(), "Corrected MLHFM");
+        tabbedPane.addTab("Help", null, new ClosedLoopKfkhfmHelpManager().getPanel(), "");
 
         enableCorrectionTab(false);
 

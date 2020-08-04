@@ -9,6 +9,8 @@ import ui.viewmodel.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,7 @@ public class ClosedLoopMlhfmUiManager implements OnTabSelectedListener {
         tabbedPane.addTab("MLHFM", null, new MlhfmUiManager().getMlhfmPanel(), "Base MLHFM");
         tabbedPane.addTab("ME7 Logs", null, new ClosedLoopMlhfmMe7LogUiManager().getMe7LogPanel(), "Closed Loop ME7 Logs");
         tabbedPane.addTab("Correction", null, new ClosedLoopMlhfmCorrectionUiManager().getCorrectionPanel(), "Corrected MLHFM");
+        tabbedPane.addTab("Help", null, new ClosedLoopMlhfmHelpManager().getPanel(),"");
 
         enableLogsTab(false);
         enableCorrectionTab(false);

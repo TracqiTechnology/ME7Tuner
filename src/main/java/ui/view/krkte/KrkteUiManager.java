@@ -2,14 +2,17 @@ package ui.view.krkte;
 
 import model.krkte.KrkteCalculator;
 import preferences.primaryfueling.PrimaryFuelingPreferences;
+import ui.view.listener.OnTabSelectedListener;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.text.DecimalFormat;
 
 
-public class KrkteUiManager {
+public class KrkteUiManager implements OnTabSelectedListener {
 
     private KrkteConstantsPanel krkteConstantsPanel;
     private JFormattedTextField outputTextField;
@@ -40,10 +43,14 @@ public class KrkteUiManager {
         c.gridx = 0;
         c.gridy = 1;
 
-        panel.add( getResultsPanel(), c);
+        panel.add(getResultsPanel(), c);
 
         double krkte = calculateKrkte();
         outputTextField.setText(decimalFormat.format(krkte));
+
+        c.gridy = 2;
+        c.insets = new Insets(16, 0, 0, 0);
+        panel.add(getHelpPanel(), c);
 
         return panel;
     }
@@ -84,11 +91,41 @@ public class KrkteUiManager {
         return  panel;
     }
 
+    private JEditorPane getHelpPanel() {
+        JEditorPane jep = new JEditorPane();
+        jep.setContentType("text/html");//set content as html
+        jep.setText("<a href='https://github.com/KalebKE/ME7Tuner#krkte-primary-fueling'>Primary Fueling KRKTE User Guide</a>.");
+        jep.setOpaque(false);
+
+        jep.setEditable(false);//so its not editable
+
+        jep.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent hle) {
+                if (HyperlinkEvent.EventType.ACTIVATED.equals(hle.getEventType())) {
+                    Desktop desktop = Desktop.getDesktop();
+                    try {
+                        desktop.browse(hle.getURL().toURI());
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        return jep;
+    }
+
     private double calculateKrkte() {
         return KrkteCalculator.calculateKrkte(PrimaryFuelingPreferences.getAirDensityGramsPerCubicDecimeterPreference(),
                 PrimaryFuelingPreferences.getEngineDisplacementCubicDecimeterPreference()/(double)PrimaryFuelingPreferences.getNumEngineCylindersPreference(),
                 PrimaryFuelingPreferences.getFuelInjectorSizePreference(),
                 PrimaryFuelingPreferences.getGasolineGramsPerCubicCentimeterPreference(),
                 PrimaryFuelingPreferences.getStoichiometricAirFuelRatioPreference());
+    }
+
+    @Override
+    public void onTabSelected(boolean selected) {
+
     }
 }

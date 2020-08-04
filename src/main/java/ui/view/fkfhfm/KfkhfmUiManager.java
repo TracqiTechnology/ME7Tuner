@@ -21,13 +21,13 @@ public class KfkhfmUiManager {
 
     public KfkhfmUiManager(boolean shouldNotifyOnChange) {
         initPanel();
-        if(shouldNotifyOnChange) {
+        if (shouldNotifyOnChange) {
             shouldNotifyOnChange();
         }
     }
 
     public JPanel getPanel() {
-     return panel;
+        return panel;
     }
 
     public void setMap(Map3d map) {

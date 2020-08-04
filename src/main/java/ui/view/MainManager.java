@@ -31,6 +31,10 @@ public class MainManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
 
+        KrkteUiManager krkteUiManager = new KrkteUiManager();
+        tabSelectedListeners.add(krkteUiManager);
+        tabbedPane.addTab("KRKTE (Primary Fueling)", null, krkteUiManager.getPanel(), "KRKTE Calculator");
+
         ClosedLoopMlhfmUiManager closedLoopMlhfmUiManager = new ClosedLoopMlhfmUiManager();
         // first tab is selected
         closedLoopMlhfmUiManager.onTabSelected(true);
@@ -42,7 +46,6 @@ public class MainManager {
         tabbedPane.addTab("Closed Loop KFKHFM", null, closedLoopKfkhfmUiManager.getPanel(), "Closed Loop KFKHFM Compensation");
 
         tabbedPane.addTab("Open Loop Fueling", null, new OpenLoopFuelingUiManager().getPanel(), "Open Loop Fueling Compensation");
-        tabbedPane.addTab("KRKTE", null, new KrkteUiManager().getPanel(), "KRKTE Calculator");
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");
         tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getPanel(), "KFZWOP Calculator");
