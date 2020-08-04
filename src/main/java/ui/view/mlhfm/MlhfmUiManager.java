@@ -76,7 +76,6 @@ public class MlhfmUiManager {
 
         GridBagConstraints c = new GridBagConstraints();
 
-
         c.fill = GridBagConstraints.BOTH;
         c.gridx = 0;
         c.gridy = 0;
@@ -107,9 +106,9 @@ public class MlhfmUiManager {
     private JPanel getMapTablePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(1, 1));
-        panel.setMinimumSize(new Dimension(120, 100));
-        panel.setMaximumSize(new Dimension(120, 100));
-        panel.setPreferredSize(new Dimension(120, 100));
+        panel.setMinimumSize(new Dimension(125, 100));
+        panel.setMaximumSize(new Dimension(125, 100));
+        panel.setPreferredSize(new Dimension(125, 100));
         panel.add(mapTable.getScrollPane());
 
         return panel;
@@ -147,6 +146,7 @@ public class MlhfmUiManager {
 
     private JButton getFileButton() {
         JButton button = new JButton("Load MLHFM");
+        button.setToolTipText("Load your base MLHFM in .csv format. This will be used as the basis for the correction.");
 
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
@@ -169,7 +169,7 @@ public class MlhfmUiManager {
         XYSeriesCollection dataset = new XYSeriesCollection();
 
         chart = ChartFactory.createScatterPlot(
-                "MHLFM",
+                "Base MLHFM",
                 "Voltage", "kg/hr", dataset);
 
         XYPlot plot = (XYPlot)chart.getPlot();
@@ -185,6 +185,7 @@ public class MlhfmUiManager {
 
     private void initMapTable() {
         mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
+        mapTable.setToolTipText("Base MLHFM");
     }
 
     private void drawMapTable(Map2d mlhfmMap) {
@@ -198,6 +199,7 @@ public class MlhfmUiManager {
 
         mapTable.setRowHeaders(voltage.toArray(new Double[0]));
         mapTable.setTableData(data);
+        mapTable.invalidate();
     }
 
     private void drawChart(Map2d mlhfmMap) {

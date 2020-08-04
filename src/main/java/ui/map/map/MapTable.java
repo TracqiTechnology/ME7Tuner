@@ -35,6 +35,8 @@ public class MapTable extends JList implements TableModelListener {
 
     private Map3d map3d;
 
+    private double maxValue;
+
     @SuppressWarnings("unchecked")
     private MapTable(Double[] rowHeaders, Object[] columnHeaders, Double[][] data) {
         this.table = this.createTable(columnHeaders, data);
@@ -44,7 +46,7 @@ public class MapTable extends JList implements TableModelListener {
         this.debouncer = new Debouncer();
 
         map3d = new Map3d();
-        if(columnHeaders instanceof Double[]) {
+        if (columnHeaders instanceof Double[]) {
             map3d.xAxis = (Double[]) columnHeaders;
         }
         map3d.yAxis = rowHeaders;
@@ -210,18 +212,66 @@ public class MapTable extends JList implements TableModelListener {
                 if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
                     setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
                 } else {
-                    setBackground(null);
+                    if(value instanceof String) {
+                        double v = Double.parseDouble((String) value);
+                        double norm;
+                        if (maxValue != 0) {
+                            norm = 1 - (v / maxValue);
+                            setBackground(getColor(norm));
+                        } else {
+                            setBackground(null);
+                        }
+                    } else {
+                        setBackground(null);
+                    }
                 }
             } else {
-                setBackground(null);
+                if(value instanceof String) {
+                    double v = Double.parseDouble((String) value);
+                    double norm;
+                    if (maxValue != 0) {
+                        norm = 1 - (v / maxValue);
+                        setBackground(getColor(norm));
+                    } else {
+                        setBackground(null);
+                    }
+                } else {
+                    setBackground(null);
+                }
             }
 
             return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        }
+
+        private Color getColor(double value) {
+            double H = value * 0.4; // Hue (note 0.4 = Green, see huge chart below)
+            double S = 0.9; // Saturation
+            double B = 0.9; // Brightness
+
+            return Color.getHSBColor((float)H, (float)S, (float)B);
+        }
+    }
+
+    private void setMaxValue(Double[][] data) {
+        if(data != null) {
+            double max = Double.MIN_VALUE;
+            for (Double[] doubles : data) {
+                for (Double value : doubles) {
+                    if (value != null) {
+                        max = Math.max(max, value);
+                    }
+                }
+            }
+
+            this.maxValue = max;
+        } else {
+            this.maxValue = 0;
         }
     }
 
     public void setTableData(Double[][] data) {
         this.data = data;
+        setMaxValue(data);
 
         tableModel.setDataVector(this.data, this.columnHeaders);
 
@@ -266,29 +316,23 @@ public class MapTable extends JList implements TableModelListener {
     }
 
     private JTable createTable(Object[] columnHeaders, final Double[][] data) {
+        setMaxValue(data);
+
         tableModel = new DefaultTableModel(data, columnHeaders) {
             private static final long serialVersionUID = 1L;
 
             @Override
             public Class<?> getColumnClass(int column) {
-                if (columnHeaders instanceof Double[]) {
-                    return Double.class;
-                } else if (columnHeaders instanceof String[]) {
-                    return String.class;
-                }
-
-                return Double.class;
+                return columnHeaders.getClass();
             }
         };
 
-        final JTable table = new JTable(tableModel)
-        {
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
-            {
+        final JTable table = new JTable(tableModel) {
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
 
-                if(row == rollOverRowIndex && column == rollOverColumnIndex) {
-                    c.setBackground(Color.BLUE);
+                if (row == rollOverRowIndex && column == rollOverColumnIndex) {
+                    c.setBackground(Color.YELLOW);
                 }
 
                 return c;
@@ -304,7 +348,7 @@ public class MapTable extends JList implements TableModelListener {
         enforceTableColumnWidth(table);
 
         // Handle Copy/Paste
-        ExcelAdapter excelAdapter = new ExcelAdapter(table);
+        new ExcelAdapter(table);
 
         table.getModel().addTableModelListener(new TableModelListener() {
             @Override
@@ -320,16 +364,12 @@ public class MapTable extends JList implements TableModelListener {
 
                 MapTable.this.data = values;
 
-                debouncer.debounce(this, new Runnable() {
-                    @Override
-                    public void run() {
+                debouncer.debounce(this, () -> {
+                    map3d.xAxis = (Double[]) getColumnHeaders();
+                    map3d.yAxis = getRowHeaders();
+                    map3d.data = values;
 
-                        map3d.xAxis = (Double[]) getColumnHeaders();
-                        map3d.yAxis = getRowHeaders();
-                        map3d.data = values;
-
-                        publishSubject.onNext(map3d);
-                    }
+                    publishSubject.onNext(map3d);
                 }, 100, TimeUnit.MILLISECONDS);
             }
         });

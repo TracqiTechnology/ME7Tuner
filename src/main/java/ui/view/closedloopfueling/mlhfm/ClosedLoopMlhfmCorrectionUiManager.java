@@ -111,9 +111,9 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         initMapTable();
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(1, 1));
-        panel.setMinimumSize(new Dimension(120, 100));
-        panel.setMaximumSize(new Dimension(120, 100));
-        panel.setPreferredSize(new Dimension(120, 100));
+        panel.setMinimumSize(new Dimension(125, 100));
+        panel.setMaximumSize(new Dimension(125, 100));
+        panel.setPreferredSize(new Dimension(125, 100));
         panel.add(mapTable.getScrollPane());
 
         return panel;
@@ -210,7 +210,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         XYSeriesCollection dataset = new XYSeriesCollection();
 
         mlfhmChart = ChartFactory.createScatterPlot(
-                "MHLFM",
+                "Corrected MLHFM",
                 "Voltage", "kg/hr", dataset);
 
         XYPlot plot = (XYPlot) mlfhmChart.getPlot();
@@ -300,12 +300,10 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         c.gridx = 0;
         c.gridy = 0;
 
-        panel.add(getFitMlhfmButton(), c);
-
         JLabel label = new JLabel("Polynomial Degree: ");
+        panel.add(label, c);
 
         c.gridx = 1;
-        panel.add(label, c);
 
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(6, 1, 100, 1));
 
@@ -316,15 +314,19 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             }
         });
 
-        c.gridx = 2;
-
         panel.add(spinner, c);
+
+        c.gridx = 2;
+        c.insets = new Insets(0, 8 ,0 ,0);
+
+        panel.add(getFitMlhfmButton(), c);
 
         return panel;
     }
 
     private JButton getFitMlhfmButton() {
         JButton button = new JButton("Fit MLHFM");
+        button.setToolTipText("Smooth the curve by fitting a polynomial.");
 
         button.addActionListener(new ActionListener() {
             @Override
@@ -353,6 +355,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
 
         mapTable.setRowHeaders(voltage.toArray(new Double[0]));
         mapTable.setTableData(data);
+        mapTable.invalidate();
     }
 
     private void drawMlhfmChart(Map2d inputMlhfmMap, Map2d correctedMlhfmMap) {

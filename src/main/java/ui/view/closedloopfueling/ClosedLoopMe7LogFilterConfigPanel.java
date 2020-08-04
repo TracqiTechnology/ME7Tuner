@@ -15,16 +15,20 @@ public class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
     public enum FieldTitle {
-        MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MAX_VOLTAGE_DT("Max dMAFv/dt");
+        MIN_THROTTLE_ANGLE("Minimum Throttle Angle", "Filter out samples with a throttle angle less than the minimum"), MIN_RPM("Minimum RPM", "Filter out samples with an RPM less than the minimum"), MAX_VOLTAGE_DT("Max dMAFv/dt", "Filter out samples with a derivative greater than the maximum. The best samples have the smallest derivative");
         private String title;
+        private String hint;
 
-        FieldTitle(String title) {
+        FieldTitle(String title, String hint) {
             this.title = title;
+            this.hint = hint;
         }
 
         public String getTitle() {
             return title;
         }
+
+        public String getHint() { return hint; }
     }
 
     private Map<FieldTitle, JTextField> fieldMap = new HashMap<FieldTitle, JTextField>();
@@ -53,7 +57,9 @@ public class ClosedLoopMe7LogFilterConfigPanel extends JPanel {
         for (int i = 0; i < FieldTitle.values().length; i++) {
             FieldTitle fieldTitle = FieldTitle.values()[i];
             gbc = createGbc(0, i);
-            add(new JLabel(fieldTitle.getTitle() + ":", JLabel.LEFT), gbc);
+            JLabel jLabel = new JLabel(fieldTitle.getTitle() + ":", JLabel.LEFT);
+            jLabel.setToolTipText(fieldTitle.getHint());
+            add(jLabel, gbc);
             gbc = createGbc(1, i);
 
             JFormattedTextField textField = null;

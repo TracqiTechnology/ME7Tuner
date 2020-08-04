@@ -181,7 +181,7 @@ public class OpenLoopFuelingCorrectionUiManager {
         XYSeriesCollection dataset = new XYSeriesCollection();
 
         mlfhmChart = ChartFactory.createScatterPlot(
-                "MHLFM",
+                "Corrected MLHFM",
                 "Voltage", "kg/hr", dataset);
 
         XYPlot plot = (XYPlot) mlfhmChart.getPlot();

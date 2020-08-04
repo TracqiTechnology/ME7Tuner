@@ -141,6 +141,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
         c.gridx = 0;
         c.gridy = 0;
         c.anchor = GridBagConstraints.LINE_START;
+        c.insets = new Insets(0, 8, 0, 0);
 
         JButton button = getConfigureFilterButton();
         panel.add(button, c);
@@ -149,6 +150,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
         c.gridx = 1;
         c.gridy = 0;
         c.anchor = GridBagConstraints.CENTER;
+        c.insets = new Insets(0, 0, 0, 0);
 
         button = getFileButton();
         panel.add(button, c);
