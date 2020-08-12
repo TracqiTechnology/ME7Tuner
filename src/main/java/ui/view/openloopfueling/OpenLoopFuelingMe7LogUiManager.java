@@ -15,6 +15,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import preferences.filechooser.FileChooserPreferences;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingAfrLogViewModel;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingAirflowViewModel;
@@ -300,12 +301,14 @@ public class OpenLoopFuelingMe7LogUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
+            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(openLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.me7LogFile = fc.getSelectedFile();
                 loadMe7File(this.me7LogFile);
+                FileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
             }
         });
 
@@ -323,12 +326,14 @@ public class OpenLoopFuelingMe7LogUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
+            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(openLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.afrLogFile = fc.getSelectedFile();
                 loadAfrFile(this.afrLogFile);
+                FileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
             }
         });
 

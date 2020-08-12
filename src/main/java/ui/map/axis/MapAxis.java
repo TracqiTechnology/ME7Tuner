@@ -2,7 +2,6 @@ package ui.map.axis;
 
 
 import io.reactivex.subjects.PublishSubject;
-import ui.map.ExcelAdapter;
 import util.Debouncer;
 import util.Util;
 
@@ -32,8 +31,12 @@ public class MapAxis {
     private int rollOverRowIndex = -1;
     private int rollOverColumnIndex = -1;
 
+    private double maxValue;
+
     private MapAxis(Double[][] data) {
         this.table = this.createAxis(data);
+        // Handle Copy/Paste
+        MapAxisExcelAdapter excelAdapter = new MapAxisExcelAdapter(this);
         this.data = data;
         this.debouncer = new Debouncer();
 
@@ -47,13 +50,14 @@ public class MapAxis {
 
     public void setTableData(Double[][] data) {
         this.data = data;
-
+        setMaxValue(data);
         tableModel.setDataVector(this.data, new Double[data[0].length]);
-
         enforceTableColumnWidth(this.table);
     }
 
     private JTable createAxis(final Double[][] data) {
+        setMaxValue(data);
+
         tableModel = new DefaultTableModel(data, data[0]) {
             private static final long serialVersionUID = 1L;
             @Override
@@ -88,9 +92,6 @@ public class MapAxis {
 
         enforceTableColumnWidth(table);
 
-        // Handle Copy/Paste
-        ExcelAdapter excelAdapter = new ExcelAdapter(table);
-
         table.getModel().addTableModelListener(new TableModelListener() {
             public void tableChanged(TableModelEvent e) {
                 Double[][] values = new Double[MapAxis.this.data.length][];
@@ -116,6 +117,10 @@ public class MapAxis {
        return table;
     }
 
+    public JTable getTable() {
+        return table;
+    }
+
     public Double[][] getData() {
         return data;
     }
@@ -132,8 +137,8 @@ public class MapAxis {
         TableColumn column;
         for (int i = 0; i < table.getColumnModel().getColumnCount(); i++) {
             column = table.getColumnModel().getColumn(i);
-            column.setPreferredWidth(50);
-            column.setMaxWidth(50);
+            column.setPreferredWidth(55);
+            column.setMaxWidth(55);
 
             DefaultTableCellRenderer centerRenderer = new DecimalFormatRenderer();
             centerRenderer.setHorizontalAlignment( JLabel.CENTER );
@@ -180,13 +185,60 @@ public class MapAxis {
                 if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
                     setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
                 } else {
-                    setBackground(null);
+                    if(value instanceof String) {
+                        double v = Double.parseDouble((String) value);
+                        double norm;
+                        if (maxValue != 0) {
+                            norm = 1 - (v / maxValue);
+                            setBackground(getColor(norm));
+                        } else {
+                            setBackground(null);
+                        }
+                    } else {
+                        setBackground(null);
+                    }
                 }
             } else {
-                setBackground(null);
+                if(value instanceof String) {
+                    double v = Double.parseDouble((String) value);
+                    double norm;
+                    if (maxValue != 0) {
+                        norm = 1 - (v / maxValue);
+                        setBackground(getColor(norm));
+                    } else {
+                        setBackground(null);
+                    }
+                } else {
+                    setBackground(null);
+                }
             }
 
             return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        }
+
+        private Color getColor(double value) {
+            double H = value * 0.4; // Hue (note 0.4 = Green, see huge chart below)
+            double S = 0.9; // Saturation
+            double B = 0.9; // Brightness
+
+            return Color.getHSBColor((float)H, (float)S, (float)B);
+        }
+    }
+
+    private void setMaxValue(Double[][] data) {
+        if(data != null) {
+            double max = Double.MIN_VALUE;
+            for (Double[] doubles : data) {
+                for (Double value : doubles) {
+                    if (value != null) {
+                        max = Math.max(max, value);
+                    }
+                }
+            }
+
+            this.maxValue = max;
+        } else {
+            this.maxValue = 0;
         }
     }
 }

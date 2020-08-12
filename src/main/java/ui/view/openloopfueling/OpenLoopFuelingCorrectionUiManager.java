@@ -18,6 +18,8 @@ import ui.viewmodel.openloopfueling.OpenLoopFuelingCorrectionViewModel;
 import writer.MlhfmWriter;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,6 +42,8 @@ public class OpenLoopFuelingCorrectionUiManager {
 
     private XYSeriesCollection afrCorrectionPointDataSet;
     private XYSeriesCollection afrCorrectionLineDataSet;
+
+    private int polynomialDegree = 6;
 
     public OpenLoopFuelingCorrectionUiManager() {
         OpenLoopFuelingCorrectionViewModel.getInstance().getPublishSubject().subscribe(new Observer<OpenLoopCorrection>() {
@@ -166,13 +170,15 @@ public class OpenLoopFuelingCorrectionUiManager {
         c.gridx = 0;
         c.gridy = 0;
 
+        JPanel fitMlhfmPanel = getFitMlhfmPanel();
+        panel.add(fitMlhfmPanel, c);
+
+        c.gridy = 1;
+        c.insets = new Insets(8, 0,0,0);
+
         JButton button = getFileButton();
         panel.add(button, c);
 
-        c.gridx = 1;
-
-        button = getFitMlhfmButton();
-        panel.add(button, c);
 
         return panel;
     }
@@ -241,6 +247,39 @@ public class OpenLoopFuelingCorrectionUiManager {
         });
 
         return button;
+    }
+
+    private JPanel getFitMlhfmPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+        c.gridy = 0;
+
+        JLabel label = new JLabel("Polynomial Degree: ");
+        panel.add(label, c);
+
+        c.gridx = 1;
+
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(6, 1, 100, 1));
+
+        spinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                polynomialDegree = (int) spinner.getValue();
+            }
+        });
+
+        panel.add(spinner, c);
+
+        c.gridx = 2;
+        c.insets = new Insets(0, 8 ,0 ,0);
+
+        panel.add(getFitMlhfmButton(), c);
+
+        return panel;
     }
 
     private JButton getFitMlhfmButton() {

@@ -1,4 +1,4 @@
-package ui.map;
+package ui.map.map;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,23 +12,26 @@ import java.awt.event.KeyEvent;
 import java.util.StringTokenizer;
 
 /**
- * ExcelAdapter enables Copy-Paste Clipboard functionality on JTables.
+ * MapAxisExcelAdapter enables Copy-Paste Clipboard functionality on JTables.
  * The clipboard data format used by the adapter is compatible with
  * the clipboard format used by Excel. This provides for clipboard
  * interoperability between enabled JTables and Excel.
  */
-public class ExcelAdapter implements ActionListener {
+public class MapTableExcelAdapter implements ActionListener {
 
     private Clipboard system;
-    private JTable jTable1;
+    private JTable jTable;
+    private MapTable mapTable;
 
     /**
      * The Excel Adapter is constructed with a
      * JTable on which it enables Copy-Paste and acts
      * as a Clipboard listener.
      */
-    public ExcelAdapter(JTable myJTable) {
-        jTable1 = myJTable;
+    public MapTableExcelAdapter(MapTable mapTable) {
+
+        this.mapTable = mapTable;
+        this.jTable = mapTable.getTable();
 
         KeyStroke copy;
         KeyStroke paste;
@@ -46,8 +49,8 @@ public class ExcelAdapter implements ActionListener {
         }
         // Identifying the Paste KeyStroke user can modify this
         //to copy on some other Key combination.
-        jTable1.registerKeyboardAction(this, "Copy", copy, JComponent.WHEN_FOCUSED);
-        jTable1.registerKeyboardAction(this, "Paste", paste, JComponent.WHEN_FOCUSED);
+        jTable.registerKeyboardAction(this, "Copy", copy, JComponent.WHEN_FOCUSED);
+        jTable.registerKeyboardAction(this, "Paste", paste, JComponent.WHEN_FOCUSED);
         system = Toolkit.getDefaultToolkit().getSystemClipboard();
     }
 
@@ -64,10 +67,10 @@ public class ExcelAdapter implements ActionListener {
             StringBuffer sbf = new StringBuffer();
             // Check to ensure we have selected only a contiguous block of
             // cells
-            int numCols = jTable1.getSelectedColumnCount();
-            int numRows = jTable1.getSelectedRowCount();
-            int[] rowsSelected = jTable1.getSelectedRows();
-            int[] colsSelected = jTable1.getSelectedColumns();
+            int numCols = jTable.getSelectedColumnCount();
+            int numRows = jTable.getSelectedRowCount();
+            int[] rowsSelected = jTable.getSelectedRows();
+            int[] colsSelected = jTable.getSelectedColumns();
             if (!((numRows - 1 == rowsSelected[rowsSelected.length - 1] - rowsSelected[0] &&
                     numRows == rowsSelected.length) &&
                     (numCols - 1 == colsSelected[colsSelected.length - 1] - colsSelected[0] &&
@@ -79,7 +82,7 @@ public class ExcelAdapter implements ActionListener {
             }
             for (int i = 0; i < numRows; i++) {
                 for (int j = 0; j < numCols; j++) {
-                    sbf.append(jTable1.getValueAt(rowsSelected[i], colsSelected[j]));
+                    sbf.append(jTable.getValueAt(rowsSelected[i], colsSelected[j]));
                     if (j < numCols - 1) sbf.append("\t");
                 }
                 sbf.append("\n");
@@ -89,8 +92,8 @@ public class ExcelAdapter implements ActionListener {
             system.setContents(stSel, stSel);
         }
         if (e.getActionCommand().compareTo("Paste") == 0) {
-            int startRow = (jTable1.getSelectedRows())[0];
-            int startCol = (jTable1.getSelectedColumns())[0];
+            int startRow = (jTable.getSelectedRows())[0];
+            int startCol = (jTable.getSelectedColumns())[0];
             try {
                 String trString = (String) (system.getContents(this).getTransferData(DataFlavor.stringFlavor));
                 StringTokenizer st1 = new StringTokenizer(trString, "\n");
@@ -100,10 +103,12 @@ public class ExcelAdapter implements ActionListener {
                     for (int j = 0; st2.hasMoreTokens(); j++) {
                         String value = st2.nextToken();
 
-                        if (startRow + i < jTable1.getRowCount() && startCol + j < jTable1.getColumnCount()) {
-                            jTable1.setValueAt(Double.valueOf(value), startRow + i, startCol + j);
+                        if (startRow + i < jTable.getRowCount() && startCol + j < jTable.getColumnCount()) {
+                            mapTable.getData()[startRow + i][startCol + j] = Double.valueOf(value);
                         }
                     }
+
+                    mapTable.setTableData(mapTable.getData());
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();

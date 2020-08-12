@@ -45,7 +45,10 @@ public class MainManager {
         tabSelectedListeners.add(closedLoopKfkhfmUiManager);
         tabbedPane.addTab("Closed Loop KFKHFM", null, closedLoopKfkhfmUiManager.getPanel(), "Closed Loop KFKHFM Compensation");
 
-        tabbedPane.addTab("Open Loop Fueling", null, new OpenLoopFuelingUiManager().getPanel(), "Open Loop Fueling Compensation");
+        OpenLoopFuelingUiManager openLoopFuelingUiManager = new OpenLoopFuelingUiManager();
+        tabSelectedListeners.add(openLoopFuelingUiManager);
+        tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingUiManager.getPanel(), "Open Loop Fueling Compensation");
+
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");
         tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getPanel(), "KFZWOP Calculator");

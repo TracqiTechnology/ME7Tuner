@@ -7,6 +7,7 @@ import model.kfkhfm.Kfkhfm;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jzy3d.chart.Chart;
 import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
+import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
 import org.jzy3d.chart.factories.IChartComponentFactory;
 import org.jzy3d.colors.ColorMapper;
@@ -138,18 +139,14 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
 
     private void initStdDevChart() {
         // Create a chart and add scatterAfr
-        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
         stdDevChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
         stdDevChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
         stdDevChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
         stdDevChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
         stdDevChart3d.getAxeLayout().setZAxeLabel("dMAFv/dt");
 
-        AWTCameraMouseController controller = new AWTCameraMouseController(stdDevChart3d);
-        Component canvas = (Component) stdDevChart3d.getCanvas();
-        canvas.addMouseListener(controller);
-        canvas.addMouseMotionListener(controller);
-        canvas.addMouseWheelListener(controller);
+        NewtCameraMouseController controller = new NewtCameraMouseController(stdDevChart3d);
 
         int size = 10;
         float x;
@@ -177,18 +174,14 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
     private void init3dAfrCorrectionChart() {
 
         // Create a chart and add scatterAfr
-        afrCorrectionChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        afrCorrectionChart3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
         afrCorrectionChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
         afrCorrectionChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
         afrCorrectionChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
         afrCorrectionChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
         afrCorrectionChart3d.getAxeLayout().setZAxeLabel("Correction %");
 
-        AWTCameraMouseController controller = new AWTCameraMouseController(afrCorrectionChart3d);
-        Component canvas = (Component) afrCorrectionChart3d.getCanvas();
-        canvas.addMouseListener(controller);
-        canvas.addMouseMotionListener(controller);
-        canvas.addMouseWheelListener(controller);
+        NewtCameraMouseController controller = new NewtCameraMouseController(afrCorrectionChart3d);
 
         int size = 10;
         float x;

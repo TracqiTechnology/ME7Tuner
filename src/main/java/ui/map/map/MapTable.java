@@ -2,7 +2,6 @@ package ui.map.map;
 
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
-import ui.map.ExcelAdapter;
 import util.Debouncer;
 import util.Util;
 
@@ -40,6 +39,8 @@ public class MapTable extends JList implements TableModelListener {
     @SuppressWarnings("unchecked")
     private MapTable(Double[] rowHeaders, Object[] columnHeaders, Double[][] data) {
         this.table = this.createTable(columnHeaders, data);
+        // Handle Copy/Paste
+        new MapTableExcelAdapter(this);
         this.rowHeaders = rowHeaders;
         this.columnHeaders = columnHeaders;
         this.data = data;
@@ -74,6 +75,10 @@ public class MapTable extends JList implements TableModelListener {
 
     public PublishSubject<Map3d> getPublishSubject() {
         return publishSubject;
+    }
+
+    public JTable getTable() {
+        return table;
     }
 
     @Override
@@ -272,9 +277,7 @@ public class MapTable extends JList implements TableModelListener {
     public void setTableData(Double[][] data) {
         this.data = data;
         setMaxValue(data);
-
         tableModel.setDataVector(this.data, this.columnHeaders);
-
         enforceTableColumnWidth(this.table);
     }
 
@@ -346,9 +349,6 @@ public class MapTable extends JList implements TableModelListener {
         table.setRowSelectionAllowed(false);
 
         enforceTableColumnWidth(table);
-
-        // Handle Copy/Paste
-        new ExcelAdapter(table);
 
         table.getModel().addTableModelListener(new TableModelListener() {
             @Override

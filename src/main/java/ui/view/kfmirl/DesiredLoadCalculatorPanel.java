@@ -17,20 +17,26 @@ class DesiredLoadCalculatorPanel extends JPanel {
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
     enum FieldTitle {
-        MAX_DESIRED_BOOST("Max Desired Boost", "mbar (absolute)", true), KFURL("KFURL", "%", true), MAX_DESIRED_LOAD("Max Desired Load", "%", false);
+        MAX_DESIRED_BOOST("Max Desired Boost",  "", "mbar (absolute)", true), KFURL("KFURL", "Conversion constant for ps->rl (pressure to load)","%", true), MAX_DESIRED_LOAD("Max Desired Load", "","%", false);
 
         private String title;
         private String units;
+        private String hint;
         private boolean editable;
 
-        FieldTitle(String title, String units, boolean editable) {
+        FieldTitle(String title, String hint, String units, boolean editable) {
             this.title = title;
+            this.hint = hint;
             this.units = units;
             this.editable = editable;
         }
 
         public String getTitle() {
             return title;
+        }
+
+        public String getHint() {
+            return hint;
         }
 
         public String getUnits() {
@@ -128,6 +134,7 @@ class DesiredLoadCalculatorPanel extends JPanel {
     private void addKfurl(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
         textField.setValue(KfmirlPreferences.getKfurlPreference());
+        textField.setToolTipText(fieldTitle.getHint());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {}

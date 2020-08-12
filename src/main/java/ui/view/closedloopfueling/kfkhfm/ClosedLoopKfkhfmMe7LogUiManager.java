@@ -8,6 +8,7 @@ import math.map.Map3d;
 import model.kfkhfm.Kfkhfm;
 import org.jzy3d.chart.Chart;
 import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
+import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
 import org.jzy3d.chart.factories.IChartComponentFactory;
 import org.jzy3d.colors.ColorMapper;
@@ -224,18 +225,14 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
 
     private void initChart() {
         // Create a chart and add scatterAfr
-        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Advanced, IChartComponentFactory.Toolkit.swing);
+        stdDevChart3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
         stdDevChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
         stdDevChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
         stdDevChart3d.getAxeLayout().setXAxeLabel("Engine Load (rl_w)");
         stdDevChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
         stdDevChart3d.getAxeLayout().setZAxeLabel("dMAFv/dt");
 
-        AWTCameraMouseController controller = new AWTCameraMouseController(stdDevChart3d);
-        Component canvas = (Component) stdDevChart3d.getCanvas();
-        canvas.addMouseListener(controller);
-        canvas.addMouseMotionListener(controller);
-        canvas.addMouseWheelListener(controller);
+        NewtCameraMouseController controller = new NewtCameraMouseController(stdDevChart3d);
 
         int size = 10;
         float x;
