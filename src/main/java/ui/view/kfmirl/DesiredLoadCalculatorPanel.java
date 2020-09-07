@@ -71,12 +71,16 @@ class DesiredLoadCalculatorPanel extends JPanel {
         integerFormatter.setValueClass(Integer.class);
         integerFormatter.setAllowsInvalid(false);
         integerFormatter.setMinimum(0);
+        integerFormatter.setAllowsInvalid(true);
 
         DecimalFormat decimalFormat = new DecimalFormat("#.####");
+        decimalFormat.setGroupingUsed(false);
+
         NumberFormatter decimalFormatter = new NumberFormatter(decimalFormat);
         decimalFormatter.setOverwriteMode(true);
         decimalFormatter.setAllowsInvalid(true);
         decimalFormatter.setMinimum(0d);
+        decimalFormatter.setAllowsInvalid(true);
 
         for (int i = 0; i < FieldTitle.values().length; i++) {
             FieldTitle fieldTitle = FieldTitle.values()[i];

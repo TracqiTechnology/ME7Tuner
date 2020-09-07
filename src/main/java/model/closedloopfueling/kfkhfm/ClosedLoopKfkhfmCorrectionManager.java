@@ -134,7 +134,6 @@ public class ClosedLoopKfkhfmCorrectionManager {
         Mean mean = new Mean();
         for (int i = 0; i < corrections.size(); i++) {
             for (int j = 0; j < corrections.get(i).size(); j++) {
-
                 if (corrections.get(i).get(j).size() > MIN_SAMPLES_THRESHOLD) {
                     // Get the mean of the correction set
                     double meanValue = mean.evaluate(Util.toDoubleArray(corrections.get(i).get(j).toArray(new Double[0])), 0, corrections.get(i).get(j).size());
