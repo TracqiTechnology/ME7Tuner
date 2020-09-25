@@ -12,4 +12,8 @@ public class Me7LogFileContract {
     public static final String REQUESTED_LAMBDA_HEADER = "lamsbg_w";
     public static final String FUEL_INJECTOR_ON_TIME_HEADER = "ti_b1";
     public static final String ENGINE_LOAD_HEADER = "rl_w";
+    public static final String WASTEGATE_DUTY_CYCLE_HEADER = "ldtvm";
+    public static final String BAROMETRIC_PRESSURE_HEADER = "pus_w";
+    public static final String ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER = "pvdks_w";
+    public static final String SELECTED_GEAR_HEADER = "gangi";
 }

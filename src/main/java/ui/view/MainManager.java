@@ -7,6 +7,7 @@ import ui.view.kfmirl.KfmirlUiManager;
 import ui.view.kfzw.KfzwUiManager;
 import ui.view.kfzwop.KfzwopUiManager;
 import ui.view.krkte.KrkteUiManager;
+import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingUiManager;
 
@@ -53,6 +54,7 @@ public class MainManager {
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");
         tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getPanel(), "KFZWOP Calculator");
         tabbedPane.addTab("KFZW", null, new KfzwUiManager().getPanel(), "KFZW Calculator");
+        tabbedPane.addTab("LDRPID", null, new LdrpidUiManager().getPanel(), "LDRPID");
 
         tabbedPane.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {

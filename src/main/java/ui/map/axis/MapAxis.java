@@ -11,7 +11,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -59,7 +58,6 @@ public class MapAxis {
         setMaxValue(data);
 
         tableModel = new DefaultTableModel(data, data[0]) {
-            private static final long serialVersionUID = 1L;
             @Override
             public Class<?> getColumnClass(int column) {
                 return Double.class;
@@ -67,19 +65,7 @@ public class MapAxis {
         };
 
 
-        final JTable table = new JTable(tableModel)
-        {
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
-            {
-                Component c = super.prepareRenderer(renderer, row, column);
-
-                if(row == rollOverRowIndex && column == rollOverColumnIndex) {
-                    c.setBackground(Color.BLUE);
-                }
-
-                return c;
-            }
-        };
+        final JTable table = new JTable(tableModel);
 
         RollOverListener rollOverListener = new RollOverListener();
         table.addMouseListener(rollOverListener);
@@ -96,9 +82,9 @@ public class MapAxis {
             public void tableChanged(TableModelEvent e) {
                 Double[][] values = new Double[MapAxis.this.data.length][];
 
-                for(int i = 0; i < MapAxis.this.data.length; i++) {
+                for (int i = 0; i < MapAxis.this.data.length; i++) {
                     values[i] = new Double[MapAxis.this.data[i].length];
-                    for(int j = 0; j < MapAxis.this.data[i].length; j++) {
+                    for (int j = 0; j < MapAxis.this.data[i].length; j++) {
                         values[i][j] = (Double) table.getModel().getValueAt(i, j);
                     }
                 }
@@ -114,7 +100,7 @@ public class MapAxis {
             }
         });
 
-       return table;
+        return table;
     }
 
     public JTable getTable() {
@@ -141,8 +127,8 @@ public class MapAxis {
             column.setMaxWidth(55);
 
             DefaultTableCellRenderer centerRenderer = new DecimalFormatRenderer();
-            centerRenderer.setHorizontalAlignment( JLabel.CENTER );
-            column.setCellRenderer( centerRenderer );
+            centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+            column.setCellRenderer(centerRenderer);
         }
     }
 
@@ -185,7 +171,7 @@ public class MapAxis {
                 if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
                     setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
                 } else {
-                    if(value instanceof String) {
+                    if (value instanceof String) {
                         double v = Double.parseDouble((String) value);
                         double norm;
                         if (maxValue != 0) {
@@ -199,7 +185,7 @@ public class MapAxis {
                     }
                 }
             } else {
-                if(value instanceof String) {
+                if (value instanceof String) {
                     double v = Double.parseDouble((String) value);
                     double norm;
                     if (maxValue != 0) {
@@ -221,12 +207,12 @@ public class MapAxis {
             double S = 0.9; // Saturation
             double B = 0.9; // Brightness
 
-            return Color.getHSBColor((float)H, (float)S, (float)B);
+            return Color.getHSBColor((float) H, (float) S, (float) B);
         }
     }
 
     private void setMaxValue(Double[][] data) {
-        if(data != null) {
+        if (data != null) {
             double max = Double.MIN_VALUE;
             for (Double[] doubles : data) {
                 for (Double value : doubles) {

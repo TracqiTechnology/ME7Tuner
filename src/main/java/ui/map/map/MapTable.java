@@ -19,15 +19,15 @@ import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 
 public class MapTable extends JList implements TableModelListener {
-    private JTable table;
+    private final JTable table;
     private Double[] rowHeaders;
     private Object[] columnHeaders;
     private Double[][] data;
     private DefaultTableModel tableModel;
-    private JScrollPane scrollPane;
+    private final JScrollPane scrollPane;
 
-    private PublishSubject<Map3d> publishSubject;
-    private Debouncer debouncer;
+    private final PublishSubject<Map3d> publishSubject;
+    private final Debouncer debouncer;
 
     private int rollOverRowIndex = -1;
     private int rollOverColumnIndex = -1;
@@ -64,9 +64,6 @@ public class MapTable extends JList implements TableModelListener {
         setOpaque(false);
         setSelectionModel(table.getSelectionModel());
         table.getModel().addTableModelListener(this);
-        RollOverListener rollOverListener = new RollOverListener();
-        table.addMouseListener(rollOverListener);
-        table.addMouseMotionListener(rollOverListener);
         scrollPane = new JScrollPane(table);
         scrollPane.setRowHeaderView(this);
         scrollPane.setMinimumSize(new Dimension(120, 100));
@@ -155,7 +152,7 @@ public class MapTable extends JList implements TableModelListener {
     /*
      *  Use the data row header properties to render each cell
      */
-    private class ColumnHeaderRenderer extends JLabel implements TableCellRenderer {
+    private static class ColumnHeaderRenderer extends JLabel implements TableCellRenderer {
 
         ColumnHeaderRenderer() {
             setBorder(BorderFactory.createRaisedBevelBorder());
@@ -202,8 +199,7 @@ public class MapTable extends JList implements TableModelListener {
 
         private final DecimalFormat formatter = new DecimalFormat("#.00");
 
-        public Component getTableCellRendererComponent(
-                JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
             if (value != null) {
                 value = formatter.format(value);
@@ -284,7 +280,6 @@ public class MapTable extends JList implements TableModelListener {
     public void setColumnHeaders(Double[] columnHeaders) {
         this.columnHeaders = columnHeaders;
         tableModel.setDataVector(this.data, this.columnHeaders);
-
         enforceTableColumnWidth(this.table);
     }
 
@@ -322,11 +317,9 @@ public class MapTable extends JList implements TableModelListener {
         setMaxValue(data);
 
         tableModel = new DefaultTableModel(data, columnHeaders) {
-            private static final long serialVersionUID = 1L;
-
             @Override
             public Class<?> getColumnClass(int column) {
-                return columnHeaders.getClass();
+                return Double.class;
             }
         };
 
@@ -335,7 +328,7 @@ public class MapTable extends JList implements TableModelListener {
                 Component c = super.prepareRenderer(renderer, row, column);
 
                 if (row == rollOverRowIndex && column == rollOverColumnIndex) {
-                    c.setBackground(Color.YELLOW);
+                    c.setBackground(Util.newColorWithAlpha(Color.YELLOW, 50));
                 }
 
                 return c;
@@ -344,6 +337,9 @@ public class MapTable extends JList implements TableModelListener {
 
         table.getTableHeader().setDefaultRenderer(new ColumnHeaderRenderer());
         table.getTableHeader().setReorderingAllowed(false);
+        RollOverListener rollOverListener = new RollOverListener();
+        table.addMouseListener(rollOverListener);
+        table.addMouseMotionListener(rollOverListener);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setGridColor(Color.BLACK);
         table.setRowSelectionAllowed(false);
