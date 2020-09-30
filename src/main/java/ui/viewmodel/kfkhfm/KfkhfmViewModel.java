@@ -1,4 +1,4 @@
-package ui.viewmodel;
+package ui.viewmodel.kfkhfm;
 
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;

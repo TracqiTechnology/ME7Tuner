@@ -49,67 +49,26 @@ public class LdrpidCalculator {
                 double absoluteBoostPressure = absoluteBoostPressures.get(i);
                 double relativeBoostPressure = absoluteBoostPressure - barometricPressure;
 
-                int maxRpmIndex = getMaxIndex(rpm, Kfldrl.getStockYAxis());
-                int minRpmIndex;
+                int rpmIndex = Arrays.binarySearch(Kfldrl.getStockYAxis(), rpm);
 
-                if(maxRpmIndex == Kfldrl.getStockYAxis().length) {
-                    maxRpmIndex = --maxRpmIndex;
-                    minRpmIndex = maxRpmIndex;
-                } else if(maxRpmIndex == -1){
-                    maxRpmIndex = 0;
-                    minRpmIndex = maxRpmIndex;
-                } else {
-                    minRpmIndex = Math.max(maxRpmIndex - 1, 0);
+                if(rpmIndex < 0) {
+                    rpmIndex = Math.abs(rpmIndex+ 1);
                 }
 
-                double maxRpmProportion;
-                double minRpmProportion;
+                rpmIndex = Math.max(rpmIndex, 0);
+                rpmIndex = Math.min(rpmIndex, Kfldrl.getStockYAxis().length - 1);
 
-                if(minRpmIndex == maxRpmIndex) {
-                    maxRpmProportion = 1;
-                    minRpmProportion = 1;
-                } else {
-                    maxRpmProportion = (rpm - Kfldrl.getStockYAxis()[minRpmIndex])/(Kfldrl.getStockYAxis()[maxRpmIndex]-Kfldrl.getStockYAxis()[minRpmIndex]);
-                    minRpmProportion = 1 - maxRpmProportion;
+                int dutyCycleIndex = Arrays.binarySearch(Kfldrl.getStockXAxis(), dutyCycle);
+
+                if(dutyCycleIndex < 0) {
+                    dutyCycleIndex = Math.abs(dutyCycleIndex+ 1);
                 }
 
-                int maxDcIndex = getMaxIndex(dutyCycle, Kfldrl.getStockXAxis());
-                int minDcIndex;
-                if(maxDcIndex == Kfldrl.getStockXAxis().length) {
-                    maxDcIndex = --maxDcIndex;
-                    minDcIndex = maxDcIndex;
-                } else if(maxDcIndex == -1) {
-                    maxDcIndex = 0;
-                    minDcIndex = maxDcIndex;
-                } else {
-                    minDcIndex = Math.max(maxDcIndex - 1, 0);
-                }
+                dutyCycleIndex = Math.max(dutyCycleIndex, 0);
+                dutyCycleIndex = Math.min(dutyCycleIndex, Kfldrl.getStockXAxis().length - 1);
 
-                double maxDcProportion;
-                double minDcProportion;
-
-                if(minDcIndex == maxDcIndex) {
-                    maxDcProportion = 1;
-                    minDcProportion = 1;
-                } else {
-                    maxDcProportion = (dutyCycle - Kfldrl.getStockXAxis()[minDcIndex])/(Kfldrl.getStockXAxis()[maxDcIndex]-Kfldrl.getStockXAxis()[minDcIndex]);
-                    minDcProportion =  1 - maxDcProportion;
-                }
-
-                double maxRpmMaxDcIndexRelativeBoostPressure = relativeBoostPressure * maxRpmProportion * maxDcProportion;
-                double maxRpmMinDcIndexRelativeBoostPressure = relativeBoostPressure * maxRpmProportion * minDcProportion;
-                double minRpmMaxDcIndexRelativeBoostPressure = relativeBoostPressure * minRpmProportion * maxDcProportion;
-                double minRpmMinDcIndexRelativeBoostPressure = relativeBoostPressure * minRpmProportion * minDcProportion;
-
-                sums[maxRpmIndex][maxDcIndex] += maxRpmMaxDcIndexRelativeBoostPressure;
-                sums[maxRpmIndex][minDcIndex] += maxRpmMinDcIndexRelativeBoostPressure;
-                sums[minRpmIndex][maxDcIndex] += minRpmMaxDcIndexRelativeBoostPressure;
-                sums[minRpmIndex][minDcIndex] += minRpmMinDcIndexRelativeBoostPressure;
-
-                counts[maxRpmIndex][maxDcIndex] += maxRpmProportion * maxDcProportion;
-                counts[maxRpmIndex][minDcIndex] += maxRpmProportion * minDcProportion;
-                counts[minRpmIndex][maxDcIndex] += minRpmProportion * maxDcProportion;
-                counts[minRpmIndex][minDcIndex] += minRpmProportion * minDcProportion;
+                sums[rpmIndex][dutyCycleIndex] += relativeBoostPressure;
+                counts[rpmIndex][dutyCycleIndex] += 1;
 
                 for(int j = 0; j < nonLinearTable.length; j++) {
                     for(int k = 0; k < nonLinearTable[j].length; k++) {
@@ -212,10 +171,10 @@ public class LdrpidCalculator {
 
         double min = (Math.ceil(linearBoostAverage[0]/100.0))*100;
         double max = (Math.ceil(linearBoostAverage[linearBoostAverage.length - 1]/100.0))*100;
-        double span = (max - min)/kfldimxXAxis.length;
+        double interval = (max - min)/kfldimxXAxis.length;
 
         for(int i = 0; i < kfldimxXAxis.length; i++) {
-            kfldimxXAxis[i] = min + (span * i);
+            kfldimxXAxis[i] = min + (interval * i);
         }
 
         Double[][] kfldimx = new Double[nonLinearTable.length][kfldimxXAxis.length];

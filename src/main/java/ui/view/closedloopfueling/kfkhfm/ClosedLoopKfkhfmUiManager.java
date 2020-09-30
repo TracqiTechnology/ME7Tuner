@@ -2,10 +2,8 @@ package ui.view.closedloopfueling.kfkhfm;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import math.map.Map2d;
-import ui.view.fkfhfm.KfkhfmUiManager;
+import ui.view.kfkhfm.KfkhfmUiManager;
 import ui.view.listener.OnTabSelectedListener;
-import ui.viewmodel.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;

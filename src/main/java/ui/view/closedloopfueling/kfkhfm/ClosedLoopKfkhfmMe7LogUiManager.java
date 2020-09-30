@@ -7,7 +7,6 @@ import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfkhfm.Kfkhfm;
 import org.jzy3d.chart.Chart;
-import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
 import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
 import org.jzy3d.chart.factories.IChartComponentFactory;
@@ -20,7 +19,7 @@ import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
 import ui.view.closedloopfueling.kfkhfm.colormap.ColorMapTransparent;
-import ui.viewmodel.KfkhfmViewModel;
+import ui.viewmodel.kfkhfm.KfkhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;

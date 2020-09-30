@@ -5,7 +5,7 @@ import io.reactivex.disposables.Disposable;
 import math.map.Map2d;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.mlhfm.MlhfmUiManager;
-import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.mlmhfm.MlhfmViewModel;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingAfrLogViewModel;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingMe7LogViewModel;
 

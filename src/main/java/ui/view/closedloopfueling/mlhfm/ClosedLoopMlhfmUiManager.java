@@ -5,12 +5,10 @@ import io.reactivex.disposables.Disposable;
 import math.map.Map2d;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.mlhfm.MlhfmUiManager;
-import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.mlmhfm.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package ui.viewmodel;
+package ui.viewmodel.mlmhfm;
 
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map2d;

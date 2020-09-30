@@ -7,7 +7,7 @@ import math.map.Map3d;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrection;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
-import ui.viewmodel.KfkhfmViewModel;
+import ui.viewmodel.kfkhfm.KfkhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import java.util.List;

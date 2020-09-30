@@ -4,6 +4,8 @@ import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
 import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmUiManager;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
+import ui.view.kfurl.KfurlLogUiManager;
+import ui.view.kfurl.KfurlUiManager;
 import ui.view.kfzw.KfzwUiManager;
 import ui.view.kfzwop.KfzwopUiManager;
 import ui.view.krkte.KrkteUiManager;
@@ -49,6 +51,10 @@ public class MainManager {
         OpenLoopFuelingUiManager openLoopFuelingUiManager = new OpenLoopFuelingUiManager();
         tabSelectedListeners.add(openLoopFuelingUiManager);
         tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingUiManager.getPanel(), "Open Loop Fueling Compensation");
+
+        KfurlUiManager kfurlUiManager = new KfurlUiManager();
+        tabSelectedListeners.add(kfurlUiManager);
+        tabbedPane.addTab("KFURL", null, kfurlUiManager.getPanel(), "KFURL");
 
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");

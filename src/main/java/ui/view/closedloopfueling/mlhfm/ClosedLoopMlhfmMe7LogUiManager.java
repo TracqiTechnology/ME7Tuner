@@ -14,7 +14,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
-import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.mlmhfm.MlhfmViewModel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
 
 import javax.swing.*;

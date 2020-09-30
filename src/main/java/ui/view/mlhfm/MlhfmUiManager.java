@@ -13,7 +13,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.filechooser.FileChooserPreferences;
 import ui.map.map.MapTable;
-import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;

@@ -376,6 +376,8 @@ public class LdrpidUiManager {
     private void initKflimxMap() {
         kfldimxTable = MapTable.getMapTable(Kfldimx.getStockYAxis(), Kfldimx.getStockXAxis(), Kfldimx.getEmptyMap());
 
+        kfldimxTable.setEditable(false);
+
         kfldimxTable.getPublishSubject().subscribe(new Observer<Map3d>() {
 
             @Override
@@ -396,6 +398,8 @@ public class LdrpidUiManager {
 
     private void initKfldrlMap() {
         kfldrlTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
+
+        kfldrlTable.setEditable(false);
 
         kfldrlTable.getPublishSubject().subscribe(new Observer<Map3d>() {
 
@@ -447,6 +451,8 @@ public class LdrpidUiManager {
 
     private void initLinearMap() {
         linearTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
+
+        linearTable.setEditable(false);
 
         linearTable.getPublishSubject().subscribe(new Observer<Map3d>() {
 

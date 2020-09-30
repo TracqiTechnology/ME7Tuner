@@ -8,17 +8,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Me7LogParser {
 
     public enum LogType {
         OPEN_LOOP,
         CLOSED_LOOP,
-        LDRPID
+        LDRPID,
+        KFURL;
     }
 
     private int timeColumnIndex = -1;
@@ -35,6 +33,7 @@ public class Me7LogParser {
     private int wastegateDutyCycleIndex = -1;
     private int barometricPressureIndex = -1;
     private int absoluteBoostPressureActualIndex = -1;
+    private int absoluteBoostPressureModeledIndex = -1;
     private int selectedGearIndex = -1;
 
     public Map<String, List<Double>> parseLogDirectory(LogType logType, File directory) {
@@ -62,6 +61,21 @@ public class Me7LogParser {
             Reader in = new FileReader(file);
             Iterable<CSVRecord> records = CSVFormat.RFC4180.parse(in);
             for (CSVRecord record : records) {
+                if (record.size() > 0) {
+                    String string = record.get(0);
+                    if (string.contains("Log started at:")) {
+                        String[] split = string.split(" ");
+                        String timestamp = split[5];
+                        split = timestamp.split(":");
+                        double minuteSeconds = Double.parseDouble(split[1]) * 60;
+                        double secondsSeconds = Double.parseDouble(split[2]);
+
+                        double startTime = (minuteSeconds + secondsSeconds);
+
+                        map.get(Me7LogFileContract.START_TIME).add(startTime);
+                    }
+                }
+
                 for (int i = 0; i < record.size(); i++) {
                     switch (record.get(i).trim()) {
                         case Me7LogFileContract.TIME_COLUMN_HEADER:
@@ -99,6 +113,9 @@ public class Me7LogParser {
                             break;
                         case Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER:
                             absoluteBoostPressureActualIndex = i;
+                            break;
+                        case Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER:
+                            absoluteBoostPressureModeledIndex = i;
                             break;
                         case Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER:
                             barometricPressureIndex = i;
@@ -168,8 +185,18 @@ public class Me7LogParser {
                             map.get(Me7LogFileContract.WASTEGATE_DUTY_CYCLE_HEADER).add(wastegateDutyCycle);
                             map.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER).add(absoluteBoostPressure);
                             map.get(Me7LogFileContract.SELECTED_GEAR_HEADER).add(selectedGear);
+                        } else if(logType == LogType.KFURL) {
+                            double time = Double.parseDouble(record.get(timeColumnIndex));
+                            double rpm = Double.parseDouble(record.get(rpmColumnIndex));
+                            double barometricPressure = Double.parseDouble(record.get(barometricPressureIndex));
+                            double absoluteModeledBoostPressure = Double.parseDouble(record.get(absoluteBoostPressureModeledIndex));
+
+                            map.get(Me7LogFileContract.TIME_COLUMN_HEADER).add(time);
+                            map.get(Me7LogFileContract.RPM_COLUMN_HEADER).add(rpm);
+                            map.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER).add(barometricPressure);
+                            map.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER).add(absoluteModeledBoostPressure);
                         }
-                    } catch (NumberFormatException|ArrayIndexOutOfBoundsException e) {
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
                         e.printStackTrace();
                     }
                 }
@@ -179,13 +206,13 @@ public class Me7LogParser {
         }
 
         int size = -1;
-        for(String key:map.keySet()) {
-            if(size == -1) {
+        for (String key : map.keySet()) {
+            if (!key.equals(Me7LogFileContract.START_TIME) && size == -1) {
                 size = map.get(key).size();
             }
 
-            if(map.get(key).size() != size) {
-                throw new RuntimeException("Data is not square!");
+            if (!key.equals(Me7LogFileContract.START_TIME) && map.get(key).size() != size) {
+                throw new RuntimeException("Data is not square! Got: " + map.get(key).size() +" Expected: " + size);
             }
         }
     }
@@ -205,6 +232,7 @@ public class Me7LogParser {
         wastegateDutyCycleIndex = -1;
         barometricPressureIndex = -1;
         absoluteBoostPressureActualIndex = -1;
+        absoluteBoostPressureModeledIndex = -1;
         selectedGearIndex = -1;
     }
 
@@ -215,6 +243,8 @@ public class Me7LogParser {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && engineLoadIndex != -1;
         } else if (logType == LogType.LDRPID) {
             return timeColumnIndex != -1 && rpmColumnIndex != 0 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && selectedGearIndex != -1;
+        } else if(logType == LogType.KFURL) {
+            return timeColumnIndex != -1 && rpmColumnIndex != 0 && barometricPressureIndex != -1 && absoluteBoostPressureModeledIndex != -1;
         }
 
         return false;
@@ -222,6 +252,8 @@ public class Me7LogParser {
 
     private Map<String, List<Double>> generateMap(LogType logType) {
         Map<String, List<Double>> map = new HashMap<>();
+
+        map.put(Me7LogFileContract.START_TIME, new ArrayList<>());
 
         if (logType == LogType.CLOSED_LOOP || logType == LogType.OPEN_LOOP) {
             map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
@@ -238,7 +270,7 @@ public class Me7LogParser {
                 map.put(Me7LogFileContract.REQUESTED_LAMBDA_HEADER, new ArrayList<>());
                 map.put(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER, new ArrayList<>());
             }
-        }else if (logType == LogType.LDRPID) {
+        } else if (logType == LogType.LDRPID) {
             map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.RPM_COLUMN_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER, new ArrayList<>());
@@ -246,6 +278,11 @@ public class Me7LogParser {
             map.put(Me7LogFileContract.WASTEGATE_DUTY_CYCLE_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.SELECTED_GEAR_HEADER, new ArrayList<>());
+        } else if(logType == LogType.KFURL) {
+            map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.RPM_COLUMN_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER, new ArrayList<>());
         }
 
         return map;

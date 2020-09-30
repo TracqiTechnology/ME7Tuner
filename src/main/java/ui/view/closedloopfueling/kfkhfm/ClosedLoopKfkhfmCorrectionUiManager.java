@@ -6,7 +6,6 @@ import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrection;
 import model.kfkhfm.Kfkhfm;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jzy3d.chart.Chart;
-import org.jzy3d.chart.controllers.mouse.camera.AWTCameraMouseController;
 import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
 import org.jzy3d.chart.factories.IChartComponentFactory;
@@ -17,7 +16,7 @@ import org.jzy3d.plot3d.primitives.Scatter;
 import org.jzy3d.plot3d.primitives.ScatterMultiColor;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 import ui.view.closedloopfueling.kfkhfm.colormap.ColorMapTransparent;
-import ui.view.fkfhfm.KfkhfmUiManager;
+import ui.view.kfkhfm.KfkhfmUiManager;
 import ui.viewmodel.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionViewModel;
 
 import javax.swing.*;

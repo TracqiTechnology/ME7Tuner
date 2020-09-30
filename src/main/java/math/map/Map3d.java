@@ -12,9 +12,14 @@ public class Map3d {
     }
 
     public Map3d(Double[] xAxis, Double[] yAxis, Double[][] data) {
-        this.xAxis = xAxis;
-        this.yAxis = yAxis;
-        this.data = data;
+        this.xAxis = Arrays.copyOf(xAxis, xAxis.length);
+        this.yAxis = Arrays.copyOf(yAxis, yAxis.length);
+
+        this.data = new Double[data.length][];
+
+        for(int i = 0; i < data.length; i++) {
+            data[i] = Arrays.copyOf(data[i], data[i].length);
+        }
     }
 
     public Map3d(Map3d map3d) {

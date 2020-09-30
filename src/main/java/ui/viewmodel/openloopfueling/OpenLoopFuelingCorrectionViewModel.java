@@ -7,7 +7,7 @@ import math.map.Map2d;
 import model.openloopfueling.correction.OpenLoopCorrection;
 import model.openloopfueling.correction.OpenLoopCorrectionManager;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
-import ui.viewmodel.MlhfmViewModel;
+import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import java.util.List;
 import java.util.Map;

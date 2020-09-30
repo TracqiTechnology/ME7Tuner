@@ -6,41 +6,43 @@ import util.Debouncer;
 import util.Util;
 
 import javax.swing.*;
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 
 public class MapAxis {
 
-    private JTable table;
-    private JScrollPane scrollPane;
+    private final JTable table;
+    private final JScrollPane scrollPane;
     private DefaultTableModel tableModel;
     private Double[][] data;
 
-    private PublishSubject<Double[][]> publishSubject;
-    private Debouncer debouncer;
+    private final PublishSubject<Double[][]> publishSubject;
+    private final Debouncer debouncer;
 
-    private int rollOverRowIndex = -1;
-    private int rollOverColumnIndex = -1;
+    private boolean editable = true;
 
     private double maxValue;
+    private double minValue;
 
     private MapAxis(Double[][] data) {
         this.table = this.createAxis(data);
         // Handle Copy/Paste
-        MapAxisExcelAdapter excelAdapter = new MapAxisExcelAdapter(this);
+        new MapAxisExcelAdapter(this);
         this.data = data;
         this.debouncer = new Debouncer();
 
         this.scrollPane = new JScrollPane(table);
         this.publishSubject = PublishSubject.create();
+    }
+
+    public void setEditable(boolean editable) {
+        this.editable = editable;
     }
 
     public PublishSubject<Double[][]> getPublishSubject() {
@@ -49,27 +51,30 @@ public class MapAxis {
 
     public void setTableData(Double[][] data) {
         this.data = data;
-        setMaxValue(data);
+        setRange(data);
         tableModel.setDataVector(this.data, new Double[data[0].length]);
         enforceTableColumnWidth(this.table);
     }
 
     private JTable createAxis(final Double[][] data) {
-        setMaxValue(data);
+        setRange(data);
 
         tableModel = new DefaultTableModel(data, data[0]) {
             @Override
             public Class<?> getColumnClass(int column) {
                 return Double.class;
             }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                //all cells false
+                return editable;
+            }
         };
 
 
         final JTable table = new JTable(tableModel);
 
-        RollOverListener rollOverListener = new RollOverListener();
-        table.addMouseListener(rollOverListener);
-        table.addMouseMotionListener(rollOverListener);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setGridColor(Color.BLACK);
         table.setRowSelectionAllowed(false);
@@ -132,26 +137,6 @@ public class MapAxis {
         }
     }
 
-    private class RollOverListener extends MouseInputAdapter {
-        @Override
-        public void mouseExited(MouseEvent e) {
-            rollOverRowIndex = -1;
-            rollOverColumnIndex = -1;
-        }
-
-        @Override
-        public void mouseDragged(MouseEvent e) {
-            rollOverRowIndex = table.rowAtPoint(e.getPoint());
-            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-            rollOverRowIndex = table.rowAtPoint(e.getPoint());
-            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
-        }
-    }
-
     private class DecimalFormatRenderer extends DefaultTableCellRenderer {
 
         private final DecimalFormat formatter = new DecimalFormat("#.00");
@@ -174,11 +159,11 @@ public class MapAxis {
                     if (value instanceof String) {
                         double v = Double.parseDouble((String) value);
                         double norm;
-                        if (maxValue != 0) {
-                            norm = 1 - (v / maxValue);
+                        if (maxValue - minValue != 0) {
+                            norm = 1-(v-minValue)/(maxValue - minValue);
                             setBackground(getColor(norm));
                         } else {
-                            setBackground(null);
+                            setBackground(Color.GREEN);
                         }
                     } else {
                         setBackground(null);
@@ -188,11 +173,11 @@ public class MapAxis {
                 if (value instanceof String) {
                     double v = Double.parseDouble((String) value);
                     double norm;
-                    if (maxValue != 0) {
-                        norm = 1 - (v / maxValue);
+                    if (maxValue - minValue != 0) {
+                        norm = 1-(v-minValue)/(maxValue - minValue);
                         setBackground(getColor(norm));
                     } else {
-                        setBackground(null);
+                        setBackground(Color.GREEN);
                     }
                 } else {
                     setBackground(null);
@@ -211,19 +196,23 @@ public class MapAxis {
         }
     }
 
-    private void setMaxValue(Double[][] data) {
+    private void setRange(Double[][] data) {
         if (data != null) {
             double max = Double.MIN_VALUE;
+            double min = Double.MAX_VALUE;
             for (Double[] doubles : data) {
                 for (Double value : doubles) {
                     if (value != null) {
                         max = Math.max(max, value);
+                        min = Math.min(min, value);
                     }
                 }
             }
 
             this.maxValue = max;
+            this.minValue = min;
         } else {
+            this.maxValue = 0;
             this.maxValue = 0;
         }
     }

@@ -1,6 +1,7 @@
 package contract;
 
 public class Me7LogFileContract {
+    public static final String START_TIME = "start_time";
     public static final String TIME_COLUMN_HEADER = "TIME";
     public static final String RPM_COLUMN_HEADER = "nmot";
     public static final String STFT_COLUMN_HEADER = "fr_w";
@@ -16,4 +17,5 @@ public class Me7LogFileContract {
     public static final String BAROMETRIC_PRESSURE_HEADER = "pus_w";
     public static final String ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER = "pvdks_w";
     public static final String SELECTED_GEAR_HEADER = "gangi";
+    public static final String ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER = "ps_w";
 }

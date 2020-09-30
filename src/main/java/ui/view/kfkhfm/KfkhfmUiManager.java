@@ -1,11 +1,11 @@
-package ui.view.fkfhfm;
+package ui.view.kfkhfm;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfkhfm.Kfkhfm;
 import ui.map.map.MapTable;
-import ui.viewmodel.KfkhfmViewModel;
+import ui.viewmodel.kfkhfm.KfkhfmViewModel;
 
 import javax.swing.*;
 import java.awt.*;

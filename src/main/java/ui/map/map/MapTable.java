@@ -6,13 +6,11 @@ import util.Debouncer;
 import util.Util;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
@@ -29,12 +27,12 @@ public class MapTable extends JList implements TableModelListener {
     private final PublishSubject<Map3d> publishSubject;
     private final Debouncer debouncer;
 
-    private int rollOverRowIndex = -1;
-    private int rollOverColumnIndex = -1;
-
     private Map3d map3d;
 
     private double maxValue;
+    private double minValue;
+
+    private boolean editable = true;
 
     @SuppressWarnings("unchecked")
     private MapTable(Double[] rowHeaders, Object[] columnHeaders, Double[][] data) {
@@ -68,6 +66,10 @@ public class MapTable extends JList implements TableModelListener {
         scrollPane.setRowHeaderView(this);
         scrollPane.setMinimumSize(new Dimension(120, 100));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+    }
+
+    public void setEditable(boolean editable) {
+        this.editable = editable;
     }
 
     public PublishSubject<Map3d> getPublishSubject() {
@@ -125,7 +127,7 @@ public class MapTable extends JList implements TableModelListener {
      *  Use the data row header properties to render each cell
      */
     class RowHeaderRenderer extends DefaultListCellRenderer {
-        private DecimalFormat decimalFormat = new DecimalFormat("#.####");
+        private final DecimalFormat decimalFormat = new DecimalFormat("#.####");
 
         RowHeaderRenderer() {
             setHorizontalAlignment(CENTER);
@@ -163,20 +165,14 @@ public class MapTable extends JList implements TableModelListener {
 
         @Override
         public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-            setText(value.toString());
-            setFont(getFont().deriveFont(11.0f));
 
-            boolean hasSelection = table.getSelectedColumns().length > 0;
-
-            if (hasSelection) {
-                if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1]) {
-                    setBackground(Util.newColorWithAlpha(Color.YELLOW, 50));
-                } else {
-                    setBackground(null);
-                }
+            if (table.isColumnSelected(column)) {
+                setBackground(Util.newColorWithAlpha(Color.YELLOW, 50));
             } else {
-                setBackground(null);
+                setBackground(table.getTableHeader().getBackground());
             }
+
+            setText(value.toString());
 
             return this;
         }
@@ -197,7 +193,7 @@ public class MapTable extends JList implements TableModelListener {
 
     private class DecimalFormatRenderer extends DefaultTableCellRenderer {
 
-        private final DecimalFormat formatter = new DecimalFormat("#.00");
+        private final DecimalFormat formatter = new DecimalFormat("#.000");
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
@@ -209,18 +205,18 @@ public class MapTable extends JList implements TableModelListener {
 
             boolean hasSelection = table.getSelectedColumns().length > 0;
 
-            if (hasSelection) {
+            if (hasSelection && table.hasFocus()) {
                 if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
                     setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
                 } else {
                     if(value instanceof String) {
                         double v = Double.parseDouble((String) value);
                         double norm;
-                        if (maxValue != 0) {
-                            norm = 1 - (v / maxValue);
+                        if (maxValue - minValue != 0) {
+                            norm = 1-(v-minValue)/(maxValue - minValue);
                             setBackground(getColor(norm));
                         } else {
-                            setBackground(null);
+                            setBackground(Color.GREEN);
                         }
                     } else {
                         setBackground(null);
@@ -230,11 +226,11 @@ public class MapTable extends JList implements TableModelListener {
                 if(value instanceof String) {
                     double v = Double.parseDouble((String) value);
                     double norm;
-                    if (maxValue != 0) {
-                        norm = 1 - (v / maxValue);
+                    if (maxValue - minValue != 0) {
+                        norm = 1-(v-minValue)/(maxValue - minValue);
                         setBackground(getColor(norm));
                     } else {
-                        setBackground(null);
+                        setBackground(Color.GREEN);
                     }
                 } else {
                     setBackground(null);
@@ -253,26 +249,30 @@ public class MapTable extends JList implements TableModelListener {
         }
     }
 
-    private void setMaxValue(Double[][] data) {
-        if(data != null) {
+    private void setRange(Double[][] data) {
+        if (data != null) {
             double max = Double.MIN_VALUE;
+            double min = Double.MAX_VALUE;
             for (Double[] doubles : data) {
                 for (Double value : doubles) {
                     if (value != null) {
                         max = Math.max(max, value);
+                        min = Math.min(min, value);
                     }
                 }
             }
 
             this.maxValue = max;
+            this.minValue = min;
         } else {
+            this.maxValue = 0;
             this.maxValue = 0;
         }
     }
 
     public void setTableData(Double[][] data) {
         this.data = data;
-        setMaxValue(data);
+        setRange(data);
         tableModel.setDataVector(this.data, this.columnHeaders);
         enforceTableColumnWidth(this.table);
     }
@@ -291,55 +291,43 @@ public class MapTable extends JList implements TableModelListener {
         return scrollPane;
     }
 
-    private class RollOverListener extends MouseInputAdapter {
-        @Override
-        public void mouseExited(MouseEvent e) {
-            rollOverRowIndex = -1;
-            rollOverColumnIndex = -1;
-        }
-
-        @Override
-        public void mouseDragged(MouseEvent e) {
-            rollOverRowIndex = table.rowAtPoint(e.getPoint());
-            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
-            table.getTableHeader().updateUI();
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-            rollOverRowIndex = table.rowAtPoint(e.getPoint());
-            rollOverColumnIndex = table.columnAtPoint(e.getPoint());
-            table.getTableHeader().updateUI();
-        }
-    }
-
     private JTable createTable(Object[] columnHeaders, final Double[][] data) {
-        setMaxValue(data);
+        setRange(data);
 
         tableModel = new DefaultTableModel(data, columnHeaders) {
             @Override
             public Class<?> getColumnClass(int column) {
                 return Double.class;
             }
-        };
 
-        final JTable table = new JTable(tableModel) {
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
-
-                if (row == rollOverRowIndex && column == rollOverColumnIndex) {
-                    c.setBackground(Util.newColorWithAlpha(Color.YELLOW, 50));
-                }
-
-                return c;
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                //all cells false
+                return editable;
             }
         };
 
+        final JTable table = new JTable(tableModel) {
+
+            @Override
+            protected JTableHeader createDefaultTableHeader() {
+                // subclassing to take advantage of super's auto-wiring
+                // as ColumnModelListener
+                return new JTableHeader(getColumnModel()) {
+
+                    @Override
+                    public void columnSelectionChanged(ListSelectionEvent e) {
+                        repaint();
+                    }
+
+                };
+            }
+
+        };
+       // table.setCellSelectionEnabled(true);
+
         table.getTableHeader().setDefaultRenderer(new ColumnHeaderRenderer());
         table.getTableHeader().setReorderingAllowed(false);
-        RollOverListener rollOverListener = new RollOverListener();
-        table.addMouseListener(rollOverListener);
-        table.addMouseMotionListener(rollOverListener);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setGridColor(Color.BLACK);
         table.setRowSelectionAllowed(false);
