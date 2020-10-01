@@ -1,5 +1,6 @@
 package model.kfzw;
 
+import math.Index;
 import math.LinearExtrapolation;
 
 import java.util.Arrays;
@@ -13,19 +14,7 @@ public class KfzwManager {
         for (int i = 0; i < kfzwOld.length; i++) {
             for (int j = 0; j < kfzwOld[i].length; j++) {
 
-                int indexKey = Arrays.binarySearch(xAxisOld, xAxisNew[j]);
-
-                if(indexKey < 0) {
-                    indexKey = Math.abs(indexKey + 1);
-                }
-
-                if(indexKey > 0) {
-                    indexKey--;
-                }
-
-                if(indexKey >= xAxisOld.length) {
-                    indexKey = xAxisOld.length - 1;
-                }
+                int indexKey = Index.getInsertIndex(Arrays.asList(xAxisOld), xAxisNew[j]);
 
                 double x0;
                 double x1;
@@ -44,7 +33,7 @@ public class KfzwManager {
                     y1 = kfzwOld[i][indexKey];
                 }
 
-                Double value = Math.max(LinearExtrapolation.extrapolate(new Double[]{x0, x1}, new Double[]{y0, y1}, xAxisNew[j]), -13.5);
+                double value = Math.max(LinearExtrapolation.extrapolate(new Double[]{x0, x1}, new Double[]{y0, y1}, xAxisNew[j]), -13.5);
 
                 kwzwNew[i][j] = value;
             }

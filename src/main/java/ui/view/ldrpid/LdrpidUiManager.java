@@ -42,6 +42,7 @@ public class LdrpidUiManager {
     private Chart inNonLinear3d;
     private Chart linearChart;
     private Chart kfldrlChart;
+    private Chart kfldimxChart;
 
     public JPanel getPanel() {
 
@@ -175,7 +176,7 @@ public class LdrpidUiManager {
         panel.add(getHeader("KFLDIMX", new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showNonLinearChart3d();
+                showKfldimxChart3d();
             }
         }), c);
 
@@ -472,6 +473,72 @@ public class LdrpidUiManager {
         });
     }
 
+    private void showKfldimxChart3d() {
+        JDialog jd = new JDialog();
+        jd.setSize(500,500);
+        jd.setLocationRelativeTo(null);
+        jd.add(getKfldimx3d());
+        jd.setVisible(true);
+    }
+
+    private JPanel getKfldimx3d() {
+        initKfldimxChart3d();
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.fill = GridBagConstraints.BOTH;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridheight = 1;
+        c.gridwidth = 1;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+
+        panel.add((Component) kfldimxChart.getCanvas(), c);
+
+        return panel;
+    }
+
+    private void initKfldimxChart3d() {
+        // Create a chart and add scatterAfr
+        kfldimxChart = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
+        kfldimxChart.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
+        kfldimxChart.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
+        kfldimxChart.getAxeLayout().setXAxeLabel("Duty Cycle");
+        kfldimxChart.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
+        kfldimxChart.getAxeLayout().setZAxeLabel("Relative Boost (psi)");
+
+        NewtCameraMouseController controller = new NewtCameraMouseController(kfldimxChart);
+
+        Double[][] data = ldrpidResult.kfldimx.data;
+
+        Double[] xAxis = Kfldimx.getStockXAxis();
+        Double[] yAxis = Kfldimx.getStockYAxis();
+
+        ArrayList<Polygon> polygons = new ArrayList<>();
+        for(int i = 0; i < xAxis.length -1; i++){
+            for(int j = 0; j < yAxis.length -1; j++){
+                org.jzy3d.plot3d.primitives.Polygon polygon = new org.jzy3d.plot3d.primitives.Polygon();
+                polygon.add(new org.jzy3d.plot3d.primitives.Point(new Coord3d(xAxis[i], yAxis[j], data[j][i])));
+                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i], yAxis[j + 1], data[j + 1][i]) ));
+                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j + 1], data[j+1][i+1]) ));
+                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j], data[j][i+1])));
+                polygons.add(polygon);
+            }
+        }
+
+        // Create the object to represent the function over the given range.
+        final org.jzy3d.plot3d.primitives.Shape surface = new org.jzy3d.plot3d.primitives.Shape(polygons);
+        surface.setColorMapper(new ColorMapper(new ColorMapGreenYellowRed(), surface.getBounds().getZmin(), surface.getBounds().getZmax()));
+        surface.setFaceDisplayed(true);
+        surface.setWireframeColor(Color.BLACK);
+        surface.setWireframeDisplayed(true);
+
+        kfldimxChart.getScene().add(surface, true);
+    }
+
     private void showNonLinearChart3d() {
         JDialog jd = new JDialog();
         jd.setSize(500,500);
@@ -637,9 +704,9 @@ public class LdrpidUiManager {
         kfldrlChart = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
         kfldrlChart.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
         kfldrlChart.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
-        kfldrlChart.getAxeLayout().setXAxeLabel("Duty Cycle");
+        kfldrlChart.getAxeLayout().setXAxeLabel("Duty Cycle In");
         kfldrlChart.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
-        kfldrlChart.getAxeLayout().setZAxeLabel("Duty Cycle");
+        kfldrlChart.getAxeLayout().setZAxeLabel("Duty Cycle Out");
 
         NewtCameraMouseController controller = new NewtCameraMouseController(kfldrlChart);
 

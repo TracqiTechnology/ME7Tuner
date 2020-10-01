@@ -72,7 +72,7 @@ public class KfmirlUiManager {
         c.gridx = 0;
         c.gridy = 0;
 
-        panel.add(new JLabel("Minimum Load"),c);
+        panel.add(new JLabel("Minimum Torque"),c);
 
         c.gridx = 1;
         c.gridy = 0;

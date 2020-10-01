@@ -2,6 +2,7 @@ package model.closedloopfueling.mlfhm;
 
 import contract.Me7LogFileContract;
 import derivative.Derivative;
+import math.Index;
 import math.map.Map2d;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
@@ -80,10 +81,8 @@ public class ClosedLoopMlhfmCorrectionManager {
                 // Get every logged voltage
                 double me7Voltage = me7Voltages.get(i + 1);
                 // Look up the corresponding voltage from MLHFM
-                int mlhfmVoltageIndex = Arrays.binarySearch(mlhfm.axis, me7Voltage);
-                if(mlhfmVoltageIndex < 0) {
-                    mlhfmVoltageIndex = Math.abs(mlhfmVoltageIndex + 1);
-                }
+                int mlhfmVoltageIndex = Index.getInsertIndex(Arrays.asList(mlhfm.axis), me7Voltage);
+
                 double mlhfmVoltageKey = mlhfm.axis[mlhfmVoltageIndex];
 
                 double voltageScaler = me7Voltage/mlhfmVoltageKey;

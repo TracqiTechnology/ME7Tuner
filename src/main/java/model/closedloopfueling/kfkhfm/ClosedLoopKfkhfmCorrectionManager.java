@@ -2,6 +2,7 @@ package model.closedloopfueling.kfkhfm;
 
 import contract.Me7LogFileContract;
 import derivative.Derivative;
+import math.Index;
 import math.map.Map3d;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
@@ -96,15 +97,8 @@ public class ClosedLoopKfkhfmCorrectionManager {
                 }
 
                 // Look up the corresponding load from KFKHFM
-                int kfkhfmLoadIndex = Arrays.binarySearch(kfkhfm.xAxis, engineLoadValue);
-                if (kfkhfmLoadIndex < 0) {
-                    kfkhfmLoadIndex = Math.abs(kfkhfmLoadIndex + 1);
-                }
-
-                int kfkhfmRpmIndex = Arrays.binarySearch(kfkhfm.yAxis, rpmValue);
-                if (kfkhfmRpmIndex < 0) {
-                    kfkhfmRpmIndex = Math.abs(kfkhfmRpmIndex + 1);
-                }
+                int kfkhfmLoadIndex = Index.getInsertIndex(Arrays.asList(kfkhfm.xAxis), engineLoadValue);
+                int kfkhfmRpmIndex = Index.getInsertIndex(Arrays.asList(kfkhfm.yAxis), rpmValue);
 
                 if (kfkhfmLoadIndex > maxLoadIndex) {
                     maxLoadIndex = kfkhfmLoadIndex;

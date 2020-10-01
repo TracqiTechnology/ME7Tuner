@@ -2,6 +2,7 @@ package model.ldrpid;
 
 import contract.Me7LogFileContract;
 import math.CurveFitter;
+import math.Index;
 import math.LinearInterpolation;
 import math.map.Map3d;
 import model.kfldimx.Kfldimx;
@@ -49,23 +50,8 @@ public class LdrpidCalculator {
                 double absoluteBoostPressure = absoluteBoostPressures.get(i);
                 double relativeBoostPressure = absoluteBoostPressure - barometricPressure;
 
-                int rpmIndex = Arrays.binarySearch(Kfldrl.getStockYAxis(), rpm);
-
-                if(rpmIndex < 0) {
-                    rpmIndex = Math.abs(rpmIndex+ 1);
-                }
-
-                rpmIndex = Math.max(rpmIndex, 0);
-                rpmIndex = Math.min(rpmIndex, Kfldrl.getStockYAxis().length - 1);
-
-                int dutyCycleIndex = Arrays.binarySearch(Kfldrl.getStockXAxis(), dutyCycle);
-
-                if(dutyCycleIndex < 0) {
-                    dutyCycleIndex = Math.abs(dutyCycleIndex+ 1);
-                }
-
-                dutyCycleIndex = Math.max(dutyCycleIndex, 0);
-                dutyCycleIndex = Math.min(dutyCycleIndex, Kfldrl.getStockXAxis().length - 1);
+                int rpmIndex = Index.getInsertIndex(Arrays.asList(Kfldrl.getStockYAxis()), rpm);
+                int dutyCycleIndex = Index.getInsertIndex(Arrays.asList(Kfldrl.getStockXAxis()), dutyCycle);
 
                 sums[rpmIndex][dutyCycleIndex] += relativeBoostPressure;
                 counts[rpmIndex][dutyCycleIndex] += 1;

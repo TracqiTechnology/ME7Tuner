@@ -18,7 +18,7 @@ public class Map3d {
         this.data = new Double[data.length][];
 
         for(int i = 0; i < data.length; i++) {
-            data[i] = Arrays.copyOf(data[i], data[i].length);
+            this.data[i] = Arrays.copyOf(data[i], data[i].length);
         }
     }
 

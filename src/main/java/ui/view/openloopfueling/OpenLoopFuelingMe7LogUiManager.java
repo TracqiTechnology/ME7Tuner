@@ -436,7 +436,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     private void drawMe7FuelingLogChart(Map<String, List<Double>> me7LogMap) {
         me7FuelingDataset.removeAllSeries();
 
-        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, 80, 0, 2000, 75);
+        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
 
         int logCount = 1;
         for (Map<String, List<Double>> map : me7LogList) {

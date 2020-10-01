@@ -2,6 +2,7 @@ package model.openloopfueling.correction;
 
 import contract.AfrLogFileContract;
 import contract.Me7LogFileContract;
+import math.Index;
 import math.map.Map2d;
 import model.openloopfueling.util.AfrLogUtil;
 import model.openloopfueling.util.Me7LogUtil;
@@ -180,11 +181,7 @@ public class OpenLoopCorrectionManager {
                         double targetAfr = me7Log.get(Me7LogFileContract.REQUESTED_LAMBDA_HEADER).get(me7Index);
 
                         // Find the RPM from the ME7 log in the AFR log
-                        int afrIndex = Collections.binarySearch(afrLog.get(AfrLogFileContract.RPM_HEADER), rpm);
-                        if(afrIndex < 0) {
-                            afrIndex = Math.abs(afrIndex + 1);
-                        }
-
+                        int afrIndex = Index.getInsertIndex(afrLog.get(AfrLogFileContract.RPM_HEADER), rpm);
                         List<Double> afrList = afrLog.get(AfrLogFileContract.AFR_HEADER);
 
                         // Now find the AFR that corresponds to the RPM in the AFR Log

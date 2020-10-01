@@ -1,6 +1,7 @@
 package derivative;
 
 import contract.Me7LogFileContract;
+import math.Index;
 import math.map.Map2d;
 import math.map.Map3d;
 
@@ -21,12 +22,7 @@ public class Derivative {
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             double me7Voltage = me7Voltages.get(i + 1);
-            int mlhfmVoltageIndex = Arrays.binarySearch(mlhfm.axis, me7Voltage);
-
-            if(mlhfmVoltageIndex < 0) {
-                mlhfmVoltageIndex = Math.abs(mlhfmVoltageIndex + 1);
-            }
-
+            int mlhfmVoltageIndex = Index.getInsertIndex(Arrays.asList(mlhfm.axis), me7Voltage);
             double mlhfmVoltageKey = mlhfm.axis[mlhfmVoltageIndex];
             rawVoltageDt.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
         }
@@ -48,16 +44,7 @@ public class Derivative {
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             double me7Load = me7Loads.get(i + 1);
-            int kfkhfmLoadIndex = Arrays.binarySearch(kfkhfm.xAxis, me7Load);
-
-            if(kfkhfmLoadIndex < 0) {
-                kfkhfmLoadIndex = Math.abs(kfkhfmLoadIndex + 1);
-            }
-
-            if(kfkhfmLoadIndex >= kfkhfm.xAxis.length) {
-                kfkhfmLoadIndex = kfkhfm.xAxis.length - 1;
-            }
-
+            int kfkhfmLoadIndex = Index.getInsertIndex(Arrays.asList(kfkhfm.xAxis), me7Load);
             double kfkhfmLoadKey = kfkhfm.xAxis[kfkhfmLoadIndex];
             rawVoltageDt.get(kfkhfmLoadKey).add(me7voltageDt.get(i));
         }
@@ -85,24 +72,8 @@ public class Derivative {
         for (int i = 0; i < me7voltageDt.size(); i++) {
             double me7Load = me7Loads.get(i + 1);
             double rpmValue = me7Rpms.get(i + 1);
-            int kfkhfmLoadIndex = Arrays.binarySearch(kfkhfm.xAxis, me7Load);
-            if(kfkhfmLoadIndex < 0) {
-                kfkhfmLoadIndex = Math.abs(kfkhfmLoadIndex + 1);
-            }
-
-            if(kfkhfmLoadIndex >= kfkhfm.xAxis.length) {
-                kfkhfmLoadIndex = kfkhfm.xAxis.length - 1;
-            }
-
-            int kfkhfmRpmIndex = Arrays.binarySearch(kfkhfm.yAxis, rpmValue);
-            if (kfkhfmRpmIndex < 0) {
-                kfkhfmRpmIndex = Math.abs(kfkhfmRpmIndex + 1);
-            }
-
-            if(kfkhfmRpmIndex >= kfkhfm.yAxis.length) {
-                kfkhfmRpmIndex = kfkhfm.yAxis.length - 1;
-            }
-
+            int kfkhfmLoadIndex = Index.getInsertIndex(Arrays.asList(kfkhfm.xAxis), me7Load);
+            int kfkhfmRpmIndex = Index.getInsertIndex(Arrays.asList(kfkhfm.yAxis), rpmValue);
             rawVoltageDt.get(kfkhfmLoadIndex).get(kfkhfmRpmIndex).add(me7voltageDt.get(i));
         }
 
