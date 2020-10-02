@@ -18,7 +18,7 @@ This approach to tuning has notable consquences:
 
 * 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
 
-For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 3bar for the stock MAP sensor. There is * a lot* of information out there on how to tune with these methods and I am telling you that you don't want to do it that way.
+For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 3bar for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way.
 
 # (KRKTE) Primary Fueling
 
