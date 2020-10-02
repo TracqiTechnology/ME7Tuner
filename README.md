@@ -8,7 +8,7 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 
 [Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
 
-In any MAF application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution).
+In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution).
 
 In general, this is accomplished by applying a constant correction to the curve (MLHFM) that defines the conversion between the MAF sensors voltage output to an estimation of airflow. This constant correction is usually based on the change in diamater from the current MAF housing to the new MAF housing.
 
@@ -17,20 +17,14 @@ Non-linearities in the intake airflow and fuel system are then compenstated via 
 * [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
 * [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
 
-My experience with this approach when significantly increasing the diamater of the MAF housing (83mm housing to a 100mm housing) was that ot did not result in an optimal curve. While values that were reachable under closed-loop conditions had expected values, the values that were reachable under open-loop conditions (part and wide-open throttle) were notably underscaled.
+Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a non-linear change to the original linearization curve. Correcting the linearization in these cases can require more advanced corrections.
 
 ### Example of MAF underscaling
 
-* Same fuel system
-* Same KRKTE (primary fueling)
-* Same 100mm housing w/Hitachi sensor
-* Same boost
-* Same fuel
-* Same weather
-* Solid Line - Scaling based on a constand derived from the change in housing diameter
-* Broken Line - Estimated airflow based on fuel consumption and air-fuel ratio
+* **Solid Line** - Scaling based on a constand derived from the change in housing diameter
+* **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
 
-You can see a 100mm housing scaled with a constant based on a diameter increase (solid lines) vs a relatively accurate estimation of airflow (broken lines). Note that at lower values of airflow the measurements are similar while at higher values of airflow there is a significant discrepancy.
+You can see a 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs a relatively accurate estimation of airflow (broken lines).
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
