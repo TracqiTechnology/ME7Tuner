@@ -14,7 +14,7 @@ In ME7, the driver uses the accelerator pedal position to make a torque request.
 
 This approach to tuning has notable consquences:
 
-* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal actual load.
+* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load.
 
 * 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
 
