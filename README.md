@@ -1,36 +1,42 @@
 # General
 
-
  <a href="http://kircherelectronics.com/files/me7tuner/ME7Tuner_v0.1.jar" rel="ME7Tuner.jar">![Foo](https://img.shields.io/badge/ME7Tuner-v0.1-GREEN)</a>
  
 
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
+## MAF Scaling
+
 [Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
 
-In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution).
+In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution) or to change MAF sensors entirely.
 
-In general, this is accomplished by applying a constant correction to the curve (MLHFM) that defines the conversion between the MAF sensors voltage output to an estimation of airflow. This constant correction is usually based on the change in diamater from the current MAF housing to the new MAF housing.
+In general, a MAF sensor can be moved to a larger housing to extend the range of the sensor with a constant correction to the linearization curve (MLHFM) that defines the conversion between the MAF sensors voltage output to an estimation of airflow. This constant correction is usually based on the change in diameter from the current MAF housing to the new MAF housing.
 
-Non-linearities in the intake airflow and fuel system are then compenstated via KFKHFM and FKKVS.
+If the MAF diameter can not be increased enough to acheieve the desired range a new sensor (hopefully accompanied with a corresponding linearation curve) can be used to increase the range of the MAF housing.
 
-* [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
-* [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
+###  Increasing MAF Diameter
 
-Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a non-linear change to the original linearization curve. Correcting the linearization in these cases can require more advanced corrections.
+[Diaameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
-### Example of MAF underscaling
+Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve. This means a constant correction across the linearization curve is not enough and more advanced non-linear corrections will need to be calculated and applied.
 
 * **Solid Line** - Scaling based on a constand derived from the change in housing diameter
 * **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
 
-You can see a 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs a relatively accurate estimation of airflow (broken lines).
+A 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs actual airflow (broken lines).
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
-The result of scaling the MAF based on a constand derived from the change in housing diameter was low LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle. In other words, the car would idle fine at a lambda of 1, but WOT (wide open throttle) actual fueling lambda was lean compared to requested fueling lambda. Presumably, this leads to wildly a different KFKHFM and/or FKKVS compared to stock to compenstate for lean open-loop fueling.
+The result of scaling the MAF linearization curve based on a constant derived from the change in housing diameter is mild LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle and WOT.
 
-### Example of MAF underscaling
+Presumably, this type of correction will lead to irrational changes in at least a few notable places:
+
+* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
+* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
+* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF 
+
+### Chaning MAF sensors
 
 The PMAS HPX slot sensor comes with a transfer function which I also found to be underscaled. This [Nefarious Motosports topic](http://nefariousmotorsports.com/forum/index.php?topic=382.0) also provides what is presumably an older version of the transfer function. I found both transfer functions to be underscaled in the open-loop areas similiar to the 100mm housing with a Hitachi sensor.
 
@@ -39,6 +45,11 @@ The PMAS HPX slot sensor comes with a transfer function which I also found to be
 ### Summary of Examples
 
 The underscaled transfer functions can possibly be attributed to the specific properties of my open element intake or to any number of other factors. The point is simply that you may want to calibrate your MAF to avoid large corrections in KFKHFM and/or FKKVS.
+
+Non-linearities in the intake airflow and fuel system are then compenstated via KFKHFM and FKKVS.
+ 
+* [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
+* [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
 
 # (KRKTE) Primary Fueling
 
