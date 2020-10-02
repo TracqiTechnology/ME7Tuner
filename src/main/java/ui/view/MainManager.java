@@ -1,5 +1,6 @@
 package ui.view;
 
+import model.wdkugdn.Wdkugdn;
 import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
 import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmUiManager;
 import ui.view.kfmiop.KfmiopUiManager;
@@ -12,6 +13,7 @@ import ui.view.krkte.KrkteUiManager;
 import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingUiManager;
+import ui.view.wdkugdn.WdkugdnUiManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -55,6 +57,10 @@ public class MainManager {
         KfurlUiManager kfurlUiManager = new KfurlUiManager();
         tabSelectedListeners.add(kfurlUiManager);
         tabbedPane.addTab("KFURL", null, kfurlUiManager.getPanel(), "KFURL");
+
+        WdkugdnUiManager wdkugdnUiManager = new WdkugdnUiManager();
+        tabSelectedListeners.add(wdkugdnUiManager);
+        tabbedPane.addTab("WDKUGDN", null, wdkugdnUiManager.getPanel(), "KFURL");
 
         tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
         tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");

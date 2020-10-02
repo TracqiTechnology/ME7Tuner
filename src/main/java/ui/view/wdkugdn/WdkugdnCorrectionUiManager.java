@@ -1,11 +1,11 @@
-package ui.view.kfurl;
+package ui.view.wdkugdn;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import model.kfurl.Kfurl;
-import model.kfurl.KfurlCorrection;
+import model.wdkugdn.Wdkugdn;
+import model.wdkugdn.WdkugdnCorrection;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -14,36 +14,34 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import ui.map.map.MapTable;
-import ui.viewmodel.kfurl.KfurlViewModel;
+import ui.viewmodel.wdkugdn.WdkugdnViewModel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
-import java.util.Map;
 
-public class KfurlCorrectionUiManager {
+public class WdkugdnCorrectionUiManager {
 
-    private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX = 0;
 
-    private MapTable kfurl;
+    private MapTable wdkudgn;
     private JPanel panel;
 
     private XYSeriesCollection correctionLineDataSet;
     private JFreeChart correctionChart;
 
-    public KfurlCorrectionUiManager() {
+    public WdkugdnCorrectionUiManager() {
         initPanel();
 
-        KfurlViewModel.getInstance().getOutputSubject().subscribe(new Observer<KfurlCorrection>() {
+        WdkugdnViewModel.getInstance().getOutputSubject().subscribe(new Observer<WdkugdnCorrection>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
 
             }
 
             @Override
-            public void onNext(@NonNull KfurlCorrection kfurlCorrection) {
-                setMap(kfurlCorrection.kfurl);
-                drawAfrCorrectionChart(kfurlCorrection.correction);
+            public void onNext(@NonNull WdkugdnCorrection wdkugdnCorrection) {
+                setMap(wdkugdnCorrection.wdkudgn);
+                drawCorrectionChart(wdkugdnCorrection.correction);
             }
 
             @Override
@@ -63,7 +61,7 @@ public class KfurlCorrectionUiManager {
     }
 
     private void setMap(Map3d map) {
-        kfurl.setMap(map);
+        wdkudgn.setMap(map);
     }
 
     private void initPanel() {
@@ -84,28 +82,28 @@ public class KfurlCorrectionUiManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
-        tabbedPane.addTab("KFURL", null, getMapPanel(), "Corrected KFURL");
-        tabbedPane.addTab("KFURL Correction %", null, getcorrectionChartPanel(), "KFURL Correction");
+        tabbedPane.addTab("WDKUDGN", null, getMapPanel(), "Corrected WDKUDGNL");
+        tabbedPane.addTab("WDKUDGN Correction %", null, getcorrectionChartPanel(), "WDKUDGN Correction");
 
         return tabbedPane;
     }
 
-    private void drawAfrCorrectionChart(Double[][] corrections) {
+    private void drawCorrectionChart(Double[][] corrections) {
 
         XYPlot plot = (XYPlot) correctionChart.getPlot();
 
         correctionLineDataSet.removeAllSeries();
 
         generateCorrectionSeries(corrections);
-        plot.setDataset(AFR_CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
+        plot.setDataset(MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
 
     }
 
     private void generateCorrectionSeries(Double[][] corrections) {
-        XYSeries afrCorrectionSeries = new XYSeries("Final KFURL Correction %");
+        XYSeries afrCorrectionSeries = new XYSeries("Final WDKUDGN Correction %");
 
-        for(int i = 0; i < Kfurl.getXAxis().length; i++) {
-            afrCorrectionSeries.add(Kfurl.getXAxis()[i], corrections[0][i]);
+        for(int i = 0; i < Wdkugdn.getXAxis().length; i++) {
+            afrCorrectionSeries.add(Wdkugdn.getXAxis()[i], corrections[0][i]);
         }
 
         correctionLineDataSet.addSeries(afrCorrectionSeries);
@@ -146,7 +144,7 @@ public class KfurlCorrectionUiManager {
         XYLineAndShapeRenderer afrCorrectionLineRenderer = new XYLineAndShapeRenderer(true, false);
         afrCorrectionLineRenderer.setSeriesPaint(0, Color.RED);
 
-        plot.setRenderer(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
+        plot.setRenderer(MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
     }
 
     private JPanel getMapPanel() {
@@ -157,7 +155,8 @@ public class KfurlCorrectionUiManager {
 
         GridBagConstraints c = new GridBagConstraints();
 
-        kfurl = MapTable.getMapTable(Kfurl.getYAxis(), Kfurl.getXAxis(), Kfurl.getMap());
+        wdkudgn = MapTable.getMapTable(Wdkugdn.getYAxis(), Wdkugdn.getXAxis(), Wdkugdn.getMap());
+
         c.weightx = 1;
         c.gridx = 0;
 
@@ -165,7 +164,7 @@ public class KfurlCorrectionUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("Corrected KFURL"), c);
+        panel.add(new JLabel("Corrected WDKUDGN"), c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -174,8 +173,8 @@ public class KfurlCorrectionUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        JScrollPane scrollPane = kfurl.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(620, 245));
+        JScrollPane scrollPane = wdkudgn.getScrollPane();
+        scrollPane.setPreferredSize(new Dimension(720, 245));
 
         panel.add(scrollPane, c);
 

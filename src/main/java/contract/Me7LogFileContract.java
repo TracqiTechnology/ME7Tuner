@@ -18,4 +18,5 @@ public class Me7LogFileContract {
     public static final String ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER = "pvdks_w";
     public static final String SELECTED_GEAR_HEADER = "gangi";
     public static final String ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER = "ps_w";
+    public static final String MAF_AT_THROTTLE_PLATE = "msdk_w";
 }
