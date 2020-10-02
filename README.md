@@ -2,10 +2,25 @@
 
  <a href="http://kircherelectronics.com/files/me7tuner/ME7Tuner_v0.1.jar" rel="ME7Tuner.jar">![Foo](https://img.shields.io/badge/ME7Tuner-v0.1-GREEN)</a>
  
-
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
-## MAF Scaling
+# (KRKTE) Primary Fueling
+
+* Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
+
+The first step is to calculate a reasonable value for KRKTE (primary fueling). The is the value that allows the ECU to determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cyclinder filling. It is critial that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, your MAF is likely over/under scaled.
+
+Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser. 
+
+The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
+
+
+When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
+
+
+# MAF Scaling
 
 [Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
 
@@ -38,33 +53,9 @@ Presumably, this type of correction will lead to irrational changes in at least 
 
 ### Chaning MAF sensors
 
-The PMAS HPX slot sensor comes with a transfer function which I also found to be underscaled. This [Nefarious Motosports topic](http://nefariousmotorsports.com/forum/index.php?topic=382.0) also provides what is presumably an older version of the transfer function. I found both transfer functions to be underscaled in the open-loop areas similiar to the 100mm housing with a Hitachi sensor.
+Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow and specific velocities or other irregularities.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/hpx_curve.png "Underscaled 87mm housing")
-
-### Summary of Examples
-
-The underscaled transfer functions can possibly be attributed to the specific properties of my open element intake or to any number of other factors. The point is simply that you may want to calibrate your MAF to avoid large corrections in KFKHFM and/or FKKVS.
-
-Non-linearities in the intake airflow and fuel system are then compenstated via KFKHFM and FKKVS.
- 
-* [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
-* [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
-
-# (KRKTE) Primary Fueling
-
-* Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
-
-The first step is to calculate a reasonable value for KRKTE (primary fueling). The is the value that allows the ECU to determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cyclinder filling. It is critial that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, your MAF is likely over/under scaled.
-
-Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser. 
-
-The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
-
-
-When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
 
 # Closed Loop MLHFM
 
