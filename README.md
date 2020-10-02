@@ -17,7 +17,7 @@ If the MAF diameter can not be increased enough to acheieve the desired range a 
 
 ###  Increasing MAF Diameter
 
-[Diaameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
+[Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
 Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve. This means a constant correction across the linearization curve is not enough and more advanced non-linear corrections will need to be calculated and applied.
 
