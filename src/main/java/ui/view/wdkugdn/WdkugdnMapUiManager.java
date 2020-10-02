@@ -80,7 +80,7 @@ public class WdkugdnMapUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("WDKUGDN"), c);
+        panel.add(new JLabel("WDKUGDN (Input)"), c);
 
         c.weightx = 0;
         c.gridx = 0;

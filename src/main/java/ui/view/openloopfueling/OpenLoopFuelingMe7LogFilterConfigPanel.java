@@ -15,8 +15,8 @@ public class OpenLoopFuelingMe7LogFilterConfigPanel extends JPanel {
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
     enum FieldTitle {
-        MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MIN_ME7_POINTS("Minimum ME7 Points"), MIN_AFR_POINTS("Minimum AFR Points"), MAX_AFR("Maximum AFR");
-        private String title;
+        MIN_THROTTLE_ANGLE("Minimum Throttle Angle"), MIN_RPM("Minimum RPM"), MIN_ME7_POINTS("Minimum ME7 Points"), MIN_AFR_POINTS("Minimum AFR Points"), MAX_AFR("Maximum AFR"), FUEL_INJECTOR_SIZE("Fuel Injector Size"), FUEL_DENSITY("Fuel Density"), NUM_FUEL_INJECTORS("Fuel Injectors");
+        private final String title;
 
         FieldTitle(String title) {
             this.title = title;
@@ -27,7 +27,7 @@ public class OpenLoopFuelingMe7LogFilterConfigPanel extends JPanel {
         }
     }
 
-    private Map<FieldTitle, JTextField> fieldMap = new HashMap<FieldTitle, JTextField>();
+    private final Map<FieldTitle, JTextField> fieldMap = new HashMap<FieldTitle, JTextField>();
 
     OpenLoopFuelingMe7LogFilterConfigPanel() {
         setLayout(new GridBagLayout());
@@ -82,6 +82,19 @@ public class OpenLoopFuelingMe7LogFilterConfigPanel extends JPanel {
                 case MAX_AFR:
                     textField = new JFormattedTextField(decimalFormat);
                     textField.setValue(OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference());
+                    break;
+                case FUEL_INJECTOR_SIZE:
+                    textField = new JFormattedTextField(decimalFormat);
+                    textField.setValue(OpenLoopFuelingLogFilterPreferences.getFuelInjectorSizePreference());
+                    break;
+                case FUEL_DENSITY:
+                    textField = new JFormattedTextField(decimalFormat);
+                    textField.setValue(OpenLoopFuelingLogFilterPreferences.getGasolineGramsPerCubicCentimeterPreference());
+                    break;
+                case NUM_FUEL_INJECTORS:
+                    textField = new JFormattedTextField(decimalFormat);
+                    textField.setValue(OpenLoopFuelingLogFilterPreferences.getNumFuelInjectorsPreference());
+                    break;
             }
 
             textField.setColumns(5);

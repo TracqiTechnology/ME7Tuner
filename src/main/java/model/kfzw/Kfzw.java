@@ -2,15 +2,15 @@ package model.kfzw;
 
 public class Kfzw {
 
-    public static Double[] getStockXAxis() {
+    public static Double[] getXAxis() {
         return new Double[]{9.75d, 18d, 27d, 39d, 50.25d, 62.25d, 74.25d, 97.50d, 120.75d, 144.75d, 168d, 191.25d};
     }
 
-    public static Double[] getStockYAxis() {
+    public static Double[] getYAxis() {
         return new Double[]{440d, 720d, 1000d, 1240d, 1520d, 1760d, 2000d, 2520d, 3000d, 3520d, 4000d, 4520d, 5000d, 5520d, 6000d, 7000d};
     }
 
-    public static Double[][] getStockMap() {
+    public static Double[][] getMap() {
         return new Double[][]{
                 {25.5, 25.5, 19.5, 15d, 12.75, 7.5, 0d, 0d, -10.5, -10.5, -10.5, -10.5},
                 {28.5, 28.5, 23.25, 18d, 15d, 9d, 3.75, 0.75, -7.5, -10.5, -10.5, -10.5},

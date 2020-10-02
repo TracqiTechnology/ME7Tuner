@@ -238,7 +238,7 @@ public class LdrpidUiManager {
 
         GridBagConstraints c = new GridBagConstraints();
 
-        JButton button = new JButton("Load Logs");
+        JButton button = new JButton("Load ME7 Logs");
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

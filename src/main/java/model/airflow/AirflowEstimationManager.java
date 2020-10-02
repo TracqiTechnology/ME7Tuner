@@ -23,9 +23,9 @@ public class AirflowEstimationManager {
     private final double totalFuelFlowGramsPerMinute;
     private final double totalMethanolFlowGramsPerMinute;
 
-    private List<List<Double>> estimatedAirflowGramsPerSecondLogs;
-    private List<List<Double>> measuredAirflowGramsPerSecondLogs;
-    private List<List<Double>> measuredRpmLogs;
+    private final List<List<Double>> estimatedAirflowGramsPerSecondLogs;
+    private final List<List<Double>> measuredAirflowGramsPerSecondLogs;
+    private final List<List<Double>> measuredRpmLogs;
 
     private AirflowEstimation airflowEstimation;
 

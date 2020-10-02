@@ -80,7 +80,7 @@ public class KfurlMapUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("KFURL"), c);
+        panel.add(new JLabel("KFURL (Input)"), c);
 
         c.weightx = 0;
         c.gridx = 0;

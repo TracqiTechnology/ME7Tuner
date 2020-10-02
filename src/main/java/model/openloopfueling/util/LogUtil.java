@@ -6,8 +6,6 @@ public class LogUtil {
     static boolean isValidLogLength(int start, int minPoints, double minThrottleAngle, List<Double> throttleAngle) {
         int minValidIndex = start + minPoints;
 
-        new Exception().printStackTrace();
-
         if (minValidIndex < throttleAngle.size()) {
             for (int i = start; i < minValidIndex; i++) {
                 if (throttleAngle.get(i) <= minThrottleAngle) {

@@ -36,11 +36,10 @@ public class ClosedLoopKfkhfmCorrectionUiManager {
     private Scatter scatterMeanAfr;
     private Scatter scatterModeAfr;
 
-    private KfkhfmUiManager kfkhfmUiManager;
-
+    private final KfkhfmUiManager kfkhfmUiManager;
 
     ClosedLoopKfkhfmCorrectionUiManager() {
-        kfkhfmUiManager = new KfkhfmUiManager();
+        kfkhfmUiManager = new KfkhfmUiManager("Corrected KFKHFM (Output)");
 
         ClosedLoopKfkhfmCorrectionViewModel closedLoopKfkhfmCorrectionViewModel = ClosedLoopKfkhfmCorrectionViewModel.getInstance();
         closedLoopKfkhfmCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopKfkhfmCorrection>() {

@@ -165,7 +165,7 @@ public class KfurlCorrectionUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("Corrected KFURL"), c);
+        panel.add(new JLabel("Corrected KFURL (Output)"), c);
 
         c.weightx = 0;
         c.gridx = 0;

@@ -164,7 +164,7 @@ public class WdkugdnCorrectionUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("Corrected WDKUDGN"), c);
+        panel.add(new JLabel("Corrected WDKUDGN (Output)"), c);
 
         c.weightx = 0;
         c.gridx = 0;

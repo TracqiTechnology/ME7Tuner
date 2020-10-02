@@ -1,10 +1,12 @@
 package ui.view.kfmiop;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfmiop.Kfmiop;
 import model.kfmirl.Kfmirl;
+import model.kfzw.Kfzw;
 import org.jzy3d.chart.Chart;
 import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
@@ -30,14 +32,37 @@ public class KfmiopUiManager {
     private MapTable kfmiop;
 
     private MapAxis kfmiopXAxis;
+    private MapAxis kfzwXAxis;
 
     private Chart kfmirlChart3d;
     private Chart kfmiopChart3d;
 
-    private KfmiopViewModel viewModel;
+    private final KfmiopViewModel viewModel;
 
     public KfmiopUiManager() {
         viewModel = new KfmiopViewModel();
+        viewModel.getKfzwXAxisPublishSubject().subscribe(new Observer<Double[]>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+
+            }
+
+            @Override
+            public void onNext(@NonNull Double[] kfzwXAxis) {
+                KfmiopUiManager.this.kfzwXAxis.setTableData(new Double[][]{kfzwXAxis});
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
         viewModel.getKfmiopXAxisPublishSubject().subscribe(new Observer<Double[]>() {
 
             @Override
@@ -51,8 +76,8 @@ public class KfmiopUiManager {
 
                 Map3d kfmiopMap3d = new Map3d();
                 kfmiopMap3d.xAxis = kfmiopXAxis;
-                kfmiopMap3d.yAxis = Kfmiop.getStockKfmiopYAxis();
-                kfmiopMap3d.data = Kfmiop.getStockKfmiopMap();
+                kfmiopMap3d.yAxis = Kfmiop.getYAxis();
+                kfmiopMap3d.data = Kfmiop.getMap();
 
                 viewModel.cacluateKfmiop(kfmirlMap3d, kfmiopMap3d);
             }
@@ -109,7 +134,7 @@ public class KfmiopUiManager {
         constraints.gridy = 0;
 
         JPanel kfmiopPanel = new JPanel();
-        kfmiopPanel.setPreferredSize(new Dimension(700, 500));
+        kfmiopPanel.setPreferredSize(new Dimension(710, 500));
 
         kfmiopPanel.add(getKmfiopMapPanel(), new GridBagLayout());
 
@@ -133,16 +158,23 @@ public class KfmiopUiManager {
         c.gridx = 0;
         c.gridy = 0;
         c.fill = GridBagConstraints.CENTER;
-        c.anchor = GridBagConstraints.CENTER;
-        c.insets.top = 68;
+        c.anchor = GridBagConstraints.WEST;
+        c.insets.left = 52;
+        c.insets.top = 128;
 
-        panel.add(new JLabel("KFMIRL"),c);
+        panel.add(getHeader("KFMIRL (Input)",new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showKfmirlChart3d();
+            }
+        }),c);
 
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 1;
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
+        c.insets.left = 0;
         c.insets.top = 8;
 
         JScrollPane scrollPane = kfmirl.getScrollPane();
@@ -150,9 +182,29 @@ public class KfmiopUiManager {
 
         panel.add(scrollPane,c);
 
-        c.gridy = 2;
+        return panel;
+    }
 
-        panel.add(getKfmirlChard3dButton(), c);
+    private JPanel getHeader(String title, ActionListener chartActionListener) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+
+        JLabel label = new JLabel(title);
+        panel.add(label,c);
+
+        c.gridx = 1;
+
+        java.net.URL imgURL = getClass().getResource("/insert_chart.png");
+        ImageIcon icon = new ImageIcon(imgURL, "");
+        JButton button = new JButton(icon);
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.addActionListener(chartActionListener);
+        panel.add(button, c);
 
         return panel;
     }
@@ -173,17 +225,44 @@ public class KfmiopUiManager {
         constraints.fill = GridBagConstraints.CENTER;
         constraints.anchor = GridBagConstraints.CENTER;
 
-        mapPanel.add(new JLabel("KFMIOP X-Axis"),constraints);
+        mapPanel.add(new JLabel("KFZW X-Axis (Output)"),constraints);
 
         constraints.weightx = 1;
         constraints.gridx = 0;
-        constraints.gridy = 1;
+        constraints.gridy =1;
+        constraints.fill = GridBagConstraints.CENTER;
+        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.insets.top = 8;
+
+        Double[][] kfzwXAxisValues = new Double[1][];
+        kfzwXAxisValues[0] = Kfzw.getXAxis();
+
+        kfzwXAxis = MapAxis.getMapAxis(kfzwXAxisValues);
+
+        JScrollPane kfzwXAxisScrollPane = kfzwXAxis.getScrollPane();
+        kfzwXAxisScrollPane.setPreferredSize(new Dimension(670, 20));
+
+        mapPanel.add(kfzwXAxisScrollPane ,constraints);
+
+        constraints.weightx = 1;
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.ipadx = 0;
+        constraints.insets.top = 16;
+        constraints.fill = GridBagConstraints.CENTER;
+        constraints.anchor = GridBagConstraints.CENTER;
+
+        mapPanel.add(new JLabel("KFMIOP/KFZWOP X-Axis (Output)"),constraints);
+
+        constraints.weightx = 1;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
         constraints.fill = GridBagConstraints.CENTER;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.insets.top = 8;
 
         Double[][] kfmiopXAxisValues = new Double[1][];
-        kfmiopXAxisValues[0] = Kfmiop.getStockKfmiopXAxis();
+        kfmiopXAxisValues[0] = Kfmiop.getXAxis();
 
         kfmiopXAxis = MapAxis.getMapAxis(kfmiopXAxisValues);
 
@@ -195,32 +274,32 @@ public class KfmiopUiManager {
         constraints.insets.left = 0;
         constraints.weightx = 1;
         constraints.gridx = 0;
-        constraints.gridy = 2;
+        constraints.gridy = 4;
+        constraints.insets.left = 84;
         constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.anchor = GridBagConstraints.WEST;
 
-        mapPanel.add(new JLabel("KFMIOP"),constraints);
+        mapPanel.add(getHeader("KFMIOP (Output)",new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showKfmiopChart3d();
+            }
+        }),constraints);
 
         constraints.weightx = 1;
         constraints.gridx = 0;
-        constraints.gridy = 3;
+        constraints.gridy = 5;
         constraints.ipadx = -50;
+        constraints.insets.left = 0;
         constraints.fill = GridBagConstraints.EAST;
-        constraints.anchor = GridBagConstraints.EAST;
+        constraints.anchor = GridBagConstraints.CENTER;
 
-        kfmiop = MapTable.getMapTable(Kfmiop.getStockKfmiopYAxis(), Kfmiop.getStockKfmiopXAxis(), Kfmiop.getStockKfmiopMap());
+        kfmiop = MapTable.getMapTable(Kfmiop.getYAxis(), Kfmiop.getXAxis(), Kfmiop.getMap());
 
         JScrollPane kfmiopMapScrollPane = kfmiop.getScrollPane();
         kfmiopMapScrollPane.setPreferredSize(new Dimension(705, 275));
 
         mapPanel.add(kfmiopMapScrollPane,constraints);
-
-        constraints.gridy = 4;
-        constraints.ipadx = 0;
-        constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
-
-        mapPanel.add(getKfmiopChard3dButton(), constraints);
 
         return mapPanel;
     }
@@ -243,18 +322,6 @@ public class KfmiopUiManager {
             @Override
             public void onComplete() {}
         });
-    }
-
-    private JButton getKfmirlChard3dButton() {
-        JButton jButton = new JButton("3D Chart");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showKfmirlChart3d();
-            }
-        });
-
-        return jButton;
     }
 
     private void showKfmirlChart3d() {
@@ -323,18 +390,6 @@ public class KfmiopUiManager {
         kfmirlChart3d.getScene().add(surface, true);
     }
 
-    private JButton getKfmiopChard3dButton() {
-        JButton jButton = new JButton("3D Chart");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showKfmiopChart3d();
-            }
-        });
-
-        return jButton;
-    }
-
     private void showKfmiopChart3d() {
         JDialog jd = new JDialog();
         jd.setSize(500,500);
@@ -377,7 +432,7 @@ public class KfmiopUiManager {
         Double[][] data = kfmiop.getData();
 
         Double[] xAxis = kfmiopXAxis.getData()[0];
-        Double[] yAxis = Kfmiop.getStockKfmiopYAxis();
+        Double[] yAxis = Kfmiop.getYAxis();
 
         ArrayList<Polygon> polygons = new ArrayList<>();
         for(int i = 0; i < xAxis.length -1; i++){

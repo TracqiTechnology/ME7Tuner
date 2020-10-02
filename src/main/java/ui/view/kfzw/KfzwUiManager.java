@@ -5,7 +5,6 @@ import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfzw.Kfzw;
-import model.kfzwop.Kfzwop;
 import org.jzy3d.chart.Chart;
 import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
 import org.jzy3d.chart.factories.AWTChartComponentFactory;
@@ -25,7 +24,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class KfzwUiManager {
 
@@ -37,7 +35,7 @@ public class KfzwUiManager {
     private Chart inChart3d;
     private Chart inOut3d;
 
-    private KfzwViewModel viewModel;
+    private final KfzwViewModel viewModel;
 
     public KfzwUiManager() {
         viewModel = new KfzwViewModel();
@@ -105,15 +103,22 @@ public class KfzwUiManager {
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 0;
+        c.insets.left = 52;
         c.insets.top = 68;
         c.fill = GridBagConstraints.CENTER;
-        c.anchor = GridBagConstraints.CENTER;
+        c.anchor = GridBagConstraints.WEST;
 
-        panel.add(new JLabel("KFZW IN"),c);
+        panel.add(getHeader("KFZW (Input)",new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showInChart3d();
+            }
+        }),c);
 
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 1;
+        c.insets.left = 0;
         c.insets.top = 8;
         c.fill = GridBagConstraints.EAST;
         c.anchor = GridBagConstraints.EAST;
@@ -122,12 +127,6 @@ public class KfzwUiManager {
         scrollPane.setPreferredSize(new Dimension(710, 275));
 
         panel.add(scrollPane,c);
-
-        c.gridy = 2;
-        c.fill = GridBagConstraints.CENTER;
-        c.anchor = GridBagConstraints.CENTER;
-
-        panel.add(getIn3dButton(), c);
 
         return panel;
     }
@@ -146,7 +145,7 @@ public class KfzwUiManager {
         constraints.fill = GridBagConstraints.CENTER;
         constraints.anchor = GridBagConstraints.CENTER;
 
-        mapPanel.add(new JLabel("KFZW X-Axis"),constraints);
+        mapPanel.add(new JLabel("KFZW X-Axis (Input)"),constraints);
 
         constraints.weightx = 1;
         constraints.gridx = 0;
@@ -166,37 +165,61 @@ public class KfzwUiManager {
         constraints.weightx = 1;
         constraints.gridx = 0;
         constraints.gridy = 2;
-        constraints.insets.left = 0;
+        constraints.insets.left = 58;
         constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.anchor = GridBagConstraints.WEST;
 
-        mapPanel.add(new JLabel("KFZW OUT"),constraints);
+        mapPanel.add(getHeader("KFZW (Output)", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showOutChart3d();
+            }
+        }),constraints);
 
         constraints.weightx = 1;
         constraints.gridx = 0;
         constraints.gridy = 3;
+        constraints.insets.left = 0;
         constraints.fill = GridBagConstraints.EAST;
         constraints.anchor = GridBagConstraints.EAST;
 
-        kfzwOut = MapTable.getMapTable(Kfzw.getStockYAxis(), Kfzw.getStockXAxis(), Kfzw.getStockMap());
+        kfzwOut = MapTable.getMapTable(Kfzw.getYAxis(), Kfzw.getXAxis(), Kfzw.getMap());
 
         JScrollPane kfmiopMapScrollPane = kfzwOut.getScrollPane();
         kfmiopMapScrollPane.setPreferredSize(new Dimension(710, 275));
 
         mapPanel.add(kfmiopMapScrollPane,constraints);
 
-        constraints.gridy = 4;
-        constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
-
-        mapPanel.add(getOut3dButton(), constraints);
-
         return mapPanel;
+    }
+
+    private JPanel getHeader(String title, ActionListener chartActionListener) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+
+        JLabel label = new JLabel(title);
+        panel.add(label,c);
+
+        c.gridx = 1;
+
+        java.net.URL imgURL = getClass().getResource("/insert_chart.png");
+        ImageIcon icon = new ImageIcon(imgURL, "");
+        JButton button = new JButton(icon);
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.addActionListener(chartActionListener);
+        panel.add(button, c);
+
+        return panel;
     }
 
     private void initXAxis() {
         Double[][] kfmiXAxisValues = new Double[1][];
-        kfmiXAxisValues[0] = Kfzw.getStockXAxis();
+        kfmiXAxisValues[0] = Kfzw.getXAxis();
         kfzwXAxis = MapAxis.getMapAxis(kfmiXAxisValues);
 
         kfzwXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
@@ -204,7 +227,7 @@ public class KfzwUiManager {
             @Override
             public void onNext(Double[][] data) {
                 Map3d map3d = new Map3d();
-                map3d.xAxis = Kfzw.getStockXAxis();
+                map3d.xAxis = Kfzw.getXAxis();
                 map3d.yAxis = kfzwIn.getRowHeaders();
                 map3d.data = kfzwIn.getData();
 
@@ -227,7 +250,7 @@ public class KfzwUiManager {
     }
 
     private void initMap() {
-        kfzwIn = MapTable.getMapTable(Kfzw.getStockYAxis(), Kfzw.getStockXAxis(), Kfzw.getStockMap());
+        kfzwIn = MapTable.getMapTable(Kfzw.getYAxis(), Kfzw.getXAxis(), Kfzw.getMap());
 
         kfzwIn.getPublishSubject().subscribe(new Observer<Map3d>() {
 
@@ -245,18 +268,6 @@ public class KfzwUiManager {
             @Override
             public void onComplete() {}
         });
-    }
-
-    private JButton getIn3dButton() {
-        JButton jButton = new JButton("3D Chart");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showInChart3d();
-            }
-        });
-
-        return jButton;
     }
 
     private void showInChart3d() {
@@ -300,8 +311,8 @@ public class KfzwUiManager {
 
         Double[][] data = kfzwIn.getData();
 
-        Double[] xAxis = Kfzw.getStockXAxis();
-        Double[] yAxis = Kfzw.getStockYAxis();
+        Double[] xAxis = Kfzw.getXAxis();
+        Double[] yAxis = Kfzw.getYAxis();
 
         ArrayList<Polygon> polygons = new ArrayList<>();
         for(int i = 0; i < xAxis.length -1; i++){
@@ -323,18 +334,6 @@ public class KfzwUiManager {
         surface.setWireframeDisplayed(true);
 
         inChart3d.getScene().add(surface, true);
-    }
-
-    private JButton getOut3dButton() {
-        JButton jButton = new JButton("3D Chart");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showOutChart3d();
-            }
-        });
-
-        return jButton;
     }
 
     private void showOutChart3d() {
@@ -379,7 +378,7 @@ public class KfzwUiManager {
         Double[][] data = kfzwOut.getData();
 
         Double[] xAxis = kfzwXAxis.getData()[0];
-        Double[] yAxis = Kfzw.getStockYAxis();
+        Double[] yAxis = Kfzw.getYAxis();
 
         ArrayList<Polygon> polygons = new ArrayList<>();
         for(int i = 0; i < xAxis.length -1; i++){

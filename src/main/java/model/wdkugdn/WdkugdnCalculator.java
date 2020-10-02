@@ -10,7 +10,6 @@ import java.util.Map;
 
 public class WdkugdnCalculator {
 
-
     public static WdkugdnCorrection calculateWdkugdn(Map3d wdkugdn, Map<String, List<Double>> me7LogMap) {
         List<Double> throttlePlateAngle = me7LogMap.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
         List<Double> maf = me7LogMap.get(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER);
@@ -47,20 +46,20 @@ public class WdkugdnCalculator {
             }
         }
 
-        System.out.println("Sums");
-        for(double[] array: sums) {
-            System.out.println(Arrays.toString(array));
-        }
-
-        System.out.println("Counts");
-        for(double[] array: counts) {
-            System.out.println(Arrays.toString(array));
-        }
-
-        System.out.println("Corrections");
-        for(Double[] array: correction) {
-            System.out.println(Arrays.toString(array));
-        }
+//        System.out.println("Sums");
+//        for(double[] array: sums) {
+//            System.out.println(Arrays.toString(array));
+//        }
+//
+//        System.out.println("Counts");
+//        for(double[] array: counts) {
+//            System.out.println(Arrays.toString(array));
+//        }
+//
+//        System.out.println("Corrections");
+//        for(Double[] array: correction) {
+//            System.out.println(Arrays.toString(array));
+//        }
 
         Map3d result = new Map3d(wdkugdn);
 

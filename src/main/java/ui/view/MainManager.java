@@ -38,7 +38,7 @@ public class MainManager {
 
         KrkteUiManager krkteUiManager = new KrkteUiManager();
         tabSelectedListeners.add(krkteUiManager);
-        tabbedPane.addTab("KRKTE (Primary Fueling)", null, krkteUiManager.getPanel(), "KRKTE Calculator");
+        tabbedPane.addTab("KRKTE", null, krkteUiManager.getPanel(), "KRKTE Calculator");
 
         ClosedLoopMlhfmUiManager closedLoopMlhfmUiManager = new ClosedLoopMlhfmUiManager();
         // first tab is selected

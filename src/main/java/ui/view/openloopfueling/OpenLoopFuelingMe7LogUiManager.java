@@ -42,14 +42,14 @@ public class OpenLoopFuelingMe7LogUiManager {
     private JPanel openLoopLogPanel;
     private JLabel me7FileLabel;
     private JLabel afrFileLabel;
-    private OpenLoopFuelingMe7LogViewModel openLoopFuelingMe7LogViewModel;
-    private OpenLoopFuelingAfrLogViewModel openLoopFuelingAfrLogViewModel;
+    private final OpenLoopFuelingMe7LogViewModel openLoopFuelingMe7LogViewModel;
+    private final OpenLoopFuelingAfrLogViewModel openLoopFuelingAfrLogViewModel;
 
-    private  XYSeriesCollection me7FuelingDataset;
-    private  XYSeriesCollection afrFuelingDataset;
+    private final XYSeriesCollection me7FuelingDataset;
+    private final XYSeriesCollection afrFuelingDataset;
 
-    private  XYSeriesCollection measuredAirflowDataset;
-    private  XYSeriesCollection estimatedAirflowDataset;
+    private final XYSeriesCollection measuredAirflowDataset;
+    private final XYSeriesCollection estimatedAirflowDataset;
 
     private File me7LogFile;
     private File afrLogFile;
@@ -266,19 +266,29 @@ public class OpenLoopFuelingMe7LogUiManager {
                 for (OpenLoopFuelingMe7LogFilterConfigPanel.FieldTitle fieldTitle : OpenLoopFuelingMe7LogFilterConfigPanel.FieldTitle.values()) {
                     switch (fieldTitle) {
                         case MIN_THROTTLE_ANGLE:
-                           OpenLoopFuelingLogFilterPreferences.setMinThrottleAnglePreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                           OpenLoopFuelingLogFilterPreferences.setMinThrottleAnglePreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MIN_RPM:
-                            OpenLoopFuelingLogFilterPreferences.setMinRpmPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            OpenLoopFuelingLogFilterPreferences.setMinRpmPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MIN_ME7_POINTS:
-                            OpenLoopFuelingLogFilterPreferences.setMinMe7PointsPreference(Integer.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            OpenLoopFuelingLogFilterPreferences.setMinMe7PointsPreference(Integer.parseInt(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MIN_AFR_POINTS:
-                            OpenLoopFuelingLogFilterPreferences.setMinAfrPointsPreference(Integer.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            OpenLoopFuelingLogFilterPreferences.setMinAfrPointsPreference(Integer.parseInt(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MAX_AFR:
-                            OpenLoopFuelingLogFilterPreferences.setMaxAfrPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            OpenLoopFuelingLogFilterPreferences.setMaxAfrPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
+                            break;
+                        case FUEL_INJECTOR_SIZE:
+                            OpenLoopFuelingLogFilterPreferences.setFuelInjectorSizePreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
+                            break;
+                        case FUEL_DENSITY:
+                            OpenLoopFuelingLogFilterPreferences.setGasolineGramsPerCubicCentimeterPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
+                            break;
+                        case NUM_FUEL_INJECTORS:
+                            OpenLoopFuelingLogFilterPreferences.setNumFuelInjectorsPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
+                            break;
                     }
                 }
 
@@ -321,7 +331,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     }
 
     private JButton getAfrFileButton() {
-        JButton button = new JButton("Load AFR Logs");
+        JButton button = new JButton("Load Zeitronix Logs");
 
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();

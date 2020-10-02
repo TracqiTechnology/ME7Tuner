@@ -14,12 +14,15 @@ public class KfkhfmUiManager {
 
     private MapTable kfkhfm;
     private JPanel panel;
+    private String title;
 
-    public KfkhfmUiManager() {
+    public KfkhfmUiManager(String title) {
+        this.title = title;
         initPanel();
     }
 
-    public KfkhfmUiManager(boolean shouldNotifyOnChange) {
+    public KfkhfmUiManager(String title, boolean shouldNotifyOnChange) {
+        this.title = title;
         initPanel();
         if (shouldNotifyOnChange) {
             shouldNotifyOnChange();
@@ -89,7 +92,7 @@ public class KfkhfmUiManager {
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
-        panel.add(new JLabel("KFKHFM"), c);
+        panel.add(new JLabel(title), c);
 
         c.weightx = 0;
         c.gridx = 0;

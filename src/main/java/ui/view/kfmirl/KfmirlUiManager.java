@@ -52,10 +52,6 @@ public class KfmirlUiManager {
 
         c.gridy = 3;
 
-        panel.add(getChard3dButton(), c);
-
-        c.gridy = 4;
-
         panel.add(getHelpPanel(), c);
 
         return panel;
@@ -107,15 +103,22 @@ public class KfmirlUiManager {
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 0;
+        c.insets.left = 52;
         c.fill = GridBagConstraints.CENTER;
-        c.anchor = GridBagConstraints.CENTER;
+        c.anchor = GridBagConstraints.WEST;
 
-        panel.add(new JLabel("KFMIRL"),c);
+        panel.add(getHeader("KFMIRL (Output)", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showChart3d();
+            }
+        }),c);
 
         c.weightx = 0;
         c.gridx = 0;
         c.gridy = 1;
-        c.insets.top = 16;
+        c.insets.left = 0;
+        c.insets.top = 8;
         c.fill = GridBagConstraints.CENTER;
         c.anchor = GridBagConstraints.CENTER;
 
@@ -123,6 +126,30 @@ public class KfmirlUiManager {
         scrollPane.setPreferredSize(new Dimension(715, 275));
 
         panel.add(scrollPane ,c);
+
+        return panel;
+    }
+
+    private JPanel getHeader(String title, ActionListener chartActionListener) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+
+        JLabel label = new JLabel(title);
+        panel.add(label,c);
+
+        c.gridx = 1;
+
+        java.net.URL imgURL = getClass().getResource("/insert_chart.png");
+        ImageIcon icon = new ImageIcon(imgURL, "");
+        JButton button = new JButton(icon);
+        button.setOpaque(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.addActionListener(chartActionListener);
+        panel.add(button, c);
 
         return panel;
     }
@@ -170,18 +197,6 @@ public class KfmirlUiManager {
         });
 
         return jep;
-    }
-
-    private JButton getChard3dButton() {
-        JButton jButton = new JButton("3D Chart");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showChart3d();
-            }
-        });
-
-        return jButton;
     }
 
     private void showChart3d() {
