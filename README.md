@@ -4,6 +4,22 @@
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
+Everything in ME7 revolves around requested load (or cylinder fill).
+
+* Read [Engine load](https://s4wiki.com/wiki/Load)
+
+The deeply simplified description of how ME7 works is as follows:
+
+In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 then calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When you are tuning ME7, you are trying to modify the various maps to model your hardware and the weather accurately. If you don't model things correctly, ME7 is going to decide something is wrong and will try to protect the engine by reducing the capacity to produce power at various levels of intervention. In other words, it is important to get things right.
+
+This approach to tuning has notable consquences:
+
+* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal actual load.
+
+* 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
+
+For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 3bar for the stock MAP sensor. There is * a lot* of information out there on how to tune with these methods and I am telling you that you don't want to do it that way.
+
 # (KRKTE) Primary Fueling
 
 * Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
