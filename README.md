@@ -10,15 +10,15 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 
 The first step is to calculate a reasonable value for KRKTE (primary fueling). The is the value that allows the ECU to determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cyclinder filling. It is critial that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, your MAF is likely over/under scaled.
 
-Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser. 
+Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser.
+
+Note that the decision to use a fuel density of 0.71 g/cc^3 was clearly intentional and will have the effect of slightly underscaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compenstate). As a result, the measured engine load (rl_w) will be underscaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
 
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
-
-When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
-
+When you are satisfied with KRKTE, you will need to get your MAF scale your MAF to your injectors.
 
 # MAF Scaling
 
@@ -45,19 +45,29 @@ A 83mm MAF housing curve scaled with a constant based on a diameter increase (so
 
 The result of scaling the MAF linearization curve based on a constant derived from the change in housing diameter is mild LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle and WOT.
 
-Presumably, this type of correction will lead to irrational changes in at least a few notable places:
-
-* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
-* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
-* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF 
-
-### Chaning MAF sensors
+### Changing MAF sensors
 
 Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
 
-# Closed Loop MLHFM
+### Scaling Your MAF
+
+Presumably, incorrect MAF linearization will lead to irrational changes in at least a few notable places:
+
+* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
+* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
+* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF
+
+Having to make irrational changes in these places makes tuning considerably more difficult overall, so being able to scale your MAF to be as accurate as possible is ideal. 
+
+To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio actual airflow can be calculated and compared against the MAF to make corrections.
+
+* Close loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
+* Open loop fueling uses a wide-band 02 sensor to make corrections
+
+
+## (MLHFM) Closed Loop MAF Scaling 
 
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
 
