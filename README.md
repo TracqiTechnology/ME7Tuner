@@ -12,7 +12,7 @@ The first step is to calculate a reasonable value for KRKTE (primary fueling). T
 
 Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser.
 
-Note that the decision to use a fuel density of 0.71 g/cc^3 was clearly intentional and will have the effect of slightly underscaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compenstate). As a result, the measured engine load (rl_w) will be underscaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
+Note that the decision to use a fuel density of 0.71 g/cc^3 (versus a more accurate ~0.75 g/cc^3) was clearly intentional and will have the effect of slightly underscaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compenstate). As a result, the measured engine load (rl_w) will be underscaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
 
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
@@ -20,7 +20,7 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 
 When you are satisfied with KRKTE, you will need to get your MAF scale your MAF to your injectors.
 
-# MAF Scaling
+# (MLHFM) MAF Scaling
 
 [Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
 
