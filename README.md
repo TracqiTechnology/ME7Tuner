@@ -22,6 +22,17 @@ This approach to tuning has notable consquences:
 
 For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
 
+### Do I need larger injectors?
+
+In theory a stock S4 has a max load of 191%. 191% load is the limit of the stock KFMIRL and it is the point where the stock MAF and fuel injectors max out.
+
+* Stock injectors are 349cc/min
+* Stock MAF maxes at ~300g/sec
+* 191% load is approximately 300 g/sec (40lb/min)
+* The stock injectors could, in theory, support enough fuel for a 12:1 AFR at 300g/sec (2091.2 cc/min)
+* A K03 is 16lb/min and a K04 is 20lb/min... so 20lb/min * 2 = 40lb/min -> 191% load
+* It is a bad idea to max injector duty cycle
+
 ### Do I need another MAP sensor + 5120 hack?
 
 * Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
