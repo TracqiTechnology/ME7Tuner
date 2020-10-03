@@ -4,6 +4,8 @@
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
+## Tuning Philosophy
+
 Everything in ME7 revolves around requested load (or cylinder fill).
 
 * Read [Engine load](https://s4wiki.com/wiki/Load)
@@ -18,7 +20,18 @@ This approach to tuning has notable consquences:
 
 * 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
 
-For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 3bar for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
+For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
+
+### Do I need another MAP sensor + 5120 hack?
+
+* Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
+* Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0title=)
+
+If you are going to run more than 2.5bar absoulte (~22.45 psi relative), than yes, you will need another MAP sensor and the 5120 hack. However, I suspect most will not run more than ~22psi.
+
+* A K03 turbo isn't going to make ~22psi (or if it does it won't for long). 
+* A K04 turbo is likley going to be close to the knock limit of pump fuel and the limit of the wastegates at ~22psi.
+
 
 # (KRKTE) Primary Fueling
 
