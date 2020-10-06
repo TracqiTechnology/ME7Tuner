@@ -20,11 +20,12 @@ public class LinearInterpolation {
         // Calculate the line equation (i.e. slope and intercept) between each point
         for (int i = 0; i < x.length - 1; i++) {
             dx[i] = x[i + 1] - x[i];
-            if (dx[i] == 0) {
-                x[i + 1] += x[i + 1] * 0.01;
-            }
             if (dx[i] < 0) {
                 throw new IllegalArgumentException("X must be sorted " + x[i + 1] + " " + x[i]);
+            }
+
+            if (dx[i] == 0) {
+                x[i + 1] += x[i + 1] * 0.01;
             }
 
             dy[i] = y[i + 1] - y[i];
@@ -36,7 +37,7 @@ public class LinearInterpolation {
         Double[] yi = new Double[xi.length];
         for (int i = 0; i < xi.length; i++) {
             if ((xi[i] < x[0])) {
-                yi[i] = Double.NaN;
+                yi[i] = 0d;
             } else {
                 int loc = Arrays.binarySearch(x, xi[i]);
 
