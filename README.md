@@ -1,44 +1,48 @@
 # General
 
-
  <a href="http://kircherelectronics.com/files/me7tuner/ME7Tuner_v0.1.jar" rel="ME7Tuner.jar">![Foo](https://img.shields.io/badge/ME7Tuner-v0.1-GREEN)</a>
  
-
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
-[Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
+## Tuning Philosophy
 
-In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution).
+Everything in ME7 revolves around requested load (or cylinder fill).
 
-In general, this is accomplished by applying a constant correction to the curve (MLHFM) that defines the conversion between the MAF sensors voltage output to an estimation of airflow. This constant correction is usually based on the change in diamater from the current MAF housing to the new MAF housing.
+* Read [Engine load](https://s4wiki.com/wiki/Load)
 
-Non-linearities in the intake airflow and fuel system are then compenstated via KFKHFM and FKKVS.
+The deeply simplified description of how ME7 works is as follows:
 
-* [See Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary)
-* [See Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow)
+In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 then calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When you are tuning ME7, you are trying to modify the various maps to model your hardware and the weather accurately. If you don't model things correctly, ME7 is going to decide something is wrong and will try to protect the engine by reducing the capacity to produce power at various levels of intervention. It is important to get things right.
 
-Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a non-linear change to the original linearization curve. Correcting the linearization in these cases can require more advanced corrections.
+This approach to tuning has notable consquences:
 
-### Example of MAF underscaling
+* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load.
 
-* **Solid Line** - Scaling based on a constand derived from the change in housing diameter
-* **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
+* 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
 
-You can see a 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs a relatively accurate estimation of airflow (broken lines).
+For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
+### Do I need larger injectors?
 
-The result of scaling the MAF based on a constand derived from the change in housing diameter was low LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle. In other words, the car would idle fine at a lambda of 1, but WOT (wide open throttle) actual fueling lambda was lean compared to requested fueling lambda. Presumably, this leads to wildly a different KFKHFM and/or FKKVS compared to stock to compenstate for lean open-loop fueling.
+In theory a stock S4 has a max load of 191%. 191% load is the limit of the stock KFMIRL and it is the point where the stock MAF and fuel injectors max out.
 
-### Example of MAF underscaling
+* Stock injectors are 349cc/min
+* Stock MAF maxes at ~300g/sec
+* 191% load is approximately 300 g/sec (40lb/min)
+* The stock injectors could, in theory, support enough fuel for a 12:1 AFR at 300g/sec (2091.2 cc/min)
+* A K03 is 16lb/min and a K04 is 20lb/min... so 20lb/min * 2 = 40lb/min -> 191% load
+* It is a bad idea to max injector duty cycle
 
-The PMAS HPX slot sensor comes with a transfer function which I also found to be underscaled. This [Nefarious Motosports topic](http://nefariousmotorsports.com/forum/index.php?topic=382.0) also provides what is presumably an older version of the transfer function. I found both transfer functions to be underscaled in the open-loop areas similiar to the 100mm housing with a Hitachi sensor.
+### Do I need another MAP sensor + 5120 hack?
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/hpx_curve.png "Underscaled 87mm housing")
+* Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
+* Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0title=)
 
-### Summary of Examples
+If you are going to run more than 2.5bar absoulte (~22.45 psi relative), than yes, you will need another MAP sensor and the 5120 hack. However, I suspect most will not run more than ~22psi.
 
-The underscaled transfer functions can possibly be attributed to the specific properties of my open element intake or to any number of other factors. The point is simply that you may want to calibrate your MAF to avoid large corrections in KFKHFM and/or FKKVS.
+* A K03 turbo isn't going to make ~22psi (or if it does it won't for long). 
+* A K04 turbo is likley going to be close to the knock limit of pump fuel and the limit of the wastegates at ~22psi.
+
 
 # (KRKTE) Primary Fueling
 
@@ -46,16 +50,64 @@ The underscaled transfer functions can possibly be attributed to the specific pr
 
 The first step is to calculate a reasonable value for KRKTE (primary fueling). The is the value that allows the ECU to determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cyclinder filling. It is critial that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, your MAF is likely over/under scaled.
 
-Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser. 
+Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser.
+
+Note that the decision to use a fuel density of 0.71 g/cc^3 (versus a more accurate ~0.75 g/cc^3) was clearly intentional and will have the effect of slightly underscaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compenstate). As a result, the measured engine load (rl_w) will be underscaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
 
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
+When you are satisfied with KRKTE, you will need to get your MAF scale your MAF to your injectors.
 
-When you are satisfied with KRKTE, you will need to get your MAF ballpark scaled to the new KRKTE. In my experience, applying the percentage change of KRKTE (from the previous value to the new value) to MLHFM works well enough. For example, if KRKTE is changed by 10% then change all of MLFHM by 10%. Or, if you have a transfer function that is fairly accurate, transfering those values to MLFHM should be all you need.
+# (MLHFM) MAF Scaling
 
-# Closed Loop MLHFM
+[Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
+
+In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution) or to change MAF sensors entirely.
+
+In general, a MAF sensor can be moved to a larger housing to extend the range of the sensor with a constant correction to the linearization curve (MLHFM) that defines the conversion between the MAF sensors voltage output to an estimation of airflow. This constant correction is usually based on the change in diameter from the current MAF housing to the new MAF housing.
+
+If the MAF diameter can not be increased enough to acheieve the desired range a new sensor (hopefully accompanied with a corresponding linearation curve) can be used to increase the range of the MAF housing.
+
+###  Increasing MAF Diameter
+
+[Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
+
+Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve. This means a constant correction across the linearization curve is not enough and more advanced non-linear corrections will need to be calculated and applied.
+
+* **Solid Line** - Scaling based on a constand derived from the change in housing diameter
+* **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
+
+A 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs actual airflow (broken lines).
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
+
+The result of scaling the MAF linearization curve based on a constant derived from the change in housing diameter is mild LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle and WOT.
+
+### Changing MAF sensors
+
+Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
+
+### Scaling Your MAF
+
+Presumably, incorrect MAF linearization will lead to irrational changes in at least a few notable places:
+
+* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
+* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
+* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF
+
+Having to make irrational changes in these places makes tuning considerably more difficult overall, so being able to scale your MAF to be as accurate as possible is ideal. 
+
+To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio actual airflow can be calculated and compared against the MAF to make corrections.
+
+* Close loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
+* Open loop fueling uses a wide-band 02 sensor to make corrections
+
+
+## (MLHFM) Closed Loop MAF Scaling 
 
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
 
