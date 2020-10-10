@@ -75,15 +75,19 @@ Note: Remember to multiply air by the number of turbos divide fuel by the number
 
 ##### Summary
 
-From the calculations it is clear why a stock B5 S4 MAF maxes out at 337 g/sec, why it has 349 cc/min fuel injectors and why KFMIRL (load) maxes at 191%. It is also clear that most 2.7T K04 cars just need larger fuel injectors (in many cases a larger MAF housing probably isn't needed) and minimal changes to the tune. Larger turbos will need a larger MAF and many of the maps will need to be signicantly modified which is where ME7Tuner comes in.
+From the calculations it is clear why a stock B5 S4 MAF maxes out at 337 g/sec, why it has 349 cc/min fuel injectors and why KFMIRL (load) maxes at 191%. You can also see why an RS4 KFMIRL "only" maxes at 199% load. It is that most 2.7T K04 cars just need larger fuel injectors (in many cases a larger MAF housing probably isn't needed) and minimal changes to the tune. Larger turbos will need a larger MAF and many of the maps will need to be signicantly modified which is where ME7Tuner comes in.
 
 ### Do I need larger fuel injectors?
+
+Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 
 If you are running anything larger than K03's you will need larger fuel injectors.
 
 ### Do I need a larger MAF housing?
 
-With K03 turbos you will not need a larger MAF. It is likely that most K04 turbos won't need a larger MAF either. Anything larger than a K04 will certainly need a 83mm RS4 MAF or a 85mm housing with a Hitachi MAF. A 650R will likely need a HPX 89mm MAF and a 770R almost certainly will.
+Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
+
+With K03 turbos you will not need a larger MAF. It is likely that most K04 turbos won't need a larger MAF, either. Anything larger than a K04 will need a 83mm RS4 MAF or a 85mm housing with a Hitachi MAF. A 650R will likely need a HPX 89mm MAF and a 770R almost certainly will.
 
 ### Do I need another MAP sensor + 5120 hack?
 
