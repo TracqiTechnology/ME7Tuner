@@ -55,7 +55,7 @@ Note: Remember to multiply by the number of turbos
 * 650R 37 lbs/min air -> ~2200 cc/min fuel
 * 770R 48 lbs/min air -> ~3024 cc/min fuel
 
-Note: Remember to multiply air by the number of turbos divide fuel by the number of fuel injectors
+Note: Remember to multiply air by the number of turbos and divide fuel by the number of fuel injectors
 
 ##### Theoretical fuel injector size for a V6 bi-turbo configuration
 
