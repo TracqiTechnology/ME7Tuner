@@ -24,7 +24,7 @@ For a significant peroid of time tuning methods for ME7 revolved around 'trickin
 
 ### Do I need to use ME7Tuner?
 
-It depends on the capabilities of your hardware and what your expectations are. In general you want to change as little as possible because it makes tuning the car easier. Creating lots of power requires a lot of air and fuel. Tuning for lots of air and fuel requires significant changes to many maps. There isn't much point in spending money on extra hardware and the effort on tuning the extra hardware unless you can actually make the airflow. It can be helful to look at how much airflow common turbos can produce to help determine what you actually need:
+It depends on the capabilities of your hardware and what your expectations are. In general you want to change as little as possible because it makes tuning the car easier and costs less. Creating lots of power requires a lot of air and fuel. Tuning for lots of air and fuel requires significant changes to many maps. There isn't much point in spending money on extra hardware and the effort on tuning the extra hardware unless you can actually make the airflow. It can be helful to look at how much airflow common turbos can produce to help determine what you actually need:
 
 ##### Stock MAP Limit 
 
@@ -57,13 +57,21 @@ Note: Remember to multiply by the number of turbos
 
 Note: Remember to multiply air by the number of turbos divide fuel by the number of fuel injectors
 
-##### Theoretical injector size for a V6 bi-turbo configuration
+##### Theoretical fuel injector size for a V6 bi-turbo configuration
 
 * K03 16 lbs/min air -> ~340 cc/min
 * K04 22 lbs/min air -> ~470 cc/min
 * RS6 25 lbs/min air -> ~540 cc/min
 * 650R 37 lbs/min air -> ~740 cc/min
 * 770R 48 lbs/min air -> ~1000 cc/min
+
+##### Theoretical load for a 2.7l V6 bi-turbo configuration
+
+* K03 16 lbs/min air -> ~155% load -> ~320hp
+* K04 22 lbs/min air -> ~210% load -> ~440hp
+* RS6 25 lbs/min air -> ~240% load -> ~500hp
+* 650R 37 lbs/min air -> ~354% load -> ~740hp
+* 770R 48 lbs/min air -> ~460% load -> ~960hp
 
 ### Do I need another MAP sensor + 5120 hack?
 
