@@ -20,18 +20,50 @@ This approach to tuning has notable consquences:
 
 * 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
 
-For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
+For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
 
-### Do I need larger injectors?
+### Do I need to use ME7Tuner?
 
-In theory a stock S4 has a max load of 191%. 191% load is the limit of the stock KFMIRL and it is the point where the stock MAF and fuel injectors max out.
+It depends on the capabilities of your hardware and what your expectations are. In general you want to change as little as possible because it makes tuning the car easier. Creating lots of power requires a lot of air and fuel. Tuning for lots of air and fuel requires significant changes to many maps. There isn't much point in spending money on extra hardware and the effort on tuning the extra hardware unless you can actually make the airflow. It can be helful to look at how much airflow common turbos can produce to help determine what you actually need:
 
-* Stock injectors are 349cc/min
-* Stock MAF maxes at ~300g/sec
-* 191% load is approximately 300 g/sec (40lb/min)
-* The stock injectors could, in theory, support enough fuel for a 12:1 AFR at 300g/sec (2091.2 cc/min)
-* A K03 is 16lb/min and a K04 is 20lb/min... so 20lb/min * 2 = 40lb/min -> 191% load
-* It is a bad idea to max injector duty cycle
+#### Stock MAP Limit 
+
+* 2.5bar absolute (~22.45 psi relative)
+
+#### Turbo Airflow
+
+* K03 16 lbs/min (120 g/sec) (~160hp)
+* K04 22 lbs/min (166 g/sec) (~225hp)
+* RS6 25 lbs/min  (196 g/sec) (~265hp)
+* 650R 37 lbs/min (287 g/sec) (~370hp)
+* 770R 48 lbs/min (370 g/sec) ((~490hp)
+
+Note: Remember to multiply by the number of turbos
+
+### MAF Airflow
+
+* Stock Bosch/Hitachi 73mm (337 g/sec)
+* Stock RS4 83mm (498 g/sec)
+* Stock Hitachi 85mm (493 g/sec)
+* HPX 89mm (800+ g/sec)
+
+### Fuel for Airflow (10:1 AFR)
+
+* K03 16 lbs/min air ->  ~1000 cc/min fuel
+* K04 22 lbs/min air -> ~1400 cc/min fuel
+* RS6 25 lbs/min air -> ~1600 cc/min fuel
+* 650R 37 lbs/min air -> ~2200 cc/min fuel
+* 770R 48 lbs/min air -> ~3024 cc/min fuel
+
+Note: Remember to multiply air by the number of turbos divide fuel by the number of fuel injectors
+
+### Theoretical injector size for a V6 bi-turbo configuration
+
+* K03 16 lbs/min air -> ~340 cc/min
+* K04 22 lbs/min air -> ~470 cc/min
+* RS6 25 lbs/min air -> ~540 cc/min
+* 650R 37 lbs/min air -> ~740 cc/min
+* 770R 48 lbs/min air -> ~1000 cc/min
 
 ### Do I need another MAP sensor + 5120 hack?
 
