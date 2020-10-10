@@ -65,7 +65,7 @@ Note: Remember to multiply air by the number of turbos and divide fuel by the nu
 * 650R 37 lbs/min air -> ~740 cc/min
 * 770R 48 lbs/min air -> ~1000 cc/min
 
-##### Theoretical load for a 2.7l V6 bi-turbo configuration
+##### Theoretical load for a 2.7l V6 configuration
 
 * K03 16 lbs/min air -> ~155% load -> ~320hp
 * K04 22 lbs/min air -> ~210% load -> ~440hp
