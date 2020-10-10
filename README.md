@@ -73,6 +73,18 @@ Note: Remember to multiply air by the number of turbos divide fuel by the number
 * 650R 37 lbs/min air -> ~354% load -> ~740hp
 * 770R 48 lbs/min air -> ~460% load -> ~960hp
 
+##### Summary
+
+From the calculations it is clear why a stock B5 S4 MAF maxes out at 337 g/sec, why it has 349 cc/min fuel injectors and why KFMIRL (load) maxes at 191%. It is also clear that most 2.7T K04 cars just need larger fuel injectors (in many cases a larger MAF housing probably isn't needed) and minimal changes to the tune. Larger turbos will need a larger MAF and many of the maps will need to be signicantly modified which is where ME7Tuner comes in.
+
+### Do I need larger fuel injectors?
+
+If you are running anything larger than K03's you will need larger fuel injectors.
+
+### Do I need a larger MAF housing?
+
+With K03 turbos you will not need a larger MAF. It is likely that most K04 turbos won't need a larger MAF either. Anything larger than a K04 will certainly need a 83mm RS4 MAF or a 85mm housing with a Hitachi MAF. A 650R will likely need a HPX 89mm MAF and a 770R almost certainly will.
+
 ### Do I need another MAP sensor + 5120 hack?
 
 * Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
@@ -80,9 +92,20 @@ Note: Remember to multiply air by the number of turbos divide fuel by the number
 
 If you are going to run more than 2.5bar absoulte (~22.45 psi relative), than yes, you will need another MAP sensor and the 5120 hack. However, I suspect most will not run more than ~22psi.
 
-* A K03 turbo isn't going to make ~22psi (or if it does it won't for long). 
-* A K04 turbo is likley going to be close to the knock limit of pump fuel and the limit of the wastegates at ~22psi.
+* K03 turbos -> nope 
+* K04 turbos -> maybe
+* RS6 turbos -> probably
+* 650R -> yes
+* 770R -> yes
 
+### Should I use ME7Tuner?
+
+Be realistic about what your hardware can really do. Don't spend money and change maps in the tune when you don't have to.
+
+ * For K03 cars you won't need ME7Tuner
+ * For K04 cars with larger injectors the KRKTE calculator can be useful
+ * For K04 cars with larger injectors and a larger housing ME7Tuner is quite useful for getting your fueling correct
+ * For any large frame turbos with totally different MAFs, large injectors, 5120 hack, and loads over 191%... ME7Tuner can calculate corrections to maps in seconds that would take hours to do in Excel
 
 # (KRKTE) Primary Fueling
 
