@@ -16,21 +16,20 @@ The deeply simplified description of how ME7 works is as follows:
 
 In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 then calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When you are tuning ME7, you are trying to modify the various maps to model your hardware and the weather accurately. If you don't model things correctly, ME7 is going to decide something is wrong and will try to protect the engine by reducing the capacity to produce power at various levels of intervention. It is important to get things right.
 
-This approach to tuning has notable consquences:
+Note that no amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load. You must modify the tune to request more load to significantly increase power.
 
-* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load.
-
-* 'Hacking' ME7 into doing what you want requires doing irrational things in the models which makes tuning more difficult.
-
-For a significant peroid of time tuning methods for ME7 revolved around 'hacking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods. Frankly, you will have better results if you can use an accurate MAP sensor, MAF sensor and fueling to tune the models with rational inputs .
+ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow and load measurements (a properly scaled MAF) which can make tuning the car much easier.
 
 ### Do I need to use ME7Tuner?
 
-It depends on the capabilities of your hardware and what your expectations are. In general you want to change as little as possible because it makes tuning the car easier and costs less. Creating lots of power requires a lot of air and fuel. Tuning for lots of air and fuel requires significant changes to many maps. There isn't much point in spending money on extra hardware and the effort on tuning the extra hardware unless you can actually make the airflow. It can be helful to look at how much airflow common turbos can produce to help determine what you actually need:
+If have increased your MAF housing and can make significantly more than 191% load, ME7Tuner can be helpful.
 
 ##### Stock MAP Limit 
 
 * 2.5bar absolute (~22.45 psi relative)
+
+Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
+Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0titl
 
 ##### Turbo Airflow
 
@@ -48,6 +47,8 @@ Note: Remember to multiply by the number of turbos
 * Stock RS4 83mm (498 g/sec)
 * Stock Hitachi 85mm (493 g/sec)
 * HPX 89mm (800+ g/sec)
+
+Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
 
 ##### Fuel for Airflow (10:1 AFR)
 
@@ -67,6 +68,8 @@ Note: Remember to multiply air by the number of turbos and divide fuel by the nu
 * 650R 37 lbs/min air -> ~740 cc/min
 * 770R 48 lbs/min air -> ~1000 cc/min
 
+Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
+
 ##### Theoretical load for a 2.7l V6 configuration
 
 * K03 16 lbs/min air -> ~155% load -> ~320hp
@@ -74,44 +77,6 @@ Note: Remember to multiply air by the number of turbos and divide fuel by the nu
 * RS6 25 lbs/min air -> ~240% load -> ~500hp
 * 650R 37 lbs/min air -> ~354% load -> ~740hp
 * 770R 48 lbs/min air -> ~460% load -> ~960hp
-
-##### Summary
-
-From the calculations it is clear why a stock B5 S4 MAF maxes out at 337 g/sec, why it has 349 cc/min fuel injectors and why KFMIRL (load) maxes at 191%. You can also see why an RS4 KFMIRL "only" maxes at 199% load. It is that most 2.7T K04 cars just need larger fuel injectors (in many cases a larger MAF housing probably isn't needed) and minimal changes to the tune. Larger turbos will need a larger MAF and many of the maps will need to be signicantly modified which is where ME7Tuner comes in.
-
-### Do I need larger fuel injectors?
-
-Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
-
-If you are running anything larger than K03's you will need larger fuel injectors.
-
-### Do I need a larger MAF housing?
-
-Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
-
-With K03 turbos you will not need a larger MAF. It is likely that most K04 turbos won't need a larger MAF, either. Anything larger than a K04 will need a 83mm RS4 MAF or a 85mm housing with a Hitachi MAF. A 650R will likely need a HPX 89mm MAF and a 770R almost certainly will.
-
-### Do I need another MAP sensor + 5120 hack?
-
-* Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
-* Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0title=)
-
-If you are going to run more than 2.5bar absoulte (~22.45 psi relative), than yes, you will need another MAP sensor and the 5120 hack. However, I suspect most will not run more than ~22psi.
-
-* K03 turbos -> nope 
-* K04 turbos -> maybe
-* RS6 turbos -> probably
-* 650R -> yes
-* 770R -> yes
-
-### Should I use ME7Tuner?
-
-Be realistic about what your hardware can really do. Don't spend money and change maps in the tune when you don't have to.
-
- * For K03 cars you won't need ME7Tuner
- * For K04 cars with larger injectors the KRKTE calculator can be useful
- * For K04 cars with larger injectors and a larger housing ME7Tuner is quite useful for getting your fueling correct
- * For any large frame turbos with totally different MAFs, large injectors, 5120 hack, and loads over 191%... ME7Tuner can calculate corrections to maps in seconds that would take hours to do in Excel
 
 # (KRKTE) Primary Fueling
 
