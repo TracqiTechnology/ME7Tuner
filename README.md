@@ -22,7 +22,7 @@ ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airfl
 
 ### Do I need to use ME7Tuner?
 
-If have increased your MAF housing diameter and can make significantly more than 191% load, ME7Tuner can be helpful.
+If have increased your changed your MAF sensor and/or MAF housing diameter and can make significantly more than 191% load, ME7Tuner can be helpful.
 
 ##### Stock MAP Limit 
 
