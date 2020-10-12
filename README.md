@@ -78,6 +78,12 @@ Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 * 650R 37 lbs/min air -> ~354% load -> ~740hp
 * 770R 48 lbs/min air -> ~460% load -> ~960hp
 
+Note that a stock M-box has a maximum load request of 191%.
+
+#####
+
+This should give you a good estimate of what hardware you need to acheive a given power goal and how much tuning you will need to do to support that power.
+
 # (KRKTE) Primary Fueling
 
 * Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
