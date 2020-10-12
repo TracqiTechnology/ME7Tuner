@@ -98,7 +98,7 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
-When you are satisfied with KRKTE, you will need to get your MAF scale your MAF to your injectors.
+When you are satisfied with KRKTE, you will need to get your MAF scaled to the fuel injectors.
 
 # (MLHFM) MAF Scaling
 
@@ -139,7 +139,7 @@ Having to make irrational changes in these places makes tuning considerably more
 
 To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio... actual airflow can be calculated and compared against the MAF to make corrections.
 
-* Close loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
+* Closed loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
 * Open loop fueling uses a wide-band 02 sensor to make corrections
 
 ## (MLHFM) Closed Loop MAF Scaling 
