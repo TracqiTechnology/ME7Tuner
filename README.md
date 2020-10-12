@@ -80,9 +80,9 @@ Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 
 Note that a stock M-box has a maximum load request of 191%.
 
-#####
+##### Summary
 
-This should give you a good estimate of what hardware you need to acheive a given power goal and how much tuning you will need to do to support that power.
+This information should give you a good estimate of what hardware you need to acheive a given power goal, how much tuning you will need to do to support that power and if ME7Tuner is useful to you.
 
 # (KRKTE) Primary Fueling
 
