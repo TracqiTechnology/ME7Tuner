@@ -4,6 +4,8 @@
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
+
 ## Tuning Philosophy
 
 Everything in ME7 revolves around requested load (or cylinder fill).
