@@ -96,7 +96,7 @@ When you are satisfied with KRKTE, you will need to get your MAF scale your MAF 
 
 # (MLHFM) MAF Scaling
 
-[Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
+Read [MAF](https://s4wiki.com/wiki/Mass_air_flow)
 
 In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution) or to change MAF sensors entirely.
 
@@ -106,40 +106,35 @@ If the MAF diameter can not be increased enough to acheieve the desired range a 
 
 ###  Increasing MAF Diameter
 
-[Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
+Read [Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
-Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve. This means a constant correction across the linearization curve is not enough and more advanced non-linear corrections will need to be calculated and applied.
-
-* **Solid Line** - Scaling based on a constand derived from the change in housing diameter
+* **Solid Line** - 100mm housing scaled based on a constand derived from the change in housing diameter
 * **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
 
-A 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs actual airflow (broken lines).
+Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed (and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is difficult and tedious work. It is much easier to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
-The result of scaling the MAF linearization curve based on a constant derived from the change in housing diameter is mild LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle and WOT.
-
 ### Changing MAF sensors
-
-Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
 
+Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities. The original curve is inaccurate enough that KFKHFM and/or FKKVS would have to be significantly modified to get the engine to idle and WOT fueling safe. Again, it is much easier to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
+
 ### Scaling Your MAF
 
-Presumably, incorrect MAF linearization will lead to irrational changes in at least a few notable places:
+Presumably, incorrect MAF linearization will lead to irrational changes in the following places at a minimum:
 
-* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
-* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
-* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF
+* Fueling -> KFKHFM/FKKVS/LAMFA/WDKUGDN
+* VE model -> KFURL
+* Load request -> LDRXN/KFMIRL
 
-Having to make irrational changes in these places makes tuning considerably more difficult overall, so being able to scale your MAF to be as accurate as possible is ideal. 
+Having to make irrational changes in these places makes tuning considerably more difficult overall compared to just having an accurate MAF.
 
-To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio actual airflow can be calculated and compared against the MAF to make corrections.
+To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio... actual airflow can be calculated and compared against the MAF to make corrections.
 
 * Close loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
 * Open loop fueling uses a wide-band 02 sensor to make corrections
-
 
 ## (MLHFM) Closed Loop MAF Scaling 
 
