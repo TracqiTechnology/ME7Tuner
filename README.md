@@ -20,9 +20,9 @@ This approach to tuning has notable consquences:
 
 * No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load.
 
-* 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
+* 'Hacking' ME7 into doing what you want requires doing irrational things in the models which makes tuning more difficult.
 
-For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
+For a significant peroid of time tuning methods for ME7 revolved around 'hacking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods. Frankly, you will have better results if you can use an accurate MAP sensor, MAF sensor and fueling to tune the models with rational inputs .
 
 ### Do I need to use ME7Tuner?
 
