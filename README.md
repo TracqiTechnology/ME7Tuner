@@ -123,9 +123,9 @@ Significantly increasing the diamater of the MAF housing can change the airflow 
 
 ### Changing MAF sensors
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
-
 Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities. The original curve is inaccurate enough that KFKHFM and/or FKKVS would have to be significantly modified to get the engine to idle and WOT fueling safe. Again, it is much easier to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
 
 ### Scaling Your MAF
 
