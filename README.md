@@ -194,6 +194,10 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
+* You may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This could be due to non-linearities in airflow due to changes in airflow velocity, but it is likely just noise we want to get rid of.  ME7Tuner has an option to fit your curve to a polynomial of a user configurable degree which will "smooth" your curve. Click the "Fit MLHFM" button with a reasonable polynomial degree (I find a 6th degree function to work well) to smooth your curve.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/MLHFM_POLYNOMIAL_FIT.png "Polynomial Fit MLHFM Corection%")
+
 # Closed Loop KFKHFM
 
 After performing a few Closed Loop MLHFM corrections, you may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This is due to non-linearities in the intake tract where, for a given engine load, the velocity of the intake air is causing the MAF to read different values. KFKHFM exists to compensate for these non-linearities.
