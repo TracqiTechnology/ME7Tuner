@@ -268,7 +268,6 @@ First, use the 'Fit MLHFM' button to fit a polynomial of a user defined degree (
 
 * Load the corrected KFKHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
-
 # Open Loop
 
 Before attempting to tune open loop fueling, you really need to have KRKTE and and closed loop fueling nailed down. You also need a wide-band O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
@@ -347,13 +346,13 @@ The algorithm takes an **absolute** pressure request (don't forget to account fo
 
 # KFMIOP (Load/Fill to Torque)
 
-If you modify you KFMIRL you probably want to regenerate KFMIOP as the inverse of KFMIRL to keep torque monitoring sane.
+If you modify you KFMIRL you want to regenerate KFMIOP as the inverse of KFMIRL to keep torque monitoring sane.
 
 ### Algorithm
 
 The algorithm simply creates the inverse of KFMIRL to generate KFMIOP and provides a new KFMIOP axis. Don't forget to interpolate KFZWOP/KFMDS if you change KFMIOP axis. Note that simply generating the inverse is not enough and KFMIOP will need more work to get the torque monitoring right. KFMIRL and KFMIOP technically have nothing to do with each other, but using the inverse of KFMIRL to generate KFMIOP seems to be a good starting point.
 
-* [See Torque Monitoring](https://s4wiki.com/wiki/Tuning#Torque_monitoring)
+* Read [Torque Monitoring](https://s4wiki.com/wiki/Tuning#Torque_monitoring)
 
 Specifically these two points:
 
@@ -365,7 +364,9 @@ Specifically these two points:
 * Copy and paste your KFMIRL and the algorithm will generate KFMIOP
 * Copy and paste KFMIOP directly into TunerPro.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.52.51-PM.png "KFMIOP")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFMIOP.png "KFMIOP")
+
+Note that KFMIOP also produces axes for KFMIOP, KFZWOP and KFZW so you can scale your ignition timing correctly.
 
 
 
