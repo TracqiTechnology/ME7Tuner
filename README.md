@@ -368,5 +368,21 @@ Specifically these two points:
 
 Note that KFMIOP also produces axes for KFMIOP, KFZWOP and KFZW so you can scale your ignition timing correctly.
 
+# KFZWOP (Optimal Ignition Timing)
+
+If you modified KFMIRL/KFMIOP you will want to modify the table and axis of KFZWOP to reflect to the new load range.
+
+### Algorithm
+
+The input KFZWOP is extrapolated to the input KFZWOP x-axis range (engine load from generated KFMIOP).
+
+*Pay attention to the output!* Extrapolation is useful, but can be very stupid. Especially if the inputs have certain characteristics. Examine the output and make sure it is reasonable before using it. You will probably have to 'massage' the output a bit. The 3D charts can be very useful here.
+
+### Useage
+
+* Copy and paste your KFZWOP and the x-axis load range generated from KFMIOP
+* Copy and paste the output KFZWOP directly into TunerPro.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZWOP.png "KFMIOP")
 
 
