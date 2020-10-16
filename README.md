@@ -440,9 +440,9 @@ All logs must be contained a single ME7Logger file and a single Zeitronix log. B
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_CORRECTION.png "KFRUL Corrections")
 
-# WDKUDGN (Alpha-N Fueling)
+# WDKUGDN (Alpha-N Fueling)
 
-With larger turbos you will likely need to adjust WDKUDGN so airflow at the throttle plate can be predicted accurately.
+With larger turbos you will likely need to adjust WDKUGDN so airflow at the throttle plate can be predicted accurately.
 
 ### Algorithm
 
@@ -454,18 +454,18 @@ The correction is calculated based on the difference between the mass airflow me
 
 * Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
 
-* Copy WDKUDGN into the WDKUDGN table.
+* Copy WDKUGDN into the WDKUGDN table.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_OUTPUT.png "WDKUDGN Input")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_OUTPUT.png "WDKUGDN Input")
 
 * Load the ME7 Logs
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_LOGS.png "WDKUDGN Logs")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_LOGS.png "WDKUGDN Logs")
 
-* The corrected WDKUDGN will be output in the Corrected WDKUDGN table. These can be copy/pasted into TunerPro.
+* The corrected WDKUGDN will be output in the Corrected WDKUGDN table. These can be copy/pasted into TunerPro.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_INPUT.png "WDKUDGN Output")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_INPUT.png "WDKUGDN Output")
 
 * The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_CORRECTIONS.png "WDKUDGN Corrections")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_CORRECTIONS.png "WDKUGDN Corrections")
