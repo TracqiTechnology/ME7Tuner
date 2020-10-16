@@ -4,6 +4,8 @@
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
+
 ## Tuning Philosophy
 
 Everything in ME7 revolves around requested load (or cylinder fill).
@@ -14,35 +16,73 @@ The deeply simplified description of how ME7 works is as follows:
 
 In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 then calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When you are tuning ME7, you are trying to modify the various maps to model your hardware and the weather accurately. If you don't model things correctly, ME7 is going to decide something is wrong and will try to protect the engine by reducing the capacity to produce power at various levels of intervention. It is important to get things right.
 
-This approach to tuning has notable consquences:
+Note that no amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load. You must modify the tune to request more load to significantly increase power.
 
-* No amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will fundamentally increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will simply use interventions to decrease actual load to get it to equal or below requested load.
+ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow and load measurements (a properly scaled MAF) which can make tuning the car much easier.
 
-* 'Tricking' ME7 into doing what you want requires doing irrational things in the models which makes tuning much more difficult. Irrational inputs can result in irrational models and that is bad. It makes interpreting results more difficult and introduces more complexities into the models. 
+### Do I need to use ME7Tuner?
 
-For a significant peroid of time tuning methods for ME7 revolved around 'tricking' ME7 mostly due to an absolute limit of 2.5bar (~22.45 psi relative) for the stock MAP sensor. There is **a lot** of information out there on how to tune with these methods and I am telling you that you don't want to do it that way. In the long run, it is easier and you will have better results if you can use an accurate MAP sensor, MAF sensor and accurate fueling to tune the models with rational inputs.
+If have increased your changed your MAF sensor and/or MAF housing diameter and can make significantly more than 191% load, ME7Tuner can be helpful.
 
-### Do I need larger injectors?
+##### Stock MAP Limit 
 
-In theory a stock S4 has a max load of 191%. 191% load is the limit of the stock KFMIRL and it is the point where the stock MAF and fuel injectors max out.
+* 2.5bar absolute (~22.45 psi relative)
 
-* Stock injectors are 349cc/min
-* Stock MAF maxes at ~300g/sec
-* 191% load is approximately 300 g/sec (40lb/min)
-* The stock injectors could, in theory, support enough fuel for a 12:1 AFR at 300g/sec (2091.2 cc/min)
-* A K03 is 16lb/min and a K04 is 20lb/min... so 20lb/min * 2 = 40lb/min -> 191% load
-* It is a bad idea to max injector duty cycle
+Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
+Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0titl
 
-### Do I need another MAP sensor + 5120 hack?
+##### Turbo Airflow
 
-* Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
-* Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0title=)
+* K03 16 lbs/min (120 g/sec) (~160hp)
+* K04 22 lbs/min (166 g/sec) (~225hp)
+* RS6 25 lbs/min  (196 g/sec) (~265hp)
+* 650R 37 lbs/min (287 g/sec) (~370hp)
+* 770R 48 lbs/min (370 g/sec) ((~490hp)
 
-If you are going to run more than 2.5bar absoulte (~22.45 psi relative), than yes, you will need another MAP sensor and the 5120 hack. However, I suspect most will not run more than ~22psi.
+Note: Remember to multiply by the number of turbos
 
-* A K03 turbo isn't going to make ~22psi (or if it does it won't for long). 
-* A K04 turbo is likley going to be close to the knock limit of pump fuel and the limit of the wastegates at ~22psi.
+##### MAF Airflow
 
+* Stock Bosch/Hitachi 73mm (337 g/sec)
+* Stock RS4 83mm (498 g/sec)
+* Stock Hitachi 85mm (493 g/sec)
+* HPX 89mm (800+ g/sec)
+
+Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
+
+##### Fuel for Airflow (10:1 AFR)
+
+* K03 16 lbs/min air ->  ~1000 cc/min fuel
+* K04 22 lbs/min air -> ~1400 cc/min fuel
+* RS6 25 lbs/min air -> ~1600 cc/min fuel
+* 650R 37 lbs/min air -> ~2200 cc/min fuel
+* 770R 48 lbs/min air -> ~3024 cc/min fuel
+
+Note: Remember to multiply air by the number of turbos and divide fuel by the number of fuel injectors
+
+##### Theoretical fuel injector size for a V6 bi-turbo configuration
+
+* K03 16 lbs/min air -> ~340 cc/min
+* K04 22 lbs/min air -> ~470 cc/min
+* RS6 25 lbs/min air -> ~540 cc/min
+* 650R 37 lbs/min air -> ~740 cc/min
+* 770R 48 lbs/min air -> ~1000 cc/min
+
+Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
+
+##### Theoretical load for a 2.7l V6 configuration
+
+* K03 16 lbs/min air -> ~155% load -> ~320hp
+* K04 22 lbs/min air -> ~210% load -> ~440hp
+* RS6 25 lbs/min air -> ~240% load -> ~500hp
+* 650R 37 lbs/min air -> ~354% load -> ~740hp
+* 770R 48 lbs/min air -> ~460% load -> ~960hp
+
+Note that a stock M-box has a maximum load request of 191%.
+
+##### Summary
+
+This information should give you a good estimate of what hardware you need to acheive a given power goal, how much tuning you will need to do to support that power and if ME7Tuner is useful to you.
 
 # (KRKTE) Primary Fueling
 
@@ -58,11 +98,11 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-1.36.38-PM.png "Primary Fueling (KRKTE)")
 
-When you are satisfied with KRKTE, you will need to get your MAF scale your MAF to your injectors.
+When you are satisfied with KRKTE, you will need to get your MAF scaled to the fuel injectors.
 
 # (MLHFM) MAF Scaling
 
-[Start with the S4 MAF Wiki](https://s4wiki.com/wiki/Mass_air_flow)
+Read [MAF](https://s4wiki.com/wiki/Mass_air_flow)
 
 In any MAFed application it may be necessary to increase the diameter of the MAF housing to extend the range of the sensor (while also reducing resolution) or to change MAF sensors entirely.
 
@@ -72,40 +112,35 @@ If the MAF diameter can not be increased enough to acheieve the desired range a 
 
 ###  Increasing MAF Diameter
 
-[Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
+Read [Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
-Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve. This means a constant correction across the linearization curve is not enough and more advanced non-linear corrections will need to be calculated and applied.
-
-* **Solid Line** - Scaling based on a constand derived from the change in housing diameter
+* **Solid Line** - 100mm housing scaled based on a constand derived from the change in housing diameter
 * **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
 
-A 83mm MAF housing curve scaled with a constant based on a diameter increase (solid lines) for a 100mm MAF housing vs actual airflow (broken lines).
+Significantly increasing the diamater of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed (and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is difficult and tedious work. It is much easier to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Underscaled 100mm housing")
 
-The result of scaling the MAF linearization curve based on a constant derived from the change in housing diameter is mild LTFT (long-term fuel trims) corrections at idle and significant LTFT corrections at partial throttle and WOT.
-
 ### Changing MAF sensors
 
-Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities.
+Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities. The original curve is inaccurate enough that KFKHFM and/or FKKVS would have to be significantly modified to get the engine to idle and WOT fueling safe. Again, it is much easier to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
 
 ### Scaling Your MAF
 
-Presumably, incorrect MAF linearization will lead to irrational changes in at least a few notable places:
+Presumably, incorrect MAF linearization will lead to irrational changes in the following places at a minimum:
 
-* Significant changes to KFKHFM/FKKVS/LAMFA would have to be made to compenstate for lean fueling
-* Significant changes to the VE model (KFURL) to align estimated manifold pressure (ps_w) with actual presssure (pvdks_w).
-* Significant changes to alpha-n fueling (WDKUGDN) so the engine can reasonably manage without a MAF
+* Fueling -> KFKHFM/FKKVS/LAMFA/WDKUGDN
+* VE model -> KFURL
+* Load request -> LDRXN/KFMIRL
 
-Having to make irrational changes in these places makes tuning considerably more difficult overall, so being able to scale your MAF to be as accurate as possible is ideal. 
+Having to make irrational changes in these places makes tuning considerably more difficult overall compared to just having an accurate MAF.
 
-To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio actual airflow can be calculated and compared against the MAF to make corrections.
+To scale a MAF we need a source of truth to make changes against we we can do that in two ways based on fueling. Since we know the size of the injectors, the injector duty cycle and the air-fuel ratio... actual airflow can be calculated and compared against the MAF to make corrections.
 
-* Close loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
+* Closed loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
 * Open loop fueling uses a wide-band 02 sensor to make corrections
-
 
 ## (MLHFM) Closed Loop MAF Scaling 
 
@@ -158,6 +193,10 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.08.32-PM.png "Filtered Closed Loop AFR Corection%")
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
+
+* You may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This could be due to non-linearities in airflow due to changes in airflow velocity, but it is likely just noise we want to get rid of.  ME7Tuner has an option to fit your curve to a polynomial of a user configurable degree which will "smooth" your curve. Click the "Fit MLHFM" button with a reasonable polynomial degree (I find a 6th degree function to work well) to smooth your curve.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/MLHFM_POLYNOMIAL_FIT.png "Polynomial Fit MLHFM Corection%")
 
 # Closed Loop KFKHFM
 
