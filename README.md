@@ -343,7 +343,7 @@ The algorithm takes an **absolute** pressure request (don't forget to account fo
 * Select a minimum torque request to apply the calcuated load request
 * Copy paste KFMIRL directly into TunerPro
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/Screen-Shot-2019-02-17-at-4.33.38-PM.png "KFMIRL")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFMIRL.png "KFMIRL")
 
 # KFMIOP (Load/Fill to Torque)
 
