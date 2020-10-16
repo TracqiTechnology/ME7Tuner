@@ -501,4 +501,10 @@ The algorithm is mostly based on [elRey's algorithm](http://nefariousmotorsports
 
 * Wait awhile. It can take some time to parse the logs.
 
+* The linearized duty cycle will be output in KFLDRL. Note that it may not be perfect and will likely take some additional massaging to get it right.
+
+* For feed forward pre-control, ME7Tuner will output a new KFLDIMX and x-axis based on estimations from the linearized boost table. Keep in mind that this is just a ballpark estimation and will also likely require some massaging.
+
+* I would reccomend requesting 95% duty cycle at any RPM ranges that can't produce the minimum boost required for cracking the wastegates (because you might as well be spooling as hard as you can here).
+
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
