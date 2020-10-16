@@ -402,4 +402,43 @@ The input KFZW/2 is extrapolated to the input KFZW/2 x-axis range (engine load f
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZW.png "KFZW")
 
+# KFURL (VE)
+
+If you have scaled your MAF correctly and your load is reasonable, KFURL should take minimal tweaking. If you are approaching values much greater than 0.11 or less than 0.9 you need to revisit your MAF scaling.
+
+### Algorithm
+
+You will need a pressure sensor that you can log in the intake manifold to correct KFURL. ME7Tuner is intented to use Zeitronix logs.
+
+The average corrections are calculated as the difference between ps_w (calculated pressure in the intake manifold) and a second pressure sensor mounted in the intake manifold. Corrections are only taken in places where the throttle plate is more than 80% open. For currently unknown reasons, applying the correction in partial or closed throttle situations isn't producing corrections that correspond well to WOT situations.
+
+Note that the correction is calculated and applied as a constant across the ignition advance (meaning only RPM is considered and ignition advance is ignored). This is done because getting enough samples for all ignition advance and RPM combinations isn't possible and the table starts looking strange.
+
+### Useage
+
+* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w)
+
+* Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
+
+* Copy KFURL into the KFURL table.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_INPUT.png "KFURL Input")
+
+* Load the ME7 Logs
+* Load the Zeitronix Logs
+* Check the time alignment of the logs! The Zeitronix logs can't be stopped and started (it can only be started once) or the time alignment will fail.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_LOGS.png "KFURL Logs")
+
+* The corrected KFURL will be output in the Corrected KFURL table. These can be copy/pasted into TunerPro.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_OUTPUT.png "KFURL Output")
+
+* The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_CORRECTION.png "KFRUL Corrections")
+
+
+
+
 
