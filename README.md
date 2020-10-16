@@ -1,6 +1,6 @@
 # General
 
- <a href="http://kircherelectronics.com/files/me7tuner/ME7Tuner_v0.1.jar" rel="ME7Tuner.jar">![Foo](https://img.shields.io/badge/ME7Tuner-v0.1-GREEN)</a>
+ <a href="https://github.com/KalebKE/ME7Tuner/releases/download/v0.2/ME7Tuner_v0.2.jar" rel="ME7Tuner.jar">![ME7Tuner](https://img.shields.io/badge/ME7Tuner-v0.2-GREEN)</a>
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
