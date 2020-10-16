@@ -200,7 +200,11 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 # Closed Loop KFKHFM
 
-After performing a few Closed Loop MLHFM corrections, you may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This is due to non-linearities in the intake tract where, for a given engine load, the velocity of the intake air is causing the MAF to read different values. KFKHFM exists to compensate for these non-linearities.
+After performing a few Closed Loop MLHFM corrections, you may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This can be due to non-linearities in the intake tract where, for a given engine load, the velocity of the intake air is causing the MAF to read different values. If smoothing MLHFM can't get the 'bumpiness' to go away you can use KFKHFM to compensate for these non-linearities at specific loads and RPMs.
+
+* Note that reducing the MAF housing diameter can help with reducing non-linearities. If you can't reduce the MAF housing diameter, changing MAF sensors to a HPX slot sensor can be a good option, too. If all else fails, then I would change KFKHFM as a last resort.
+
+* Also note that FKKVS exists to fix fuel system non-linearities which can also result in unexpected MLHFM calibrations. However, there is no reason not to run very linear injectors like EV14's and not bother with FKKVS at all.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/08/mlhfm_lumpy.png "KFKHFM Close Loop Samples")
 
