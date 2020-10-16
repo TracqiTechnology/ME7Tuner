@@ -18,14 +18,18 @@ import ui.viewmodel.wdkugdn.WdkugdnViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.util.List;
 
 public class WdkugdnCorrectionUiManager {
 
-    private static final int MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int CORRECTION_POINT_SERIES_INDEX = 1;
 
     private MapTable wdkudgn;
     private JPanel panel;
 
+    private XYSeriesCollection correctionPointDataSet;
     private XYSeriesCollection correctionLineDataSet;
     private JFreeChart correctionChart;
 
@@ -41,7 +45,7 @@ public class WdkugdnCorrectionUiManager {
             @Override
             public void onNext(@NonNull WdkugdnCorrection wdkugdnCorrection) {
                 setMap(wdkugdnCorrection.wdkudgn);
-                drawCorrectionChart(wdkugdnCorrection.correction);
+                drawCorrectionChart(wdkugdnCorrection);
             }
 
             @Override
@@ -83,33 +87,49 @@ public class WdkugdnCorrectionUiManager {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         tabbedPane.addTab("WDKUDGN", null, getMapPanel(), "Corrected WDKUDGNL");
-        tabbedPane.addTab("WDKUDGN Correction %", null, getcorrectionChartPanel(), "WDKUDGN Correction");
+        tabbedPane.addTab("WDKUDGN Correction %", null, getCorrectionChartPanel(), "WDKUDGN Correction");
 
         return tabbedPane;
     }
 
-    private void drawCorrectionChart(Double[][] corrections) {
+    private void drawCorrectionChart(WdkugdnCorrection corrections) {
 
         XYPlot plot = (XYPlot) correctionChart.getPlot();
 
+        correctionPointDataSet.removeAllSeries();
         correctionLineDataSet.removeAllSeries();
 
-        generateCorrectionSeries(corrections);
-        plot.setDataset(MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
+        generateCorrectionLineSeries(corrections.correction);
+        plot.setDataset(CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
+
+        generateCorrectionPointSeries(corrections.corrections);
+        plot.setDataset(CORRECTION_POINT_SERIES_INDEX, correctionPointDataSet);
 
     }
 
-    private void generateCorrectionSeries(Double[][] corrections) {
-        XYSeries afrCorrectionSeries = new XYSeries("Final WDKUDGN Correction %");
+    private void generateCorrectionLineSeries(Double[][] corrections) {
+        XYSeries correctionSeries = new XYSeries("Final WDKUDGN Correction %");
 
         for(int i = 0; i < Wdkugdn.getXAxis().length; i++) {
-            afrCorrectionSeries.add(Wdkugdn.getXAxis()[i], corrections[0][i]);
+            correctionSeries.add(Wdkugdn.getXAxis()[i], corrections[0][i]);
         }
 
-        correctionLineDataSet.addSeries(afrCorrectionSeries);
+        correctionLineDataSet.addSeries(correctionSeries);
     }
 
-    private JPanel getcorrectionChartPanel() {
+    private void generateCorrectionPointSeries(List<List<Double>> corrections) {
+        XYSeries correctionsSeries = new XYSeries("WDKUDGN Corrections %");
+
+        for (int i = 0; i < corrections.size(); i++) {
+            for (Double value : corrections.get(i)) {
+                correctionsSeries.add(Wdkugdn.getXAxis()[i], value);
+            }
+        }
+
+        correctionPointDataSet.addSeries(correctionsSeries);
+    }
+
+    private JPanel getCorrectionChartPanel() {
         initCorrectionChart();
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -130,6 +150,7 @@ public class WdkugdnCorrectionUiManager {
     }
 
     private void initCorrectionChart() {
+        correctionPointDataSet = new XYSeriesCollection();
         correctionLineDataSet = new XYSeriesCollection();
 
         correctionChart = ChartFactory.createScatterPlot(
@@ -141,10 +162,17 @@ public class WdkugdnCorrectionUiManager {
         plot.setDomainGridlinePaint(Color.BLACK);
         plot.setRangeGridlinePaint(Color.BLACK);
 
-        XYLineAndShapeRenderer afrCorrectionLineRenderer = new XYLineAndShapeRenderer(true, false);
-        afrCorrectionLineRenderer.setSeriesPaint(0, Color.RED);
+        XYLineAndShapeRenderer correctionLineRenderer = new XYLineAndShapeRenderer(true, false);
+        correctionLineRenderer.setSeriesPaint(0, Color.RED);
 
-        plot.setRenderer(MAF_AT_THROTTLE_PLATE_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
+        plot.setRenderer(CORRECTION_LINE_SERIES_INDEX, correctionLineRenderer);
+
+        XYLineAndShapeRenderer correctionPointRenderer = new XYLineAndShapeRenderer(false, true);
+        correctionPointRenderer.setAutoPopulateSeriesShape(false);
+        correctionPointRenderer.setDefaultShape(new Ellipse2D.Double(0, 0, 1, 1));
+        correctionPointRenderer.setSeriesPaint(0, Color.BLUE);
+
+        plot.setRenderer(CORRECTION_POINT_SERIES_INDEX, correctionPointRenderer);
     }
 
     private JPanel getMapPanel() {

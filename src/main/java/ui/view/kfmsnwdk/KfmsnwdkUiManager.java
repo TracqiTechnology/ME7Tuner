@@ -19,6 +19,7 @@ import org.jzy3d.plot3d.primitives.Polygon;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
+import ui.view.listener.OnTabSelectedListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +28,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class KfmsnwdkUiManager {
+public class KfmsnwdkUiManager implements OnTabSelectedListener {
 
     private MapTable kfmsnwdk;
     private MapTable kfwdkmsn;
@@ -345,5 +346,10 @@ public class KfmsnwdkUiManager {
         surface.setWireframeDisplayed(true);
 
         KfwdkmsnChart3d.getScene().add(surface, true);
+    }
+
+    @Override
+    public void onTabSelected(boolean selected) {
+
     }
 }

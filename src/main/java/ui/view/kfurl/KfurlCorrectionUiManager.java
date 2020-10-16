@@ -6,6 +6,7 @@ import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfurl.Kfurl;
 import model.kfurl.KfurlCorrection;
+import model.wdkugdn.Wdkugdn;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -18,16 +19,18 @@ import ui.viewmodel.kfurl.KfurlViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.util.List;
-import java.util.Map;
 
 public class KfurlCorrectionUiManager {
 
-    private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int CORRECTION_POINT_SERIES_INDEX = 1;
 
     private MapTable kfurl;
     private JPanel panel;
 
+    private XYSeriesCollection correctionPointDataSet;
     private XYSeriesCollection correctionLineDataSet;
     private JFreeChart correctionChart;
 
@@ -43,7 +46,7 @@ public class KfurlCorrectionUiManager {
             @Override
             public void onNext(@NonNull KfurlCorrection kfurlCorrection) {
                 setMap(kfurlCorrection.kfurl);
-                drawAfrCorrectionChart(kfurlCorrection.correction);
+                drawAfrCorrectionChart(kfurlCorrection);
             }
 
             @Override
@@ -85,23 +88,27 @@ public class KfurlCorrectionUiManager {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         tabbedPane.addTab("KFURL", null, getMapPanel(), "Corrected KFURL");
-        tabbedPane.addTab("KFURL Correction %", null, getcorrectionChartPanel(), "KFURL Correction");
+        tabbedPane.addTab("KFURL Correction %", null, getCorrectionChartPanel(), "KFURL Correction");
 
         return tabbedPane;
     }
 
-    private void drawAfrCorrectionChart(Double[][] corrections) {
+    private void drawAfrCorrectionChart(KfurlCorrection corrections) {
 
         XYPlot plot = (XYPlot) correctionChart.getPlot();
 
+        correctionPointDataSet.removeAllSeries();
         correctionLineDataSet.removeAllSeries();
 
-        generateCorrectionSeries(corrections);
-        plot.setDataset(AFR_CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
+        generateCorrectionLineSeries(corrections.correction);
+        plot.setDataset(CORRECTION_LINE_SERIES_INDEX, correctionLineDataSet);
+
+        generateCorrectionPointSeries(corrections.corrections);
+        plot.setDataset(CORRECTION_POINT_SERIES_INDEX, correctionPointDataSet);
 
     }
 
-    private void generateCorrectionSeries(Double[][] corrections) {
+    private void generateCorrectionLineSeries(Double[][] corrections) {
         XYSeries afrCorrectionSeries = new XYSeries("Final KFURL Correction %");
 
         for(int i = 0; i < Kfurl.getXAxis().length; i++) {
@@ -111,7 +118,19 @@ public class KfurlCorrectionUiManager {
         correctionLineDataSet.addSeries(afrCorrectionSeries);
     }
 
-    private JPanel getcorrectionChartPanel() {
+    private void generateCorrectionPointSeries(List<List<Double>> corrections) {
+        XYSeries correctionsSeries = new XYSeries("KFRUL Corrections %");
+
+        for (int i = 0; i < corrections.size(); i++) {
+            for (Double value : corrections.get(i)) {
+                correctionsSeries.add(Kfurl.getXAxis()[i], value);
+            }
+        }
+
+        correctionPointDataSet.addSeries(correctionsSeries);
+    }
+
+    private JPanel getCorrectionChartPanel() {
         initCorrectionChart();
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -132,6 +151,7 @@ public class KfurlCorrectionUiManager {
     }
 
     private void initCorrectionChart() {
+        correctionPointDataSet = new XYSeriesCollection();
         correctionLineDataSet = new XYSeriesCollection();
 
         correctionChart = ChartFactory.createScatterPlot(
@@ -143,10 +163,17 @@ public class KfurlCorrectionUiManager {
         plot.setDomainGridlinePaint(Color.BLACK);
         plot.setRangeGridlinePaint(Color.BLACK);
 
-        XYLineAndShapeRenderer afrCorrectionLineRenderer = new XYLineAndShapeRenderer(true, false);
-        afrCorrectionLineRenderer.setSeriesPaint(0, Color.RED);
+        XYLineAndShapeRenderer correctionLineRenderer = new XYLineAndShapeRenderer(true, false);
+        correctionLineRenderer.setSeriesPaint(0, Color.RED);
 
-        plot.setRenderer(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
+        plot.setRenderer(CORRECTION_LINE_SERIES_INDEX, correctionLineRenderer);
+
+        XYLineAndShapeRenderer correctionPointRenderer = new XYLineAndShapeRenderer(false, true);
+        correctionPointRenderer.setAutoPopulateSeriesShape(false);
+        correctionPointRenderer.setDefaultShape(new Ellipse2D.Double(0, 0, 1, 1));
+        correctionPointRenderer.setSeriesPaint(0, Color.BLUE);
+
+        plot.setRenderer(CORRECTION_POINT_SERIES_INDEX, correctionPointRenderer);
     }
 
     private JPanel getMapPanel() {

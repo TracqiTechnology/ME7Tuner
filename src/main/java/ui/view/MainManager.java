@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainManager {
-    private List<OnTabSelectedListener> tabSelectedListeners = new ArrayList<>();
+    private final List<OnTabSelectedListener> tabSelectedListeners = new ArrayList<>();
 
     public void start() {
         JFrame frame = new JFrame();
@@ -53,6 +53,22 @@ public class MainManager {
         tabSelectedListeners.add(openLoopFuelingUiManager);
         tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingUiManager.getPanel(), "Open Loop Fueling Compensation");
 
+        KfmirlUiManager kfmirlUiManager = new KfmirlUiManager();
+        tabSelectedListeners.add(kfmirlUiManager);
+        tabbedPane.addTab("KFMIRL", null, kfmirlUiManager.getPanel(), "KFMIRL Calculator");
+
+        KfmiopUiManager kfmiopUiManager = new KfmiopUiManager();
+        tabSelectedListeners.add(kfmiopUiManager);
+        tabbedPane.addTab("KFMIOP", null, kfmiopUiManager.getPanel(), "KFMIOP Calculator");
+
+        KfzwopUiManager kfzwopUiManager = new KfzwopUiManager();
+        tabSelectedListeners.add(kfzwopUiManager);
+        tabbedPane.addTab("KFZWOP", null, kfzwopUiManager.getPanel(), "KFZWOP Calculator");
+
+        KfzwUiManager kfzwUiManager = new KfzwUiManager();
+        tabSelectedListeners.add(kfzwUiManager);
+        tabbedPane.addTab("KFZW", null,  kfzwUiManager.getPanel(), "KFZW Calculator");
+
         KfurlUiManager kfurlUiManager = new KfurlUiManager();
         tabSelectedListeners.add(kfurlUiManager);
         tabbedPane.addTab("KFURL", null, kfurlUiManager.getPanel(), "KFURL");
@@ -61,18 +77,16 @@ public class MainManager {
         tabSelectedListeners.add(wdkugdnUiManager);
         tabbedPane.addTab("WDKUGDN", null, wdkugdnUiManager.getPanel(), "KFURL");
 
-        tabbedPane.addTab("KFWDKMSN", null, new KfmsnwdkUiManager().getPanel(), "KFWDKMSN");
+        KfmsnwdkUiManager kfmsnwdkUiManager = new KfmsnwdkUiManager();
+        tabSelectedListeners.add(kfmsnwdkUiManager);
+        tabbedPane.addTab("KFWDKMSN", null, kfmsnwdkUiManager.getPanel(), "KFWDKMSN");
 
-        tabbedPane.addTab("KFMIRL", null, new KfmirlUiManager().getPanel(), "KFMIRL Calculator");
-        tabbedPane.addTab("KFMIOP", null, new KfmiopUiManager().getPanel(), "KFMIOP Calculator");
-        tabbedPane.addTab("KFZWOP", null, new KfzwopUiManager().getPanel(), "KFZWOP Calculator");
-        tabbedPane.addTab("KFZW", null, new KfzwUiManager().getPanel(), "KFZW Calculator");
         tabbedPane.addTab("LDRPID", null, new LdrpidUiManager().getPanel(), "LDRPID");
 
         tabbedPane.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 int selectedIndex = tabbedPane.getSelectedIndex();
-                for(int i = 0; i < tabSelectedListeners.size(); i++) {
+                for (int i = 0; i < tabSelectedListeners.size(); i++) {
                     tabSelectedListeners.get(i).onTabSelected(selectedIndex == i);
                 }
             }

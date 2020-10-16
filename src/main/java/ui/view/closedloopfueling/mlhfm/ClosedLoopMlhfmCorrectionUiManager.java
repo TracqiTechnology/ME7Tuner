@@ -31,8 +31,8 @@ import java.util.Map;
 
 public class ClosedLoopMlhfmCorrectionUiManager {
 
-    private static final int AFR_CORRECTION_POINT_SERIES_INDEX = 1;
-    private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
+    private static final int CORRECTION_POINT_SERIES_INDEX = 1;
+    private static final int CORRECTION_LINE_SERIES_INDEX = 0;
 
     private JFreeChart mlfhmChart;
     private JFreeChart stdDevChart;
@@ -257,19 +257,19 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         plot.setDomainGridlinePaint(Color.BLACK);
         plot.setRangeGridlinePaint(Color.BLACK);
 
-        XYLineAndShapeRenderer afrCorrectionLineRenderer = new XYLineAndShapeRenderer(true, false);
-        afrCorrectionLineRenderer.setSeriesPaint(0, Color.RED);
-        afrCorrectionLineRenderer.setSeriesPaint(1, Color.GREEN);
-        afrCorrectionLineRenderer.setSeriesPaint(2, Color.MAGENTA);
+        XYLineAndShapeRenderer correctionLineRenderer = new XYLineAndShapeRenderer(true, false);
+        correctionLineRenderer.setSeriesPaint(0, Color.RED);
+        correctionLineRenderer.setSeriesPaint(1, Color.GREEN);
+        correctionLineRenderer.setSeriesPaint(2, Color.MAGENTA);
 
-        plot.setRenderer(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineRenderer);
+        plot.setRenderer(CORRECTION_LINE_SERIES_INDEX, correctionLineRenderer);
 
-        XYLineAndShapeRenderer afrCorrectionPointRenderer = new XYLineAndShapeRenderer(false, true);
-        afrCorrectionPointRenderer.setAutoPopulateSeriesShape(false);
-        afrCorrectionPointRenderer.setDefaultShape(new Ellipse2D.Double(0, 0, 1, 1));
-        afrCorrectionPointRenderer.setSeriesPaint(0, Color.BLUE);
+        XYLineAndShapeRenderer correctionPointRenderer = new XYLineAndShapeRenderer(false, true);
+        correctionPointRenderer.setAutoPopulateSeriesShape(false);
+        correctionPointRenderer.setDefaultShape(new Ellipse2D.Double(0, 0, 1, 1));
+        correctionPointRenderer.setSeriesPaint(0, Color.BLUE);
 
-        plot.setRenderer(AFR_CORRECTION_POINT_SERIES_INDEX, afrCorrectionPointRenderer);
+        plot.setRenderer(CORRECTION_POINT_SERIES_INDEX, correctionPointRenderer);
     }
 
     private JButton getFileButton() {
@@ -412,10 +412,10 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         generateFinalAfrCorrectionSeries(correctedAfrMap);
         generateModeAfrCorrectionSeries(modeAfrMap);
         generateMeanAfrCorrectionSeries(meanAfrMap);
-        plot.setDataset(AFR_CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineDataSet);
+        plot.setDataset(CORRECTION_LINE_SERIES_INDEX, afrCorrectionLineDataSet);
 
         generateRawAfrCorrections(correctionsAfrMap);
-        plot.setDataset(AFR_CORRECTION_POINT_SERIES_INDEX, afrCorrectionPointDataSet);
+        plot.setDataset(CORRECTION_POINT_SERIES_INDEX, afrCorrectionPointDataSet);
     }
 
     private void generateRawAfrCorrections(Map<Double, List<Double>> correctionsAfrMap) {

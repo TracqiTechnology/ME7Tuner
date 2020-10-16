@@ -5,7 +5,10 @@ import contract.Me7LogFileContract;
 import math.Index;
 import math.map.Map3d;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class KfurlCalculator {
 
@@ -17,6 +20,12 @@ public class KfurlCalculator {
         List<Double> me7ModeledBoosts = me7LogMap.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER);
         List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
         List<Double> me7Rpms = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+
+        List<List<Double>> corrections = new ArrayList<>();
+
+        for(int i = 0; i < Kfurl.getXAxis().length; i++) {
+            corrections.add(new ArrayList<>());
+        }
 
         double[][] sums = new double[Kfurl.getYAxis().length][Kfurl.getXAxis().length];
         double[][] counts = new double[Kfurl.getYAxis().length][Kfurl.getXAxis().length];
@@ -37,6 +46,8 @@ public class KfurlCalculator {
                 double me7Rpm = me7Rpms.get(me7TimestampIndex);
 
                 int kfurlRpmIndex = Index.getInsertIndex(Arrays.asList(Kfurl.getXAxis()), me7Rpm);
+
+                corrections.get(kfurlRpmIndex).add(correction);
 
                 for (int j = 0; j < Kfurl.getYAxis().length; j++) {
                     sums[j][kfurlRpmIndex] += correction;
@@ -79,6 +90,6 @@ public class KfurlCalculator {
             }
         }
 
-        return new KfurlCorrection(result, correction);
+        return new KfurlCorrection(result, correction, corrections);
     }
 }

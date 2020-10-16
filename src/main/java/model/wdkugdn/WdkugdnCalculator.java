@@ -4,6 +4,7 @@ import contract.Me7LogFileContract;
 import math.Index;
 import math.map.Map3d;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +17,18 @@ public class WdkugdnCalculator {
         List<Double> mafAtThrottlePlate = me7LogMap.get(Me7LogFileContract.MAF_AT_THROTTLE_PLATE);
         List<Double> rpm = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
 
+        List<List<Double>> corrections = new ArrayList<>();
+
+        for(int i = 0; i < Wdkugdn.getXAxis().length; i++) {
+            corrections.add(new ArrayList<>());
+        }
+
         double[][] sums = new double[Wdkugdn.getYAxis().length][Wdkugdn.getXAxis().length];
         double[][] counts = new double[Wdkugdn.getYAxis().length][Wdkugdn.getXAxis().length];
 
         for (int i = 0; i < throttlePlateAngle.size(); i++) {
 
-            if (throttlePlateAngle.get(i) >= 0) {
+            if (throttlePlateAngle.get(i) >= 90) {
                 double mafValue = maf.get(i);
                 double mafAtThrottlePlateValue = mafAtThrottlePlate.get(i);
 
@@ -30,6 +37,7 @@ public class WdkugdnCalculator {
 
                 int wdkugdnRpmIndex = Index.getInsertIndex(Arrays.asList(Wdkugdn.getXAxis()), me7Rpm);
 
+                corrections.get(wdkugdnRpmIndex).add(correction);
                 sums[0][wdkugdnRpmIndex] += correction;
                 counts[0][wdkugdnRpmIndex] += 1;
             }
@@ -40,7 +48,7 @@ public class WdkugdnCalculator {
             for (int j = 0; j < correction[i].length; j++) {
                 correction[i][j] = sums[i][j] / counts[i][j];
 
-                if (Double.isNaN(correction[i][j]) || counts[i][j]< 50) {
+                if (Double.isNaN(correction[i][j]) || counts[i][j]< 20) {
                     correction[i][j] = 1d;
                 }
             }
@@ -69,6 +77,6 @@ public class WdkugdnCalculator {
             }
         }
 
-        return new WdkugdnCorrection(result, correction);
+        return new WdkugdnCorrection(result, correction, corrections);
     }
 }

@@ -19,6 +19,7 @@ import org.jzy3d.plot3d.rendering.canvas.Quality;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
+import ui.view.listener.OnTabSelectedListener;
 import ui.viewmodel.kfmiop.KfmiopViewModel;
 
 import javax.swing.*;
@@ -27,7 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class KfmiopUiManager {
+public class KfmiopUiManager implements OnTabSelectedListener {
     private MapTable kfmirl;
     private MapTable kfmiop;
 
@@ -454,5 +455,10 @@ public class KfmiopUiManager {
         surface.setWireframeDisplayed(true);
 
         kfmiopChart3d.getScene().add(surface, true);
+    }
+
+    @Override
+    public void onTabSelected(boolean selected) {
+
     }
 }

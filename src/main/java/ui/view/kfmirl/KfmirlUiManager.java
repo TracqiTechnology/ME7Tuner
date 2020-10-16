@@ -11,6 +11,7 @@ import org.jzy3d.maths.Coord3d;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
+import ui.view.listener.OnTabSelectedListener;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -20,7 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class KfmirlUiManager {
+public class KfmirlUiManager implements OnTabSelectedListener {
     private MapTable kfmirl;
     private DesiredLoadCalculatorPanel desiredLoadCalculatorPanel;
     private int minLoadIndex = 6;
@@ -263,5 +264,10 @@ public class KfmirlUiManager {
         surface.setWireframeDisplayed(true);
 
         chart3d.getScene().add(surface, true);
+    }
+
+    @Override
+    public void onTabSelected(boolean selected) {
+
     }
 }

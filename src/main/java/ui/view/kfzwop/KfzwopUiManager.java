@@ -17,6 +17,7 @@ import org.jzy3d.plot3d.rendering.canvas.Quality;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
+import ui.view.listener.OnTabSelectedListener;
 import ui.viewmodel.kfzwop.KfzwopViewModel;
 
 import javax.swing.*;
@@ -25,7 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-public class KfzwopUiManager {
+public class KfzwopUiManager implements OnTabSelectedListener {
 
     private MapTable kfzwopIn;
     private MapTable kfzwopOut;
@@ -397,5 +398,10 @@ public class KfzwopUiManager {
         surface.setWireframeDisplayed(true);
 
         inOut3d.getScene().add(surface, true);
+    }
+
+    @Override
+    public void onTabSelected(boolean selected) {
+
     }
 }
