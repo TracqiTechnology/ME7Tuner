@@ -469,3 +469,15 @@ The correction is calculated based on the difference between the mass airflow me
 * The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_CORRECTIONS.png "WDKUGDN Corrections")
+
+# KFWDKMSN (Alpha-N Fueling)
+
+For cases where you need to calculate a new inverse from KFMSNWDK.
+
+### Useage
+
+* Paste KFMSNWDK into the KFMSNWDK Table
+* The inverse map will be output in the KFWDKMSN Table.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFWDKMSN.png "KFWDKMSN Corrections")
+
