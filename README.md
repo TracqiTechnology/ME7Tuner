@@ -440,7 +440,32 @@ All logs must be contained a single ME7Logger file and a single Zeitronix log. B
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_CORRECTION.png "KFRUL Corrections")
 
+# WDKUDGN (Alpha-N Fueling)
 
+With larger turbos you will likely need to adjust WDKUDGN so airflow at the throttle plate can be predicted accurately.
 
+### Algorithm
 
+The correction is calculated based on the difference between the mass airflow measured at the MAF (mshfm_w) and the airflow calculated at the throttle plate (msdk_w) when the throttle plate is more than 80% open.
 
+### Useage
+
+* Log RPM (nmot), Throttle Plate Angle (pvdks_w), Airflow from MAF (mshfm_w) and Airflow at Throttle Plate (msdk_w)
+
+* Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
+
+* Copy WDKUDGN into the WDKUDGN table.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_OUTPUT.png "WDKUDGN Input")
+
+* Load the ME7 Logs
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_LOGS.png "WDKUDGN Logs")
+
+* The corrected WDKUDGN will be output in the Corrected WDKUDGN table. These can be copy/pasted into TunerPro.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_INPUT.png "WDKUDGN Output")
+
+* The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_CORRECTIONS.png "WDKUDGN Corrections")
