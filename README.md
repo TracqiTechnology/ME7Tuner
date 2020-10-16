@@ -324,6 +324,10 @@ Unlike closed loop corrections, open loop logs must be contained a single ME7Log
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your AFR at WOT.
 
+* You may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This could be due to non-linearities in airflow due to changes in airflow velocity, but it is likely just noise we want to get rid of.  ME7Tuner has an option to fit your curve to a polynomial of a user configurable degree which will "smooth" your curve. Click the "Fit MLHFM" button with a reasonable polynomial degree (I find a 6th degree function to work well) to smooth your curve.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/MLFHM_POLYNOMIAL_FIT_OPEN_LOOP.png "Open Loop Polynomial Fit")
+
 # KFMIRL (Torque request to Load/Fill request)
 
 If you are using sigificantly more airflow than a stock engine you will need to modify KFMIRL in some way since your newly calibrated MAF has probably increased actual load (rl_w). How you modify is subjective and up to you, but I have provided a KFMIRL generator that I find useful. Don't forget to address LDRXN as well. Remeber that if you are running a stock MAP without the 5120 hack you will risk maxing out ps_w.
