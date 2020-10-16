@@ -481,3 +481,24 @@ For cases where you need to calculate a new inverse from KFMSNWDK.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFWDKMSN.png "KFWDKMSN Corrections")
 
+# LDRPID (Feed-Forward PID)
+
+Provide a feed-forward (pre-control) factor to the existing PID. Highly recommended. The linearization process can be a lot of work. ME7Tuner can do most of the work for you. You just need to provide the logs.
+
+Read [Actual pre-control in LDRPID](http://nefariousmotorsports.com/forum/index.php?topic=12352.0title=)
+
+### Algorithm
+
+The algorithm is mostly based on [elRey's algorithm](http://nefariousmotorsports.com/forum/index.php?;topic=517.0). However, instead of using increments to build the linearization table, ME7Tuner uses a fit one-dimensional polynomial which can (and likely will) produce better results. ME7Tuner can also parse millions of data points to produce the linearization table versus the handful of points you would get from doing it by hand.
+
+### Useage
+
+* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w), Throttle Plate Angle (pvdks_w), Wastegate Duty Cycle (ldtvm), and Selected Gear (gangi)
+
+* Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible. You will want a mix of "fixed" duty cycles and "real world" duty cycles.
+
+* Put all of your logs in a single directory and load select the directory in ME7Tuner with "Load ME7 Logs"
+
+* Wait awhile. It can take some time to parse the logs.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
