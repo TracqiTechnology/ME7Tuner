@@ -416,7 +416,9 @@ Note that the correction is calculated and applied as a constant across the igni
 
 ### Useage
 
-* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w)
+All logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. 
+
+* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w) along with the Zeitronix
 
 * Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
 
