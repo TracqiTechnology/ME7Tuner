@@ -383,6 +383,23 @@ The input KFZWOP is extrapolated to the input KFZWOP x-axis range (engine load f
 * Copy and paste your KFZWOP and the x-axis load range generated from KFMIOP
 * Copy and paste the output KFZWOP directly into TunerPro.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZWOP.png "KFMIOP")
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZWOP.png "KFZWOP")
+
+# KFZW/2 (Ignition Timing)
+
+If you modified KFMIRL/KFMIOP you will want to modify the table and axis of KFZW/2 to reflect to the new load range.
+
+### Algorithm
+
+The input KFZW/2 is extrapolated to the input KFZW/2 x-axis range (engine load from generated KFMIOP).
+
+*Pay attention to the output!* Extrapolation is useful, but can be very stupid. Especially if the inputs have certain characteristics. Examine the output and make sure it is reasonable before using it. You will probably have to 'massage' the output a bit. The 3D charts can be very useful here.
+
+### Useage
+
+* Copy and paste your KFZW/2 and the x-axis load range generated from KFMIOP
+* Copy and paste the output KFZW/2 directly into TunerPro.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZW.png "KFZW")
 
 
