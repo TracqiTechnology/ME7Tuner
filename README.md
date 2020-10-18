@@ -6,8 +6,12 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
 
+#### Table of contents
 1. [Tuning Philosophy](#tuning-philosophy)
 2. [KRKTE(Primary Fueling)](#krkte-primary-fueling)
+3. [MLHFM (MAF Scaling)](#mlhfm-maf-scaling)
+   - [Closed Loop](#mlhfm-closed-loop-maf-scaling)
+   -
 
 # Tuning Philosophy
 
@@ -87,7 +91,7 @@ Note that a stock M-box has a maximum load request of 191%.
 
 This information should give you a good estimate of what hardware you need to acheive a given power goal, how much tuning you will need to do to support that power and if ME7Tuner is useful to you.
 
-# (KRKTE) Primary Fueling
+# KRKTE (Primary Fueling)
 
 * Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
 
@@ -103,7 +107,7 @@ The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill
 
 When you are satisfied with KRKTE, you will need to get your MAF scaled to the fuel injectors.
 
-# (MLHFM) MAF Scaling
+# MLHFM (MAF Scaling)
 
 Read [MAF](https://s4wiki.com/wiki/Mass_air_flow)
 
@@ -145,7 +149,7 @@ To scale a MAF we need a source of truth to make changes against we we can do th
 * Closed loop fueling uses the narrow band O2 sensors and fuel trims to make corrections
 * Open loop fueling uses a wide-band 02 sensor to make corrections
 
-## (MLHFM) Closed Loop MAF Scaling 
+# MLHFM - Closed Loop
 
 This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscaling/wiki/How-To-Use).
 
@@ -201,7 +205,7 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/MLHFM_POLYNOMIAL_FIT.png "Polynomial Fit MLHFM Corection%")
 
-# Closed Loop KFKHFM
+# KFKHFM - Closed Loop 
 
 After performing a few Closed Loop MLHFM corrections, you may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This can be due to non-linearities in the intake tract where, for a given engine load, the velocity of the intake air is causing the MAF to read different values. If smoothing MLHFM can't get the 'bumpiness' to go away you can use KFKHFM to compensate for these non-linearities at specific loads and RPMs.
 
@@ -271,7 +275,7 @@ First, use the 'Fit MLHFM' button to fit a polynomial of a user defined degree (
 
 * Load the corrected KFKHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
-# Open Loop
+# MLHFM - Open Loop
 
 Before attempting to tune open loop fueling, you really need to have KRKTE and and closed loop fueling nailed down. You also need a wide-band O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
 
