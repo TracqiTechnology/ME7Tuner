@@ -6,8 +6,8 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
 
-*[Tuning Philosophy](#tuning-philosophy)
-*[KRKTE(Primary Fueling](#krkte-primary-fueling)
+1. [Tuning Philosophy](#tuning-philosophy)
+2. [KRKTE(Primary Fueling)](#krkte-primary-fueling)
 
 # Tuning Philosophy
 
