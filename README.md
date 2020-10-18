@@ -6,7 +6,10 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/LDRPID.png "ME7Tuner")
 
-## Tuning Philosophy
+[Tuning Philosophy](#tuning-philosophy)
+[KRKTE(Primary Fueling](#krkte-primary-fueling)
+
+# Tuning Philosophy
 
 Everything in ME7 revolves around requested load (or cylinder fill).
 
@@ -20,7 +23,7 @@ Note that no amount of modifications (intake, exhaust, turbo, boost controllers,
 
 ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow and load measurements (a properly scaled MAF) which can make tuning the car much easier.
 
-### Do I need to use ME7Tuner?
+## Do I need to use ME7Tuner?
 
 If have increased your changed your MAF sensor and/or MAF housing diameter and can make significantly more than 191% load, ME7Tuner can be helpful.
 
