@@ -10,8 +10,9 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 1. [Tuning Philosophy](#tuning-philosophy)
 2. [KRKTE(Primary Fueling)](#krkte-primary-fueling)
 3. [MLHFM (MAF Scaling)](#mlhfm-maf-scaling)
-   - [Closed Loop](#mlhfm-closed-loop-maf-scaling)
-   -
+4. [MLHFM - Closed Loop](#mlhfm---closed-loop)
+5. [KFKHFM - Closed Loop](#kfkhfm---closed-loop)
+6. [MLHFM - Open Loop](#mlhfm---open-loop)
 
 # Tuning Philosophy
 
