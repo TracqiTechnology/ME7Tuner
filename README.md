@@ -13,6 +13,15 @@ ME7Tuner is software that provides tools to help calibrate the MAF, primary fuel
 4. [MLHFM - Closed Loop](#mlhfm---closed-loop)
 5. [KFKHFM - Closed Loop](#kfkhfm---closed-loop)
 6. [MLHFM - Open Loop](#mlhfm---open-loop)
+7. [MLHFM - Open Loop](#mlhfm---open-loop)
+8. [KFMIRL (Load)](#kfmirl-torque-request-to-loadfill-request)
+9. [KFMIOP (Torque)](#kfmiop-loadfill-to-torque)
+10. [KFZWOP (Optimal Ignition Timing)](#kfzwop-optimal-ignition-timing)
+11. [KFZW/2 (Ignition Timing)](#kfzw2-ignition-timing)
+12. [KFURL (VE)](#kfurl-ve)
+13. [WDKUGDN (Alpha-N Fueling)](#wdkugdn-alpha-n-fueling)
+14. [KFWDKMSN (Alpha-N Fueling)](#kfwdkmsn-alpha-n-fueling)
+15. [LDRPID (Feed-Forward PID)](#ldrpid-feed-forward-pid)
 
 # Tuning Philosophy
 
