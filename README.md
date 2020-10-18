@@ -46,7 +46,7 @@ If have increased your changed your MAF sensor and/or MAF housing diameter and c
 * 2.5bar absolute (~22.45 psi relative)
 
 Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)  
-Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0titl
+Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0)
 
 ##### Turbo Airflow
 
