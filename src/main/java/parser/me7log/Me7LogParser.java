@@ -258,6 +258,7 @@ public class Me7LogParser {
         if (logType == LogType.OPEN_LOOP) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && mafGramsPerSecondIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && requestedLambdaIndex != -1 && fuelInjectorOnTimeIndex != -1;
         } else if (logType == LogType.CLOSED_LOOP) {
+            // nmot, fr_w, fra_2, uhfm_w, wdkba, B_lr, rl_w
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && engineLoadIndex != -1;
         } else if (logType == LogType.LDRPID) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && selectedGearIndex != -1;
