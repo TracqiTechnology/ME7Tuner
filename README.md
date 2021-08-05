@@ -178,7 +178,7 @@ The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * 
 The key is to get as much data as possible. Narrow band O2 sensors are noisy and slow, so the algorithm depends on lots of data and averaging to estimate corrections. The Closed Loop parser is designed to parse multiple log files at one time so you can compile logs over a period of time. The tune/hardware cannot change between logs. Also, it is advisable to log in consistent weather.
 
 * Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
-* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba) and Lambda Control Active (B_lr).
+* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba), Lambda Control Active (B_lr) and Engine Load (rl_w).
 * Log long periods of consistent throttle plate angles and boost. We are trying to capture data where the MAF's rate of change (delta) is as small as possible. You don't have to stop/start logging between peroids of being consistent since ME7Tuner will filter the data for you, but you still want as much of this data as possible.
 * Stay out of open-loop fueling. We don't care about it (right now). Like inconsistent MAF deltas, ME7Tuner will filter out open-loop data.
 * Get at least 30 minutes of driving on a highway. Vary gears and throttle positions often to get measurements at as many throttle angles and RPM combinations as possible. Finding a highway with a long, consistent incline is ideal since you can 'load' the engine resulting in higher MAF voltages without going into open-loop fueling. Remember to slowly roll on and off the throttle. Sudden changes will result in less usuable data.
