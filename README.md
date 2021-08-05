@@ -185,7 +185,7 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 * Get at least 30 minutes of typical 'city' driving. Stop lights, slower city speeds, lots of gears and throttle positions. Remember to be as consistent as possible rolling on and off of the throttle.
 * Get at least 15 minutes of parking lot data. Drive slowly around the parking lot in 1st and 2nd gear. Stop and start often. Vary the throttle plate and RPM as much as possible.
 * Save your log and put it into a directory (along with other closed-loop logs from the same tune if desired).
-* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com/wp-content/uploads/2019/02/mlhfm.csv)
+* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com/wp-content/uploads/2019/02/mlhfm.csv) (Right Click -> Save Link As)
 * Open ME7Tuner and click on the "Close Loop Fueling" tab at the top
 * Click the MLHFM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
 
