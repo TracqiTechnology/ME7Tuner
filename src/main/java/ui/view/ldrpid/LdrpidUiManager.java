@@ -46,53 +46,51 @@ public class LdrpidUiManager {
 
     public JPanel getPanel() {
 
-        GridBagConstraints constraints = new GridBagConstraints();
-        JPanel mainPanel = new JPanel();
+        GridLayout tableGridLayout = new GridLayout(2,2);
 
-        constraints.gridx = 0;
-        constraints.gridy = 0;
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new GridBagLayout());
+
+        JPanel tablePanel = new JPanel();
+        tablePanel.setBackground(java.awt.Color.BLUE);
+        tablePanel.setLayout(tableGridLayout);
 
         JPanel nonLinearPanel = new JPanel();
-        nonLinearPanel.setPreferredSize(new Dimension(710, 310));
-
         nonLinearPanel.add(getNonLinearMapPanel(), new GridBagLayout());
 
-        mainPanel.add(nonLinearPanel, constraints);
-
-        constraints.gridx = 1;
-        constraints.gridy = 0;
+        tablePanel.add(nonLinearPanel);
 
         JPanel linearPanel = new JPanel();
-        linearPanel.setPreferredSize(new Dimension(710, 310));
 
         linearPanel.add(getLinearMapPanel(), new GridBagLayout());
 
-        mainPanel.add(linearPanel, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
+        tablePanel.add(linearPanel);
 
         JPanel kfldrlPanel = new JPanel();
-        linearPanel.setPreferredSize(new Dimension(710, 310));
 
         kfldrlPanel.add(getKflDrlMapPanel(), new GridBagLayout());
 
-        mainPanel.add(kfldrlPanel, constraints);
-
-        constraints.gridx = 2;
-        constraints.gridy = 1;
+        tablePanel.add(kfldrlPanel);
 
         JPanel kfldimxPanel = new JPanel();
-        linearPanel.setPreferredSize(new Dimension(710, 310));
 
         kfldimxPanel.add(getKfldimxMapPanel(), new GridBagLayout());
 
-        mainPanel.add(kfldimxPanel, constraints);
+        tablePanel.add(kfldimxPanel);
 
-        constraints.gridx = 0;
-        constraints.gridy = 2;
+        GridBagConstraints c = new GridBagConstraints();
 
-        mainPanel.add(getLogsButton(mainPanel), constraints);
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weighty = 0.9;
+
+        mainPanel.add(tablePanel, c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weighty = 0.1;
+
+        mainPanel.add(getLogsButton(tablePanel), c);
 
         return mainPanel;
     }

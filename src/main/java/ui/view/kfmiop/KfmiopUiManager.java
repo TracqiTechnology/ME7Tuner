@@ -115,6 +115,7 @@ public class KfmiopUiManager implements OnTabSelectedListener {
     public JPanel getPanel() {
 
         GridBagConstraints constraints = new GridBagConstraints();
+
         JPanel mainPanel = new JPanel();
 
         constraints.fill = GridBagConstraints.HORIZONTAL;

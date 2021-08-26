@@ -37,7 +37,7 @@ public class MainManager {
 
         KrkteUiManager krkteUiManager = new KrkteUiManager();
         tabSelectedListeners.add(krkteUiManager);
-        tabbedPane.addTab("KRKTE", null, krkteUiManager.getPanel(), "KRKTE Calculator");
+        tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiManager.getPanel()), "KRKTE Calculator");
 
         ClosedLoopMlhfmUiManager closedLoopMlhfmUiManager = new ClosedLoopMlhfmUiManager();
         // first tab is selected
@@ -55,23 +55,23 @@ public class MainManager {
 
         KfmirlUiManager kfmirlUiManager = new KfmirlUiManager();
         tabSelectedListeners.add(kfmirlUiManager);
-        tabbedPane.addTab("KFMIRL", null, kfmirlUiManager.getPanel(), "KFMIRL Calculator");
+        tabbedPane.addTab("KFMIRL", null, new JScrollPane(kfmirlUiManager.getPanel()), "KFMIRL Calculator");
 
         KfmiopUiManager kfmiopUiManager = new KfmiopUiManager();
         tabSelectedListeners.add(kfmiopUiManager);
-        tabbedPane.addTab("KFMIOP", null, kfmiopUiManager.getPanel(), "KFMIOP Calculator");
+        tabbedPane.addTab("KFMIOP", null, new JScrollPane(kfmiopUiManager.getPanel()), "KFMIOP Calculator");
 
         KfzwopUiManager kfzwopUiManager = new KfzwopUiManager();
         tabSelectedListeners.add(kfzwopUiManager);
-        tabbedPane.addTab("KFZWOP", null, kfzwopUiManager.getPanel(), "KFZWOP Calculator");
+        tabbedPane.addTab("KFZWOP", null, new JScrollPane(kfzwopUiManager.getPanel()), "KFZWOP Calculator");
 
         KfzwUiManager kfzwUiManager = new KfzwUiManager();
         tabSelectedListeners.add(kfzwUiManager);
-        tabbedPane.addTab("KFZW", null,  kfzwUiManager.getPanel(), "KFZW Calculator");
+        tabbedPane.addTab("KFZW", null,  new JScrollPane(kfzwUiManager.getPanel()), "KFZW Calculator");
 
         KfurlUiManager kfurlUiManager = new KfurlUiManager();
         tabSelectedListeners.add(kfurlUiManager);
-        tabbedPane.addTab("KFURL", null, kfurlUiManager.getPanel(), "KFURL");
+        tabbedPane.addTab("KFURL", null, new JScrollPane(kfurlUiManager.getPanel()), "KFURL");
 
         WdkugdnUiManager wdkugdnUiManager = new WdkugdnUiManager();
         tabSelectedListeners.add(wdkugdnUiManager);
@@ -79,9 +79,10 @@ public class MainManager {
 
         KfmsnwdkUiManager kfmsnwdkUiManager = new KfmsnwdkUiManager();
         tabSelectedListeners.add(kfmsnwdkUiManager);
-        tabbedPane.addTab("KFWDKMSN", null, kfmsnwdkUiManager.getPanel(), "KFWDKMSN");
+        tabbedPane.addTab("KFWDKMSN", null, new JScrollPane(kfmsnwdkUiManager.getPanel()), "KFWDKMSN");
 
-        tabbedPane.addTab("LDRPID", null, new LdrpidUiManager().getPanel(), "LDRPID");
+        LdrpidUiManager ldrpidUiManager = new LdrpidUiManager();
+        tabbedPane.addTab("LDRPID", null, new JScrollPane(ldrpidUiManager.getPanel()), "LDRPID");
 
         tabbedPane.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
