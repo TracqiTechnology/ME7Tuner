@@ -510,7 +510,7 @@ The algorithm is mostly based on [elRey's algorithm](http://nefariousmotorsports
 
 ### Useage
 
-* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w), Throttle Plate Angle (pvdks_w), Wastegate Duty Cycle (ldtvm), and Selected Gear (gangi)
+* Log RPM (nmot), Actual Absolute Manifold Pressure (pvdks_w) and Barometric Pressure (pus_w), Throttle Plate Angle (wdkba), Wastegate Duty Cycle (ldtvm), and Selected Gear (gangi)
 
 * Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible. You will want a mix of "fixed" duty cycles and "real world" duty cycles.
 
