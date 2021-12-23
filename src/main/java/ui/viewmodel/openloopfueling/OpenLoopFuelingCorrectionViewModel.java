@@ -4,10 +4,10 @@ import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map2d;
-import model.openloopfueling.correction.OpenLoopCorrection;
-import model.openloopfueling.correction.OpenLoopCorrectionManager;
+import math.map.Map3d;
+import model.openloopfueling.correction.OpenLoopMlhfmCorrection;
+import model.openloopfueling.correction.OpenLoopMlhfmCorrectionManager;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
-import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import java.util.List;
 import java.util.Map;
@@ -16,11 +16,11 @@ public class OpenLoopFuelingCorrectionViewModel {
 
     private static OpenLoopFuelingCorrectionViewModel instance;
 
-    private Map2d mlhfmMap;
+    private Map3d mlhfmMap;
     private Map<String, List<Double>> me7LogMap;
     private Map<String, List<Double>> afrLogMap;
 
-    private PublishSubject<OpenLoopCorrection> publishSubject;
+    private PublishSubject<OpenLoopMlhfmCorrection> publishSubject;
 
     public static OpenLoopFuelingCorrectionViewModel getInstance() {
         if (instance == null) {
@@ -75,41 +75,41 @@ public class OpenLoopFuelingCorrectionViewModel {
             }
         });
 
-        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
-            @Override
-            public void onNext(Map2d mlhfmMap) {
-                OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = mlhfmMap;
-                generateCorrection();
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
+//        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
+//        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
+//            @Override
+//            public void onNext(Map2d mlhfmMap) {
+//                OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = mlhfmMap;
+//                generateCorrection();
+//            }
+//
+//            @Override
+//            public void onSubscribe(Disposable disposable) {
+//            }
+//
+//            @Override
+//            public void onError(Throwable throwable) {
+//            }
+//
+//            @Override
+//            public void onComplete() {
+//            }
+//        });
     }
 
     private void generateCorrection() {
         if (me7LogMap != null && afrLogMap != null && mlhfmMap != null) {
-            OpenLoopCorrectionManager openLoopCorrectionManager = new OpenLoopCorrectionManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference());
-            openLoopCorrectionManager.correct(me7LogMap, afrLogMap, mlhfmMap);
-            OpenLoopCorrection openLoopCorrection = openLoopCorrectionManager.getOpenLoopCorrection();
+            OpenLoopMlhfmCorrectionManager openLoopMlhfmCorrectionManager = new OpenLoopMlhfmCorrectionManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference());
+            openLoopMlhfmCorrectionManager.correct(me7LogMap, afrLogMap, mlhfmMap);
+            OpenLoopMlhfmCorrection openLoopMlhfmCorrection = openLoopMlhfmCorrectionManager.getOpenLoopCorrection();
 
-            if (openLoopCorrection != null) {
-                publishSubject.onNext(openLoopCorrection);
+            if (openLoopMlhfmCorrection != null) {
+                publishSubject.onNext(openLoopMlhfmCorrection);
             }
         }
     }
 
-    public PublishSubject<OpenLoopCorrection> getPublishSubject() {
+    public PublishSubject<OpenLoopMlhfmCorrection> getPublishSubject() {
         return publishSubject;
     }
 }

@@ -5,20 +5,20 @@ import java.util.Arrays;
 public class Map3d {
     public Double[] xAxis;
     public Double[] yAxis;
-    public Double[][] data;
+    public Double[][] zAxis;
 
     public Map3d() {
         super();
     }
 
-    public Map3d(Double[] xAxis, Double[] yAxis, Double[][] data) {
+    public Map3d(Double[] xAxis, Double[] yAxis, Double[][] zAxis) {
         this.xAxis = Arrays.copyOf(xAxis, xAxis.length);
         this.yAxis = Arrays.copyOf(yAxis, yAxis.length);
 
-        this.data = new Double[data.length][];
+        this.zAxis = new Double[zAxis.length][];
 
-        for(int i = 0; i < data.length; i++) {
-            this.data[i] = Arrays.copyOf(data[i], data[i].length);
+        for(int i = 0; i < zAxis.length; i++) {
+            this.zAxis[i] = Arrays.copyOf(zAxis[i], zAxis[i].length);
         }
     }
 
@@ -26,17 +26,17 @@ public class Map3d {
         this.xAxis = Arrays.copyOf(map3d.xAxis, map3d.xAxis.length);
         this.yAxis = Arrays.copyOf(map3d.yAxis, map3d.yAxis.length);
 
-        this.data = new Double[map3d.data.length][];
+        this.zAxis = new Double[map3d.zAxis.length][];
 
-        for(int i = 0; i < data.length; i++) {
-            data[i] = Arrays.copyOf(map3d.data[i], map3d.data[i].length);
+        for(int i = 0; i < zAxis.length; i++) {
+            zAxis[i] = Arrays.copyOf(map3d.zAxis[i], map3d.zAxis[i].length);
         }
     }
 
     public static Map3d transpose(Map3d map3d) {
         Double[] xAxis = map3d.yAxis;
         Double[] yAxis = map3d.xAxis;
-        Double[][] data = transposeMatrix(map3d.data);
+        Double[][] data = transposeMatrix(map3d.zAxis);
 
         return new Map3d(xAxis, yAxis, data);
     }

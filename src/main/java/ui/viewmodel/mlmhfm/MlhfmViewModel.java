@@ -1,48 +1,89 @@
 package ui.viewmodel.mlmhfm;
 
-import io.reactivex.subjects.PublishSubject;
-import math.map.Map2d;
-import parser.mlhfm.MlhfmParser;
+import com.sun.tools.javac.util.Pair;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.BehaviorSubject;
+import math.map.Map3d;
+import parser.bin.BinParser;
+import parser.xdf.BinDefinitionParser;
+import parser.xdf.TableDefinition;
+import preferences.mlhfm.MlhfmMapPreferences;
 
-import java.io.File;
+import java.util.List;
+import java.util.Optional;
 
 public class MlhfmViewModel {
+    private final BehaviorSubject<MlfhmModel> mlhfmPublishSubject = BehaviorSubject.create();
 
-    private MlhfmParser mlhfmParser;
-    private PublishSubject<Map2d> mlhfmPublishSubject;
-    private PublishSubject<File> filePublishSubject;
+    public MlhfmViewModel() {
+        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
 
-    private static MlhfmViewModel instance;
+            @Override
+            public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                if(tableDefinition != null) {
+                    mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.fst, tableDefinition.snd)); // Found the map
+                } else {
+                    mlhfmPublishSubject.onNext(new MlfhmModel(null, null)); // No map found
+                }
+            }
 
-    public static MlhfmViewModel getInstance() {
-        if (instance == null) {
-            instance = new MlhfmViewModel();
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        MlhfmMapPreferences.registerOnSelectedChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
+                // Found the map
+                selectedTableDefinitionPair.ifPresent(tableDefinitionPair -> mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinitionPair.fst, tableDefinitionPair.snd)));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+    }
+
+    public void registerMLHFMOnChange(Observer<MlfhmModel> observer) {
+        mlhfmPublishSubject.subscribe(observer);
+    }
+
+    public static class MlfhmModel {
+        private final TableDefinition tableDefinition;
+        private final Map3d map3d;
+        private final boolean mapSelected;
+
+        public MlfhmModel(@Nullable TableDefinition tableDefinition, @Nullable Map3d map3d) {
+            this.tableDefinition = tableDefinition;
+            this.map3d = map3d;
+            this.mapSelected = tableDefinition != null && map3d != null;
         }
 
-        return instance;
-    }
+        @Nullable
+        public TableDefinition getTableDefinition() { return tableDefinition; }
 
-    private MlhfmViewModel() {
-        mlhfmParser = new MlhfmParser();
-        mlhfmPublishSubject = PublishSubject.create();
-        filePublishSubject = PublishSubject.create();
-    }
+        @Nullable
+        public Map3d getMap3d() {
+            return map3d;
+        }
 
-    public PublishSubject<Map2d> getMlhfmPublishSubject() {
-        return mlhfmPublishSubject;
-    }
-
-    public PublishSubject<File> getFilePublishSubject() {
-        return filePublishSubject;
-    }
-
-    public void loadFile(File file) {
-
-        Map2d mlhfmMap = mlhfmParser.parse(file);
-
-        if (mlhfmMap != null) {
-            mlhfmPublishSubject.onNext(mlhfmMap);
-            filePublishSubject.onNext(file);
+        public boolean isMapSelected() {
+            return mapSelected;
         }
     }
+
 }

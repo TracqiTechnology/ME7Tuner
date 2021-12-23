@@ -263,10 +263,8 @@ public class LdrpidUiManager {
                     SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
                         @Override
                         public Void doInBackground() {
-                            System.out.println("Starting Parse...");
                             Me7LogParser parser = new Me7LogParser();
                             Map<String, List<Double>> values = parser.parseLogDirectory(Me7LogParser.LogType.LDRPID, fc.getSelectedFile());
-                            System.out.println("Parse Complete...");
 
                             LdrpidCalculator calculator = new LdrpidCalculator();
                             ldrpidResult = calculator.caclulateLdrpid(values);
@@ -424,9 +422,9 @@ public class LdrpidUiManager {
         nonLinearTable.getPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
             public void onNext(Map3d map3d) {
-                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.data);
-                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.data, linearMap3d.data);
-                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.data, linearMap3d.data);
+                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis);
+                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis);
+                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.zAxis, linearMap3d.zAxis);
 
                 linearTable.setMap(linearMap3d);
                 kfldrlTable.setMap(kfldrlMap3d);
@@ -510,7 +508,7 @@ public class LdrpidUiManager {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(kfldimxChart);
 
-        Double[][] data = ldrpidResult.kfldimx.data;
+        Double[][] data = ldrpidResult.kfldimx.zAxis;
 
         Double[] xAxis = Kfldimx.getStockXAxis();
         Double[] yAxis = Kfldimx.getStockYAxis();
@@ -576,7 +574,7 @@ public class LdrpidUiManager {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(inNonLinear3d);
 
-        Double[][] data = ldrpidResult.nonLinearOutput.data;
+        Double[][] data = ldrpidResult.nonLinearOutput.zAxis;
 
         Double[] xAxis = Kfldrl.getStockXAxis();
         Double[] yAxis = Kfldrl.getStockYAxis();
@@ -642,7 +640,7 @@ public class LdrpidUiManager {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(linearChart);
 
-        Double[][] data = ldrpidResult.linearOutput.data;
+        Double[][] data = ldrpidResult.linearOutput.zAxis;
 
         Double[] xAxis = Kfldrl.getStockXAxis();
         Double[] yAxis = Kfldrl.getStockYAxis();
@@ -708,7 +706,7 @@ public class LdrpidUiManager {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(kfldrlChart);
 
-        Double[][] data = ldrpidResult.kfldrl.data;
+        Double[][] data = ldrpidResult.kfldrl.zAxis;
 
         Double[] xAxis = Kfldrl.getStockXAxis();
         Double[] yAxis = Kfldrl.getStockYAxis();

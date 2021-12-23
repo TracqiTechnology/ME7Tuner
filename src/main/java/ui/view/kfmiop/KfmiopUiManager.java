@@ -73,12 +73,12 @@ public class KfmiopUiManager implements OnTabSelectedListener {
                 Map3d kfmirlMap3d = new Map3d();
                 kfmirlMap3d.xAxis = (Double[]) kfmirl.getColumnHeaders();
                 kfmirlMap3d.yAxis = kfmirl.getRowHeaders();
-                kfmirlMap3d.data = kfmirl.getData();
+                kfmirlMap3d.zAxis = kfmirl.getData();
 
                 Map3d kfmiopMap3d = new Map3d();
                 kfmiopMap3d.xAxis = kfmiopXAxis;
                 kfmiopMap3d.yAxis = Kfmiop.getYAxis();
-                kfmiopMap3d.data = Kfmiop.getMap();
+                kfmiopMap3d.zAxis = Kfmiop.getMap();
 
                 viewModel.cacluateKfmiop(kfmirlMap3d, kfmiopMap3d);
             }
@@ -98,7 +98,7 @@ public class KfmiopUiManager implements OnTabSelectedListener {
             public void onNext(Map3d map3d) {
                 kfmiop.setColumnHeaders(map3d.xAxis);
                 kfmiop.setRowHeaders(map3d.yAxis);
-                kfmiop.setTableData(map3d.data);
+                kfmiop.setTableData(map3d.zAxis);
             }
 
             @Override

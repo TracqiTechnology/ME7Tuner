@@ -1,6 +1,7 @@
 package ui.viewmodel.closedloopfueling.kfkhfm;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
@@ -8,7 +9,7 @@ import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrection;
 import model.closedloopfueling.kfkhfm.ClosedLoopKfkhfmCorrectionManager;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import ui.viewmodel.kfkhfm.KfkhfmViewModel;
-import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
+import parser.me7log.ClosedLoopLogParser;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class ClosedLoopKfkhfmCorrectionViewModel {
     private Map3d kfkhfm;
     private Map<String, List<Double>> me7LogMap;
 
-    private PublishSubject<ClosedLoopKfkhfmCorrection> publishSubject;
+    private final PublishSubject<ClosedLoopKfkhfmCorrection> publishSubject;
 
     public static ClosedLoopKfkhfmCorrectionViewModel getInstance() {
         if (instance == null) {
@@ -32,42 +33,39 @@ public class ClosedLoopKfkhfmCorrectionViewModel {
 
     private ClosedLoopKfkhfmCorrectionViewModel() {
         publishSubject = PublishSubject.create();
-
-        ClosedLoopFuelingMe7LogViewModel closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
-        closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
-            public void onNext(Map<String, List<Double>> me7LogMap) {
+            public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
                 ClosedLoopKfkhfmCorrectionViewModel.this.me7LogMap = me7LogMap;
                 generateCorrection();
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(Throwable throwable) {
+            public void onError(@NonNull Throwable throwable) {
             }
 
             @Override
-            public void onComplete() {
-            }
+            public void onComplete() { }
         });
 
         KfkhfmViewModel kfkhfmViewModel = KfkhfmViewModel.getInstance();
         kfkhfmViewModel.getKfkhfmBehaviorSubject().subscribe(new Observer<Map3d>() {
             @Override
-            public void onNext(Map3d kfkhfm) {
+            public void onNext(@NonNull Map3d kfkhfm) {
                 ClosedLoopKfkhfmCorrectionViewModel.this.kfkhfm = kfkhfm;
                 generateCorrection();
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(Throwable throwable) {
+            public void onError(@NonNull Throwable throwable) {
             }
 
             @Override

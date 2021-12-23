@@ -2,8 +2,9 @@ package ui.view.closedloopfueling.mlhfm;
 
 import derivative.Derivative;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map2d;
+import math.map.Map3d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -11,11 +12,11 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import parser.me7log.ClosedLoopLogParser;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
-import ui.viewmodel.mlmhfm.MlhfmViewModel;
-import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
+import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmLogViewModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,57 +25,30 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopMlhfmMe7LogUiManager {
+public class ClosedLoopLogView {
 
     private JFreeChart chart;
     private JPanel closedLoopLogPanel;
     private JLabel fileLabel;
-    private ClosedLoopFuelingMe7LogViewModel closedLoopViewModel;
 
-    private Map2d mlhfmMap;
     private File me7LogFile;
 
-    ClosedLoopMlhfmMe7LogUiManager() {
-        closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
-        closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+    ClosedLoopLogView() {
+        ClosedLoopMlhfmLogViewModel viewModel = new ClosedLoopMlhfmLogViewModel();
+        viewModel.registerMLHFMOnChange(new Observer<ClosedLoopMlhfmLogViewModel.ClosedLoopMlhfmLogModel>() {
             @Override
-            public void onNext(Map<String, List<Double>> me7LogMap) {
-                if (mlhfmMap != null) {
-                    drawChart(me7LogMap, mlhfmMap);
-                }
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull ClosedLoopMlhfmLogViewModel.ClosedLoopMlhfmLogModel closedLoopMlhfmLogModel) {
+                drawChart(closedLoopMlhfmLogModel.getMe7LogMap(), closedLoopMlhfmLogModel.getMlhfm());
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
-            }
+            public void onError(@NonNull Throwable throwable) {}
 
             @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-
-        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
-            @Override
-            public void onNext(Map2d mlhfmMap) {
-                ClosedLoopMlhfmMe7LogUiManager.this.mlhfmMap = mlhfmMap;
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
+            public void onComplete() {}
         });
     }
 
@@ -170,13 +144,13 @@ public class ClosedLoopMlhfmMe7LogUiManager {
                 for (ClosedLoopMe7LogFilterConfigPanel.FieldTitle fieldTitle : ClosedLoopMe7LogFilterConfigPanel.FieldTitle.values()) {
                     switch (fieldTitle) {
                         case MIN_THROTTLE_ANGLE:
-                            ClosedLoopFuelingLogFilterPreferences.setMinThrottleAnglePreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            ClosedLoopFuelingLogFilterPreferences.setMinThrottleAnglePreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MIN_RPM:
-                            ClosedLoopFuelingLogFilterPreferences.setMinRpmPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            ClosedLoopFuelingLogFilterPreferences.setMinRpmPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                         case MAX_VOLTAGE_DT:
-                            ClosedLoopFuelingLogFilterPreferences.setMaxVoltageDtPreference(Double.valueOf(filterConfigPane.getFieldText(fieldTitle)));
+                            ClosedLoopFuelingLogFilterPreferences.setMaxVoltageDtPreference(Double.parseDouble(filterConfigPane.getFieldText(fieldTitle)));
                             break;
                     }
 
@@ -212,7 +186,7 @@ public class ClosedLoopMlhfmMe7LogUiManager {
     }
 
     private void loadMe7File(File file) {
-        closedLoopViewModel.loadDirectory(file);
+        ClosedLoopLogParser.getInstance().loadDirectory(file);
         fileLabel.setText(file.getName());
     }
 
@@ -233,26 +207,38 @@ public class ClosedLoopMlhfmMe7LogUiManager {
 
         plot.getRenderer().setSeriesShape(0, new Ellipse2D.Double(0, 0, 1, 1));
         plot.getRenderer().setSeriesPaint(0, Color.BLUE);
+
+        plot.getRenderer().setSeriesShape(1, new Ellipse2D.Double(0, 0, 1, 1));
+        plot.getRenderer().setSeriesPaint(1, Color.GREEN);
     }
 
-    private void drawChart(Map<String, List<Double>> me7LogMap, Map2d mlhfmMap) {
+    private void drawChart(Map<String, List<Double>> me7LogMap, Map3d mlhfm) {
 
-        Map<Double, List<Double>> dtMap = Derivative.getDtMap2d(me7LogMap, mlhfmMap);
-        Double[] voltages = mlhfmMap.axis;
+        Map<Double, List<Double>> dtMap = Derivative.getMlfhm(me7LogMap, mlhfm);
+        Double[] voltages = mlhfm.yAxis;
 
-        XYSeries series = new XYSeries("Derivative");
+        XYSeries invalidDtSeries = new XYSeries("Excluded Sample");
+        XYSeries validDtSeries = new XYSeries("Included Sample");
+
+        double maxFilterVoltage = ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference();
 
         for (Double voltage : voltages) {
             List<Double> values = dtMap.get(voltage);
 
             for (Double value : values) {
-                series.add(voltage, value);
+                if(value > maxFilterVoltage) {
+                    invalidDtSeries.add(voltage, value);
+                } else {
+                    validDtSeries.add(voltage, value);
+                }
             }
         }
 
+
         XYPlot plot = (XYPlot) chart.getPlot();
         ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection) plot.getDataset()).addSeries(series);
+        ((XYSeriesCollection) plot.getDataset()).addSeries(invalidDtSeries);
+        ((XYSeriesCollection) plot.getDataset()).addSeries(validDtSeries);
     }
 
 

@@ -21,7 +21,7 @@ public class KfzwopViewModel {
         Map3d newKfzwop = new Map3d();
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
-        newKfzwop.data = KfzwopManager.generateKfzwop(kfzwop.xAxis, kfzwop.data, newXAxis);
+        newKfzwop.zAxis = KfzwopManager.generateKfzwop(kfzwop.xAxis, kfzwop.zAxis, newXAxis);
 
         kfzwopMapPublishSubject.onNext(newKfzwop);
     }

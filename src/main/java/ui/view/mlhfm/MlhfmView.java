@@ -1,9 +1,11 @@
 package ui.view.mlhfm;
 
 
+import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map2d;
+import math.map.Map3d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -11,66 +13,39 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.filechooser.FileChooserPreferences;
+import parser.xdf.TableDefinition;
+import preferences.mlhfm.MlhfmMapPreferences;
 import ui.map.map.MapTable;
+import ui.view.map.MapPickerDialog;
 import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-public class MlhfmUiManager {
+public class MlhfmView {
 
     private JFreeChart chart;
     private JPanel mlhfmPanel;
-    private JLabel fileLabel;
     private MlhfmViewModel mlhfmViewModel;
     private MapTable mapTable;
+    private JLabel fileLabel;
 
-    public MlhfmUiManager() {
-        mlhfmViewModel = MlhfmViewModel.getInstance();
-        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
-            @Override
-            public void onNext(Map2d mlhfmMap) {
-                drawChart(mlhfmMap);
-                drawMapTable(mlhfmMap);
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        mlhfmViewModel.getFilePublishSubject().subscribe(new Observer<File>() {
-            @Override
-            public void onNext(File file) {
-                fileLabel.setText(file.getAbsolutePath());
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
+    public MlhfmView() {
+        initChart();
+        initMapTable();
+        initPanel();
+        initViewModel();
     }
 
     public JPanel getMlhfmPanel() {
-        initChart();
-        initMapTable();
+        return mlhfmPanel;
+    }
 
+    private void initPanel() {
         mlhfmPanel = new JPanel();
         mlhfmPanel.setLayout(new GridBagLayout());
 
@@ -99,8 +74,32 @@ public class MlhfmUiManager {
         c.gridwidth = 2;
         c.insets = new Insets(0, 0, 0 ,0);
         mlhfmPanel.add(getActionPanel(), c);
+    }
 
-        return mlhfmPanel;
+    private void initViewModel() {
+        mlhfmViewModel = new MlhfmViewModel();
+        mlhfmViewModel.registerMLHFMOnChange(new Observer<MlhfmViewModel.MlfhmModel>() {
+            @Override
+            public void onNext(@NonNull MlhfmViewModel.MlfhmModel model) {
+                if(model.isMapSelected()) {
+                    fileLabel.setText(model.getTableDefinition().toString());
+                    drawChart(model.getMap3d());
+                    drawMapTable(model.getMap3d());
+                } else {
+                    System.out.println("No File Selected");
+                    fileLabel.setText("No File Selected");
+                }
+            }
+
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
     }
 
     private JPanel getMapTablePanel() {
@@ -131,7 +130,7 @@ public class MlhfmUiManager {
         c.gridx = 0;
         c.gridy = 0;
 
-        JButton button = getFileButton();
+        JButton button = getDefinitionButton();
         panel.add(button, c);
 
         c.gridx = 0;
@@ -144,21 +143,17 @@ public class MlhfmUiManager {
     }
 
 
-    private JButton getFileButton() {
-        JButton button = new JButton("Load MLHFM");
-        button.setToolTipText("Load your base MLHFM in .csv format. This will be used as the basis for the correction.");
+    private JButton getDefinitionButton() {
+        JButton button = new JButton("Load Definition");
+        button.setToolTipText("Load the MLHFM definition.");
 
         button.addActionListener(e -> {
-            final JFileChooser fc = new JFileChooser();
-            fc.setFileFilter(new CSVFileFilter());
-            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
+            Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
 
-            int returnValue = fc.showOpenDialog(mlhfmPanel);
-
-            if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fc.getSelectedFile();
-                mlhfmViewModel.loadFile(selectedFile);
-                FileChooserPreferences.setDirectory(selectedFile.getParentFile());
+            if(tableDefinition != null) {
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmMapPreferences::setSelectedMlhfmTableDefinition);
+            } else {
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmMapPreferences::setSelectedMlhfmTableDefinition);
             }
         });
 
@@ -188,23 +183,19 @@ public class MlhfmUiManager {
         mapTable.setToolTipText("Base MLHFM");
     }
 
-    private void drawMapTable(Map2d mlhfmMap) {
-        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(mlhfmMap.data);
-        Double[][] data = new Double[kghr.size()][1];
-
-        for(int i = 0; i < data.length; i++) {
-            data[i][0] = kghr.get(i);
-        }
-
-        mapTable.setRowHeaders(voltage.toArray(new Double[0]));
-        mapTable.setTableData(data);
+    private void drawMapTable(Map3d mlhfmMap) {
+        mapTable.setRowHeaders(mlhfmMap.yAxis);
+        mapTable.setTableData(mlhfmMap.zAxis);
         mapTable.invalidate();
     }
 
-    private void drawChart(Map2d mlhfmMap) {
-        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(mlhfmMap.data);
+    private void drawChart(Map3d mlhfm) {
+        List<Double> voltage = Arrays.asList(mlhfm.yAxis);
+        List<Double> kghr = new ArrayList<>();
+
+        for(int i = 0; i < mlhfm.zAxis.length; i++) {
+            kghr.add(mlhfm.zAxis[i][0]);
+        }
 
         XYSeries series = new XYSeries("MLHFM");
 
@@ -215,27 +206,5 @@ public class MlhfmUiManager {
         XYPlot plot = (XYPlot)chart.getPlot();
         ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
         ((XYSeriesCollection)plot.getDataset()).addSeries(series);
-    }
-
-    private class CSVFileFilter extends FileFilter {
-        public boolean accept(File f) {
-            if (f.isDirectory()) {
-                return true;
-            }
-
-            String name = f.getName();
-            String[] parts = name.split("\\.");
-            if(parts.length > 0) {
-                String ext = parts[parts.length - 1];
-                return ext.trim().equalsIgnoreCase("csv");
-            }
-
-            return false;
-        }
-
-        @Override
-        public String getDescription() {
-            return "CSV";
-        }
     }
 }

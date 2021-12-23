@@ -84,9 +84,9 @@ public class KfurlCalculator {
 
         Map3d result = new Map3d(kfurl);
 
-        for(int i = 0; i < kfurl.data.length; i++) {
-            for(int j = 0; j < kfurl.data[i].length; j++) {
-                result.data[i][j] = kfurl.data[i][j] * correction[i][j];
+        for(int i = 0; i < kfurl.zAxis.length; i++) {
+            for(int j = 0; j < kfurl.zAxis[i].length; j++) {
+                result.zAxis[i][j] = kfurl.zAxis[i][j] * correction[i][j];
             }
         }
 

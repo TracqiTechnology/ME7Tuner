@@ -1,6 +1,8 @@
 package parser.me7log;
 
+import com.oracle.tools.packager.Log;
 import contract.Me7LogFileContract;
+import io.reactivex.annotations.NonNull;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -48,6 +50,7 @@ public class Me7LogParser {
         return map;
     }
 
+    @NonNull
     public Map<String, List<Double>> parseLogFile(LogType logType, File file) {
         Map<String, List<Double>> map = generateMap(logType);
 

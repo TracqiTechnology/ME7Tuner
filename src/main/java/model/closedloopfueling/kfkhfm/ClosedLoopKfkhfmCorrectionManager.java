@@ -15,17 +15,17 @@ import java.util.Map;
 
 public class ClosedLoopKfkhfmCorrectionManager {
 
-    private static int MIN_SAMPLES_THRESHOLD = 5;
+    private final static int MIN_SAMPLES_THRESHOLD = 5;
 
     private final int lambdaControlEnabled = 1;
     private final double minThrottleAngle;
     private final double minRpm;
     private final double maxDerivative;
 
-    private List<List<List<Double>>>filteredLoadDt = new ArrayList<>();
-    private List<List<List<Double>>> correctionsAfr = new ArrayList<>();
-    private List<List<List<Double>>> meanAfr = new ArrayList<>();
-    private List<List<List<double[]>>> modeAfr = new ArrayList<>();
+    private final List<List<List<Double>>>filteredLoadDt = new ArrayList<>();
+    private final List<List<List<Double>>> correctionsAfr = new ArrayList<>();
+    private final List<List<List<Double>>> meanAfr = new ArrayList<>();
+    private final List<List<List<double[]>>> modeAfr = new ArrayList<>();
 
     public ClosedLoopKfkhfmCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
         this.minThrottleAngle = minThrottleAngle;
@@ -52,9 +52,9 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
         List<List<List<Double>>> corrections = new ArrayList<>();
 
-        for (int i = 0; i < kfkhfmCorrected.data.length; i++) {
+        for (int i = 0; i < kfkhfmCorrected.zAxis.length; i++) {
             corrections.add(new ArrayList<>());
-            for (int j = 0; j < kfkhfmCorrected.data[i].length; j++) {
+            for (int j = 0; j < kfkhfmCorrected.zAxis[i].length; j++) {
                 corrections.get(i).add(new ArrayList<>());
             }
         }
@@ -148,7 +148,7 @@ public class ClosedLoopKfkhfmCorrectionManager {
 
                     // Keep track of the largest index a correction was made at
                     if (!Double.isNaN(correction)) {
-                        kfkhfm.data[i][j] *= 1 + correction;
+                        kfkhfm.zAxis[i][j] *= 1 + correction;
                     }
                 }
             }

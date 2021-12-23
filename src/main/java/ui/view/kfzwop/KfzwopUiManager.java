@@ -46,7 +46,7 @@ public class KfzwopUiManager implements OnTabSelectedListener {
             public void onNext(Map3d map3d) {
                 kfzwopOut.setColumnHeaders(map3d.xAxis);
                 kfzwopOut.setRowHeaders(map3d.yAxis);
-                kfzwopOut.setTableData(map3d.data);
+                kfzwopOut.setTableData(map3d.zAxis);
             }
 
             @Override
@@ -232,7 +232,7 @@ public class KfzwopUiManager implements OnTabSelectedListener {
                 Map3d map3d = new Map3d();
                 map3d.xAxis = Kfzwop.getStockXAxis();
                 map3d.yAxis = kfzwopIn.getRowHeaders();
-                map3d.data = kfzwopIn.getData();
+                map3d.zAxis = kfzwopIn.getData();
                 viewModel.cacluateKfzwop(map3d, data[0]);
             }
 

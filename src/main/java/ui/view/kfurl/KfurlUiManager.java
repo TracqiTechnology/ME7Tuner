@@ -3,10 +3,8 @@ package ui.view.kfurl;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import model.kfurl.Kfurl;
 import model.kfurl.KfurlCorrection;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.mlhfm.MlhfmUiManager;
 import ui.viewmodel.kfurl.KfurlViewModel;
 
 import javax.swing.*;

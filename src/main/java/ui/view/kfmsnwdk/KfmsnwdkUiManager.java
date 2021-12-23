@@ -74,9 +74,6 @@ public class KfmsnwdkUiManager implements OnTabSelectedListener {
             @Override
             public void onNext(@NonNull Map3d map3d) {
                 Map3d result = Map3d.transpose(Inverse.calculateInverse(Map3d.transpose(new Map3d(map3d)), Map3d.transpose(new Map3d(kfwdkmsn.getMap3d()))));
-                for(Double[] array: result.data) {
-                    System.out.println(Arrays.toString(array));
-                }
                 kfwdkmsn.setMap(result);
             }
 

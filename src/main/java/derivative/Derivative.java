@@ -9,10 +9,10 @@ import java.util.*;
 
 public class Derivative {
 
-    public static Map<Double, List<Double>> getDtMap2d(Map<String, List<Double>> me7Logs, Map2d mlhfm) {
+    public static Map<Double, List<Double>> getMlfhm(Map<String, List<Double>> me7Logs, Map3d mlhfm) {
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
-        for (Double voltage : mlhfm.axis) {
+        for (Double voltage : mlhfm.yAxis) {
             rawVoltageDt.put(voltage, new ArrayList<>());
         }
 
@@ -22,8 +22,8 @@ public class Derivative {
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             double me7Voltage = me7Voltages.get(i + 1);
-            int mlhfmVoltageIndex = Index.getInsertIndex(Arrays.asList(mlhfm.axis), me7Voltage);
-            double mlhfmVoltageKey = mlhfm.axis[mlhfmVoltageIndex];
+            int mlhfmVoltageIndex = Index.getInsertIndex(Arrays.asList(mlhfm.yAxis), me7Voltage);
+            double mlhfmVoltageKey = mlhfm.yAxis[mlhfmVoltageIndex];
             rawVoltageDt.get(mlhfmVoltageKey).add(me7voltageDt.get(i));
         }
 

@@ -3,7 +3,6 @@ package ui.viewmodel.kfzw;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import model.kfzw.KfzwManager;
-import model.kfzwop.KfzwopManager;
 
 public class KfzwViewModel {
 
@@ -22,7 +21,7 @@ public class KfzwViewModel {
         Map3d newKfzw = new Map3d();
         newKfzw.xAxis = newXAxis;
         newKfzw.yAxis = kfzw.yAxis;
-        newKfzw.data = KfzwManager.generateKfzw(kfzw.xAxis, kfzw.data, newXAxis);
+        newKfzw.zAxis = KfzwManager.generateKfzw(kfzw.xAxis, kfzw.zAxis, newXAxis);
 
         kfzwMapPublishSubject.onNext(newKfzw);
     }

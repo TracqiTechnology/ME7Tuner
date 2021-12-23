@@ -1,8 +1,9 @@
 package ui.view.closedloopfueling.mlhfm;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map2d;
+import math.map.Map3d;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import model.mlhfm.MlhfmFitter;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
@@ -15,7 +16,6 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import ui.map.map.MapTable;
 import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmCorrectionViewModel;
-import writer.MlhfmWriter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -24,12 +24,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
-import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopMlhfmCorrectionUiManager {
+public class ClosedLoopMlhfmCorrectionView {
 
     private static final int CORRECTION_POINT_SERIES_INDEX = 1;
     private static final int CORRECTION_LINE_SERIES_INDEX = 0;
@@ -46,13 +46,13 @@ public class ClosedLoopMlhfmCorrectionUiManager {
 
     private int polynomialDegree = 6;
 
-    ClosedLoopMlhfmCorrectionUiManager() {
-        ClosedLoopMlhfmCorrectionViewModel closedLoopMlhfmCorrectionViewModel = ClosedLoopMlhfmCorrectionViewModel.getInstance();
-        closedLoopMlhfmCorrectionViewModel.getPublishSubject().subscribe(new Observer<ClosedLoopMlhfmCorrection>() {
+    ClosedLoopMlhfmCorrectionView() {
+        ClosedLoopMlhfmCorrectionViewModel closedLoopMlhfmCorrectionViewModel = new ClosedLoopMlhfmCorrectionViewModel();
+        closedLoopMlhfmCorrectionViewModel.registerMLHFMOnChange(new Observer<ClosedLoopMlhfmCorrection>() {
 
             @Override
-            public void onNext(ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection) {
-                ClosedLoopMlhfmCorrectionUiManager.this.closedLoopMlhfmCorrection = closedLoopMlhfmCorrection;
+            public void onNext(@NonNull ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection) {
+                ClosedLoopMlhfmCorrectionView.this.closedLoopMlhfmCorrection = closedLoopMlhfmCorrection;
                 drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, closedLoopMlhfmCorrection.correctedMlhfm);
                 drawMapTable(closedLoopMlhfmCorrection.correctedMlhfm);
                 drawStdDevChart(closedLoopMlhfmCorrection.filteredVoltageDt, closedLoopMlhfmCorrection.correctedMlhfm);
@@ -60,11 +60,11 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(Throwable throwable) {
+            public void onError(@NonNull Throwable throwable) {
             }
 
             @Override
@@ -281,14 +281,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             int returnValue = fc.showOpenDialog(correctionPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fc.getSelectedFile();
-
-                MlhfmWriter mlhfmWriter = new MlhfmWriter();
-                if(closedLoopMlhfmCorrection.fitMlhfm != null) {
-                    mlhfmWriter.write(selectedFile, closedLoopMlhfmCorrection.fitMlhfm);
-                } else {
-                    mlhfmWriter.write(selectedFile, closedLoopMlhfmCorrection.correctedMlhfm);
-                }
+                // TODO Write to binary
             }
         });
 
@@ -335,7 +328,7 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map2d correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
+                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
                 closedLoopMlhfmCorrection = new ClosedLoopMlhfmCorrection(closedLoopMlhfmCorrection.inputMlhfm, closedLoopMlhfmCorrection.correctedMlhfm, correctedFitMlhfm, closedLoopMlhfmCorrection.filteredVoltageDt, closedLoopMlhfmCorrection.correctionsAfrMap, closedLoopMlhfmCorrection.meanAfrMap, closedLoopMlhfmCorrection.modeAfrMap, closedLoopMlhfmCorrection.correctedAfrMap);
                 drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
@@ -349,23 +342,19 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
     }
 
-    private void drawMapTable(Map2d mlhfmMap) {
-        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(mlhfmMap.data);
-        Double[][] data = new Double[kghr.size()][1];
-
-        for (int i = 0; i < data.length; i++) {
-            data[i][0] = kghr.get(i);
-        }
-
-        mapTable.setRowHeaders(voltage.toArray(new Double[0]));
-        mapTable.setTableData(data);
+    private void drawMapTable(Map3d mlhfmMap) {
+        mapTable.setRowHeaders(mlhfmMap.yAxis);
+        mapTable.setTableData(mlhfmMap.zAxis);
         mapTable.invalidate();
     }
 
-    private void drawMlhfmChart(Map2d inputMlhfmMap, Map2d correctedMlhfmMap) {
-        List<Double> voltage = Arrays.asList(inputMlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(inputMlhfmMap.data);
+    private void drawMlhfmChart(Map3d inputMlhfm, Map3d correctedMlhfm) {
+        List<Double> voltage = Arrays.asList(inputMlhfm.yAxis);
+        List<Double> kghr = new ArrayList<>();
+
+        for(int i = 0; i < inputMlhfm.zAxis.length; i++) {
+            kghr.add(inputMlhfm.zAxis[i][0]);
+        }
 
         XYSeries inputMlhfmSeries = new XYSeries("MLHFM");
 
@@ -373,8 +362,13 @@ public class ClosedLoopMlhfmCorrectionUiManager {
             inputMlhfmSeries.add(voltage.get(i), kghr.get(i));
         }
 
-        voltage = Arrays.asList(correctedMlhfmMap.axis);
-        kghr = Arrays.asList(correctedMlhfmMap.data);
+        voltage = Arrays.asList(correctedMlhfm.yAxis);
+
+        kghr.clear();
+
+        for(int i = 0; i < correctedMlhfm.zAxis.length; i++) {
+            kghr.add(correctedMlhfm.zAxis[i][0]);
+        }
 
         XYSeries correctedMlhfmSeries = new XYSeries("Corrected MLHFM");
 
@@ -388,9 +382,9 @@ public class ClosedLoopMlhfmCorrectionUiManager {
         ((XYSeriesCollection) plot.getDataset()).addSeries(correctedMlhfmSeries);
     }
 
-    private void drawStdDevChart(Map<Double, List<Double>> stdDev, Map2d mlhfmMap) {
+    private void drawStdDevChart(Map<Double, List<Double>> stdDev, Map3d mlhfm) {
 
-        Double[] voltages = mlhfmMap.axis;
+        Double[] voltages = mlhfm.yAxis;
 
         XYSeries series = new XYSeries("dMAFv/dt");
 

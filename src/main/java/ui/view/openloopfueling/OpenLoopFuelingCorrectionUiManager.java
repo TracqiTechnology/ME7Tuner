@@ -2,9 +2,9 @@ package ui.view.openloopfueling;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import math.map.Map2d;
+import math.map.Map3d;
 import model.mlhfm.MlhfmFitter;
-import model.openloopfueling.correction.OpenLoopCorrection;
+import model.openloopfueling.correction.OpenLoopMlhfmCorrection;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -15,7 +15,6 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import ui.map.map.MapTable;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingCorrectionViewModel;
-import writer.MlhfmWriter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -24,7 +23,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
-import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class OpenLoopFuelingCorrectionUiManager {
     private JFreeChart mlfhmChart;
     private JFreeChart afrCorrectionChart;
     private JPanel correctionPanel;
-    private OpenLoopCorrection openLoopCorrection;
+    private OpenLoopMlhfmCorrection openLoopMlhfmCorrection;
     private MapTable mapTable;
 
     private XYSeriesCollection afrCorrectionPointDataSet;
@@ -46,13 +45,13 @@ public class OpenLoopFuelingCorrectionUiManager {
     private int polynomialDegree = 6;
 
     public OpenLoopFuelingCorrectionUiManager() {
-        OpenLoopFuelingCorrectionViewModel.getInstance().getPublishSubject().subscribe(new Observer<OpenLoopCorrection>() {
+        OpenLoopFuelingCorrectionViewModel.getInstance().getPublishSubject().subscribe(new Observer<OpenLoopMlhfmCorrection>() {
             @Override
-            public void onNext(OpenLoopCorrection openLoopCorrection) {
-                OpenLoopFuelingCorrectionUiManager.this.openLoopCorrection = openLoopCorrection;
-                drawMlhfmChart(openLoopCorrection.inputMlhfm, openLoopCorrection.correctedMlhfm);
-                drawMapTable(openLoopCorrection.correctedMlhfm);
-                drawAfrCorrectionChart(openLoopCorrection.correctionsAfrMap, openLoopCorrection.meanAfrMap, openLoopCorrection.modeAfrMap, openLoopCorrection.correctedAfrMap);
+            public void onNext(OpenLoopMlhfmCorrection openLoopMlhfmCorrection) {
+                OpenLoopFuelingCorrectionUiManager.this.openLoopMlhfmCorrection = openLoopMlhfmCorrection;
+                drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, openLoopMlhfmCorrection.correctedMlhfm);
+                drawMapTable(openLoopMlhfmCorrection.correctedMlhfm);
+                drawAfrCorrectionChart(openLoopMlhfmCorrection.correctionsAfrMap, openLoopMlhfmCorrection.meanAfrMap, openLoopMlhfmCorrection.modeAfrMap, openLoopMlhfmCorrection.correctedAfrMap);
             }
 
             @Override
@@ -239,10 +238,7 @@ public class OpenLoopFuelingCorrectionUiManager {
             int returnValue = fc.showSaveDialog(correctionPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fc.getSelectedFile();
-
-                MlhfmWriter mlhfmWriter = new MlhfmWriter();
-                mlhfmWriter.write(selectedFile, openLoopCorrection.correctedMlhfm);
+                // TODO Write to binary
             }
         });
 
@@ -288,8 +284,8 @@ public class OpenLoopFuelingCorrectionUiManager {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map2d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopCorrection.correctedMlhfm, 6);
-                drawMlhfmChart(openLoopCorrection.inputMlhfm, correctedFitMlhfm);
+                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopMlhfmCorrection.correctedMlhfm, 6);
+                drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }
         });
@@ -301,22 +297,19 @@ public class OpenLoopFuelingCorrectionUiManager {
         mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
     }
 
-    private void drawMapTable(Map2d mlhfmMap) {
-        List<Double> voltage = Arrays.asList(mlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(mlhfmMap.data);
-        Double[][] data = new Double[kghr.size()][1];
-
-        for (int i = 0; i < data.length; i++) {
-            data[i][0] = kghr.get(i);
-        }
-
-        mapTable.setRowHeaders(voltage.toArray(new Double[0]));
-        mapTable.setTableData(data);
+    private void drawMapTable(Map3d mlhfm) {
+        mapTable.setRowHeaders(mlhfm.yAxis);
+        mapTable.setTableData(mlhfm.zAxis);
     }
 
-    private void drawMlhfmChart(Map2d inputMlhfmMap,Map2d correctedMlhfmMap) {
-        List<Double> voltage = Arrays.asList(inputMlhfmMap.axis);
-        List<Double> kghr = Arrays.asList(inputMlhfmMap.data);
+    private void drawMlhfmChart(Map3d inputMlhfmMap,Map3d correctedMlhfmMap) {
+        List<Double> voltage = Arrays.asList(inputMlhfmMap.yAxis);
+
+        List<Double> kghr = new ArrayList<>();
+
+        for(int i = 0; i < inputMlhfmMap.zAxis.length; i++) {
+            kghr.add(inputMlhfmMap.zAxis[i][0]);
+        }
 
         XYSeries inputMlhfmSeries = new XYSeries("MLHFM");
 
@@ -324,8 +317,13 @@ public class OpenLoopFuelingCorrectionUiManager {
             inputMlhfmSeries.add(voltage.get(i), kghr.get(i));
         }
 
-        voltage = Arrays.asList(correctedMlhfmMap.axis);
-        kghr = Arrays.asList(correctedMlhfmMap.data);
+        voltage = Arrays.asList(correctedMlhfmMap.yAxis);
+
+        kghr.clear();
+
+        for(int i = 0; i < inputMlhfmMap.zAxis.length; i++) {
+            kghr.add(correctedMlhfmMap.zAxis[i][0]);
+        }
 
         XYSeries correctedMlhfmSeries = new XYSeries("Corrected MLHFM");
 

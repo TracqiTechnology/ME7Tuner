@@ -181,9 +181,9 @@ public class LdrpidCalculator {
     public static LdrpidResult caclulateLdrpid(Map<String, List<Double>> values) {
 
         Map3d nonLinearTable = calculateNonLinearTable(values);
-        Map3d linearTable = calculateLinearTable(nonLinearTable.data);
-        Map3d kfldrl = calculateKfldrl(nonLinearTable.data, linearTable.data);
-        Map3d kfldimxMap3d = calculateKfldimx(nonLinearTable.data, linearTable.data);
+        Map3d linearTable = calculateLinearTable(nonLinearTable.zAxis);
+        Map3d kfldrl = calculateKfldrl(nonLinearTable.zAxis, linearTable.zAxis);
+        Map3d kfldimxMap3d = calculateKfldimx(nonLinearTable.zAxis, linearTable.zAxis);
 
         return new LdrpidResult(nonLinearTable, linearTable, kfldrl, kfldimxMap3d);
     }

@@ -7,12 +7,10 @@ import util.Util;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +47,7 @@ public class MapTable extends JList implements TableModelListener {
             map3d.xAxis = (Double[]) columnHeaders;
         }
         map3d.yAxis = rowHeaders;
-        map3d.data = data;
+        map3d.zAxis = data;
 
         this.publishSubject = PublishSubject.create();
 
@@ -103,7 +101,7 @@ public class MapTable extends JList implements TableModelListener {
         this.map3d = map3d;
         setColumnHeaders(map3d.xAxis);
         setRowHeaders(map3d.yAxis);
-        setTableData(map3d.data);
+        setTableData(map3d.zAxis);
     }
 
     public Map3d getMap3d() {
@@ -351,7 +349,7 @@ public class MapTable extends JList implements TableModelListener {
                 debouncer.debounce(this, () -> {
                     map3d.xAxis = (Double[]) getColumnHeaders();
                     map3d.yAxis = getRowHeaders();
-                    map3d.data = values;
+                    map3d.zAxis = values;
 
                     publishSubject.onNext(map3d);
                 }, 100, TimeUnit.MILLISECONDS);

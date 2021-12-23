@@ -4,7 +4,7 @@ import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import math.map.Map2d;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.mlhfm.MlhfmUiManager;
+import ui.view.mlhfm.MlhfmView;
 import ui.viewmodel.mlmhfm.MlhfmViewModel;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingAfrLogViewModel;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingMe7LogViewModel;
@@ -26,24 +26,24 @@ public class OpenLoopFuelingUiManager implements OnTabSelectedListener {
         this.me7LogsLoaded = false;
         this.afrLogsLoaded = false;
 
-        MlhfmViewModel.getInstance().getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
-            @Override
-            public void onNext(Map2d mlhfmMap) {
-                enableLogsTab(selected && mlhfmMap != null);
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
+//        MlhfmViewModel.getInstance().getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
+//            @Override
+//            public void onNext(Map2d mlhfmMap) {
+//                enableLogsTab(selected && mlhfmMap != null);
+//            }
+//
+//            @Override
+//            public void onSubscribe(Disposable disposable) {
+//            }
+//
+//            @Override
+//            public void onError(Throwable throwable) {
+//            }
+//
+//            @Override
+//            public void onComplete() {
+//            }
+//        });
 
         OpenLoopFuelingAfrLogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
             @Override
@@ -94,7 +94,7 @@ public class OpenLoopFuelingUiManager implements OnTabSelectedListener {
     private JTabbedPane getTabbedPane() {
         tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        tabbedPane.addTab("MLHFM", null, new MlhfmUiManager().getMlhfmPanel(), "Voltage to Kg/Hr");
+        tabbedPane.addTab("MLHFM", null, new MlhfmView().getMlhfmPanel(), "Voltage to Kg/Hr");
         tabbedPane.addTab("ME7 Logs", null, new OpenLoopFuelingMe7LogUiManager().getMe7LogPanel(), "ME7 Logging");
         tabbedPane.addTab("Correction", null, new OpenLoopFuelingCorrectionUiManager().getCorrectionPanel(), "Corrected MLHFM");
         tabbedPane.addTab("Help", null, new OpenLoopMlhfmHelpManager().getPanel(), "");

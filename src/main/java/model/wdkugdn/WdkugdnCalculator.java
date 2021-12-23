@@ -71,9 +71,9 @@ public class WdkugdnCalculator {
 
         Map3d result = new Map3d(wdkugdn);
 
-        for (int i = 0; i < wdkugdn.data.length; i++) {
-            for (int j = 0; j < wdkugdn.data[i].length; j++) {
-                result.data[i][j] = wdkugdn.data[i][j] * correction[i][j];
+        for (int i = 0; i < wdkugdn.zAxis.length; i++) {
+            for (int j = 0; j < wdkugdn.zAxis[i].length; j++) {
+                result.zAxis[i][j] = wdkugdn.zAxis[i][j] * correction[i][j];
             }
         }
 

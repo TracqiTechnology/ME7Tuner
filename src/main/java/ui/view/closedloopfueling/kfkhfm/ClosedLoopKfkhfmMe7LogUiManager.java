@@ -20,7 +20,7 @@ import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
 import ui.view.closedloopfueling.kfkhfm.colormap.ColorMapTransparent;
 import ui.viewmodel.kfkhfm.KfkhfmViewModel;
-import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
+import parser.me7log.ClosedLoopLogParser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,14 +37,12 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
 
     private JPanel closedLoopLogPanel;
     private JLabel fileLabel;
-    private ClosedLoopFuelingMe7LogViewModel closedLoopViewModel;
 
     private Map3d kfkhfm;
     private File me7LogFile;
 
     public ClosedLoopKfkhfmMe7LogUiManager() {
-        closedLoopViewModel = ClosedLoopFuelingMe7LogViewModel.getInstance();
-        closedLoopViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(Map<String, List<Double>> me7LogMap) {
                 if(kfkhfm != null) {
@@ -218,7 +216,7 @@ public class ClosedLoopKfkhfmMe7LogUiManager {
     }
 
     private void loadMe7File(File file) {
-        closedLoopViewModel.loadDirectory(file);
+        ClosedLoopLogParser.getInstance().loadDirectory(file);
         fileLabel.setText(file.getName());
     }
 

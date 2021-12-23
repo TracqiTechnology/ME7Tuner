@@ -1,10 +1,11 @@
 package ui.view.closedloopfueling.kfkhfm;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import ui.view.kfkhfm.KfkhfmUiManager;
 import ui.view.listener.OnTabSelectedListener;
-import ui.viewmodel.closedloopfueling.ClosedLoopFuelingMe7LogViewModel;
+import parser.me7log.ClosedLoopLogParser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,18 +18,18 @@ public class ClosedLoopKfkhfmUiManager implements OnTabSelectedListener {
     private boolean selected;
 
     public ClosedLoopKfkhfmUiManager() {
-        ClosedLoopFuelingMe7LogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, java.util.List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, java.util.List<Double>>>() {
             @Override
-            public void onNext(Map<String, List<Double>> me7LogMap) {
-                enableCorrectionTab(selected && me7LogMap != null);
+            public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
+                enableCorrectionTab(selected);
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(Throwable throwable) {
+            public void onError(@NonNull Throwable throwable) {
             }
 
             @Override

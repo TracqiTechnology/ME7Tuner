@@ -6,7 +6,6 @@ public class Map2d {
     public Double[] axis;
     public Double[] data;
 
-
     public Map2d() {
         super();
     }

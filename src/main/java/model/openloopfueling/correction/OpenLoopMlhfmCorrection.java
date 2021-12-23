@@ -1,19 +1,19 @@
 package model.openloopfueling.correction;
 
-import math.map.Map2d;
+import math.map.Map3d;
 
 import java.util.List;
 import java.util.Map;
 
-public class OpenLoopCorrection {
-    public final Map2d inputMlhfm;
-    public final Map2d correctedMlhfm;
+public class OpenLoopMlhfmCorrection {
+    public final Map3d inputMlhfm;
+    public final Map3d correctedMlhfm;
     public final Map<Double, List<Double>> correctionsAfrMap;
     public final Map<Double, Double> meanAfrMap;
     public final Map<Double, double[]> modeAfrMap;
     public final Map<Double, Double> correctedAfrMap;
 
-    public OpenLoopCorrection(Map2d inputMlhfm, Map2d correctedMlhfm, Map<Double, List<Double>> correctionsAfrMap, Map<Double, Double> meanAfrMap, Map<Double, double[]> modeAfrMap, Map<Double, Double> correctedAfrMap) {
+    public OpenLoopMlhfmCorrection(Map3d inputMlhfm, Map3d correctedMlhfm, Map<Double, List<Double>> correctionsAfrMap, Map<Double, Double> meanAfrMap, Map<Double, double[]> modeAfrMap, Map<Double, Double> correctedAfrMap) {
         this.inputMlhfm = inputMlhfm;
         this.correctedMlhfm = correctedMlhfm;
         this.correctionsAfrMap = correctionsAfrMap;

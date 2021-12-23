@@ -1,7 +1,7 @@
 package ui.view;
 
 import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
-import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmUiManager;
+import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmView;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
 import ui.view.kfurl.KfurlUiManager;
@@ -39,11 +39,11 @@ public class MainManager {
         tabSelectedListeners.add(krkteUiManager);
         tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiManager.getPanel()), "KRKTE Calculator");
 
-        ClosedLoopMlhfmUiManager closedLoopMlhfmUiManager = new ClosedLoopMlhfmUiManager();
+        ClosedLoopMlhfmView closedLoopMlhfmView = new ClosedLoopMlhfmView();
         // first tab is selected
-        closedLoopMlhfmUiManager.onTabSelected(true);
-        tabSelectedListeners.add(closedLoopMlhfmUiManager);
-        tabbedPane.addTab("Closed Loop MLHFM", null, closedLoopMlhfmUiManager.getPanel(), "Closed Loop MLFHM Compensation");
+        closedLoopMlhfmView.onTabSelected(true);
+        tabSelectedListeners.add(closedLoopMlhfmView);
+        tabbedPane.addTab("Closed Loop MLHFM", null, closedLoopMlhfmView.getPanel(), "Closed Loop MLFHM Compensation");
 
         ClosedLoopKfkhfmUiManager closedLoopKfkhfmUiManager = new ClosedLoopKfkhfmUiManager();
         tabSelectedListeners.add(closedLoopKfkhfmUiManager);
