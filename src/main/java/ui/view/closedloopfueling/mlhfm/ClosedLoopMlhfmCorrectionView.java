@@ -3,6 +3,7 @@ package ui.view.closedloopfueling.mlhfm;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import jogamp.opengl.glu.nurbs.Bin;
 import math.map.Map3d;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import model.mlhfm.MlhfmFitter;
@@ -14,8 +15,11 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import preferences.bin.BinFilePreferences;
+import preferences.mlhfm.MlhfmMapPreferences;
 import ui.map.map.MapTable;
 import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmCorrectionViewModel;
+import writer.BinWriter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -24,6 +28,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -199,7 +204,7 @@ public class ClosedLoopMlhfmCorrectionView {
 
         c.gridx = 0;
         c.gridy = 1;
-        c.insets = new Insets(10, 0, 0 , 0);
+        c.insets = new Insets(10, 0, 0, 0);
 
         panel.add(getFileButton(), c);
 
@@ -273,15 +278,21 @@ public class ClosedLoopMlhfmCorrectionView {
     }
 
     private JButton getFileButton() {
-        JButton button = new JButton("Save MLHFM");
+        JButton button = new JButton("Write MLHFM");
 
         button.addActionListener(e -> {
-            final JFileChooser fc = new JFileChooser();
-
-            int returnValue = fc.showOpenDialog(correctionPanel);
+            int returnValue = JOptionPane.showConfirmDialog(
+                    correctionPanel,
+                    "Are you sure you want to write MLHFM to the binary?",
+                    "Write MLHFM",
+                    JOptionPane.YES_NO_OPTION);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                // TODO Write to binary
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, closedLoopMlhfmCorrection.correctedMlhfm);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
             }
         });
 
@@ -314,7 +325,7 @@ public class ClosedLoopMlhfmCorrectionView {
         panel.add(spinner, c);
 
         c.gridx = 2;
-        c.insets = new Insets(0, 8 ,0 ,0);
+        c.insets = new Insets(0, 8, 0, 0);
 
         panel.add(getFitMlhfmButton(), c);
 
@@ -352,7 +363,7 @@ public class ClosedLoopMlhfmCorrectionView {
         List<Double> voltage = Arrays.asList(inputMlhfm.yAxis);
         List<Double> kghr = new ArrayList<>();
 
-        for(int i = 0; i < inputMlhfm.zAxis.length; i++) {
+        for (int i = 0; i < inputMlhfm.zAxis.length; i++) {
             kghr.add(inputMlhfm.zAxis[i][0]);
         }
 
@@ -366,7 +377,7 @@ public class ClosedLoopMlhfmCorrectionView {
 
         kghr.clear();
 
-        for(int i = 0; i < correctedMlhfm.zAxis.length; i++) {
+        for (int i = 0; i < correctedMlhfm.zAxis.length; i++) {
             kghr.add(correctedMlhfm.zAxis[i][0]);
         }
 

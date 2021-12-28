@@ -10,6 +10,7 @@ import parser.bin.BinParser;
 import parser.me7log.ClosedLoopLogParser;
 import parser.xdf.TableDefinition;
 import preferences.mlhfm.MlhfmMapPreferences;
+import writer.BinWriter;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,38 @@ public class ClosedLoopMlhfmViewModel {
     private final BehaviorSubject<ClosedLoopMlfhmModel> behaviorSubject = BehaviorSubject.create();
 
     public ClosedLoopMlhfmViewModel() {
+
+        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull TableDefinition tableDefinition) {
+                if(tableDefinition.getTableName().contains("MLHFM")) {
+
+                    ClosedLoopMlfhmModel model = behaviorSubject.getValue();
+                    ClosedLoopMlfhmModel.Builder builder;
+                    if(model == null) {
+                        builder = new ClosedLoopMlfhmModel.Builder();
+                    } else {
+                        builder = new ClosedLoopMlfhmModel.Builder(model);
+                    }
+
+                    builder.logsTabEnabled(true);
+                    builder.correctionsTabEnabled(false);
+                    builder.selectedTabIndex(0);
+
+                    behaviorSubject.onNext(builder.build());
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
         BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
@@ -36,8 +69,9 @@ public class ClosedLoopMlhfmViewModel {
                 }
 
                 builder.logsTabEnabled(tableDefinition != null);
+                builder.selectedTabIndex(0);
 
-                behaviorSubject.onNext(builder.build()); // No map found
+                behaviorSubject.onNext(builder.build());
             }
 
             @Override
@@ -62,6 +96,7 @@ public class ClosedLoopMlhfmViewModel {
                 }
 
                 builder.correctionsTabEnabled(!stringListMap.isEmpty());
+                builder.selectedTabIndex(1);
 
                 behaviorSubject.onNext(builder.build()); // No map found
             }
@@ -79,13 +114,17 @@ public class ClosedLoopMlhfmViewModel {
     }
 
     public static class ClosedLoopMlfhmModel {
+        private final int selectedTabIndex;
         private final boolean logsTabEnabled;
         private final boolean correctionsTabEnabled;
 
         private ClosedLoopMlfhmModel(Builder builder) {
+            this.selectedTabIndex = builder.selectedTabIndex;
            this.logsTabEnabled = builder.logsTabEnabled;
            this.correctionsTabEnabled = builder.correctionsTabEnabled;
         }
+
+        public int getSelectedTabIndex() { return selectedTabIndex; }
 
         public boolean isLogsTabEnabled() {
             return logsTabEnabled;
@@ -96,14 +135,22 @@ public class ClosedLoopMlhfmViewModel {
         }
 
         public static class Builder {
+            private int selectedTabIndex;
             private boolean logsTabEnabled;
             private boolean correctionsTabEnabled;
 
             public Builder() {}
 
             public Builder(ClosedLoopMlfhmModel model) {
+                this.selectedTabIndex = model.selectedTabIndex;
                 this.logsTabEnabled = model.logsTabEnabled;
                 this.correctionsTabEnabled = model.correctionsTabEnabled;
+            }
+
+            public Builder selectedTabIndex(int selectedTabIndex) {
+                this.selectedTabIndex = selectedTabIndex;
+
+                return this;
             }
 
             public Builder logsTabEnabled(boolean enabled) {

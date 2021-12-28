@@ -8,7 +8,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import parser.bin.BinParser;
-import parser.xdf.BinDefinitionParser;
 import parser.xdf.TableDefinition;
 import preferences.mlhfm.MlhfmMapPreferences;
 

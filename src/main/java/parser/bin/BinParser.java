@@ -1,18 +1,18 @@
 package parser.bin;
 
-import com.oracle.tools.packager.Log;
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import parser.xdf.AxisDefinition;
 import parser.xdf.TableDefinition;
+import parser.xdf.XdfParser;
+import preferences.bin.BinFilePreferences;
 
 import javax.script.*;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
@@ -27,9 +27,57 @@ public class BinParser {
 
     private final List<Pair<TableDefinition, Map3d>> mapList = new ArrayList<>();
 
-    private BehaviorSubject<List<Pair<TableDefinition, Map3d>>> behaviorSubject = BehaviorSubject.create();
+    private final BehaviorSubject<List<Pair<TableDefinition, Map3d>>> behaviorSubject = BehaviorSubject.create();
 
-    private BinParser() {}
+    private File binaryFile = new File("");
+
+    private BinParser() {
+        BinFilePreferences.getInstance().registerObserver(new Observer<File>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull File file) {
+                binaryFile = file;
+
+                if(binaryFile.exists() && binaryFile.isFile()) {
+                    try {
+                        parse(new BufferedInputStream(new FileInputStream(binaryFile)), XdfParser.getInstance().getTableDefinitions());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        XdfParser.getInstance().register(new Observer<List<TableDefinition>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull List<TableDefinition> tableDefinitions) {
+                if(binaryFile.exists() && binaryFile.isFile()) {
+                    try {
+                        parse(new BufferedInputStream(new FileInputStream(binaryFile)), tableDefinitions);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+    }
 
     public static BinParser getInstance() {
         if (instance == null) {
@@ -51,7 +99,7 @@ public class BinParser {
         return mapList;
     }
 
-    public void parse(InputStream inputStream, List<TableDefinition> tableDefinitions) throws IOException {
+    private void parse(InputStream inputStream, List<TableDefinition> tableDefinitions) throws IOException {
         mapList.clear();
 
         BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);

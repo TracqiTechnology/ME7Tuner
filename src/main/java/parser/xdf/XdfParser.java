@@ -1,16 +1,20 @@
 package parser.xdf;
 
 import com.sun.tools.javac.util.Pair;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.BehaviorSubject;
 import org.jdom2.*;
 import org.jdom2.input.SAXBuilder;
+import preferences.xdf.XdfFilePreferences;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class BinDefinitionParser {
+public class XdfParser {
 
     private static final String XDF_TABLE_TAG = "XDFTABLE";
     private static final String XDF_AXIS_TAG = "XDFAXIS";
@@ -33,17 +37,42 @@ public class BinDefinitionParser {
     private static final String XDF_COLUMN_COUNT_TAG = "mmedcolcount";
     private static final String XDF_EQUATION_TAG = "equation";
 
-    private static BinDefinitionParser instance;
+    private static XdfParser instance;
 
     private final List<TableDefinition> tableDefinitions = new ArrayList<>();
 
-    private BinDefinitionParser()  {}
+    private final BehaviorSubject<List<TableDefinition>> behaviorSubject = BehaviorSubject.create();
 
-    public static BinDefinitionParser getInstance() {
+    private XdfParser()  {
+        XdfFilePreferences.getInstance().registerObserver(new Observer<File>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull File file) {
+                if(file.exists() && file.isFile()) {
+                    try {
+                        parse(new BufferedInputStream(new FileInputStream(file)));
+                    } catch (JDOMException | IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+    }
+
+    public static XdfParser getInstance() {
         if(instance == null) {
-            synchronized ((BinDefinitionParser.class)) {
+            synchronized ((XdfParser.class)) {
                 if(instance == null) {
-                    instance = new BinDefinitionParser();
+                    instance = new XdfParser();
                 }
             }
         }
@@ -51,11 +80,15 @@ public class BinDefinitionParser {
         return instance;
     }
 
+    public void register(Observer<List<TableDefinition>> observer) {
+        behaviorSubject.subscribe(observer);
+    }
+
     public List<TableDefinition> getTableDefinitions() {
         return tableDefinitions;
     }
 
-    public void parse(InputStream inputStream) throws JDOMException, IOException {
+    private void parse(InputStream inputStream) throws JDOMException, IOException {
         tableDefinitions.clear();
 
         SAXBuilder saxBuilder = new SAXBuilder();
@@ -258,5 +291,7 @@ public class BinDefinitionParser {
         }
 
         tableDefinitions.sort(Comparator.comparing(TableDefinition::toString));
+
+        behaviorSubject.onNext(tableDefinitions);
     }
 }

@@ -1,6 +1,6 @@
 package ui.view.map;
 
-import parser.xdf.BinDefinitionParser;
+import parser.xdf.XdfParser;
 import parser.xdf.TableDefinition;
 
 import javax.swing.*;
@@ -94,7 +94,7 @@ public class MapPickerDialog extends JDialog
 
         DefaultListModel<TableDefinition> listModel = new DefaultListModel<>();
 
-        for (TableDefinition tableDefinition : BinDefinitionParser.getInstance().getTableDefinitions()) {
+        for (TableDefinition tableDefinition : XdfParser.getInstance().getTableDefinitions()) {
             listModel.addElement(tableDefinition);
         }
 

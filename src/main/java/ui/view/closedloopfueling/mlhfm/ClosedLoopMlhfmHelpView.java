@@ -5,7 +5,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 
-public class ClosedLoopMlhfmHelpManager {
+public class ClosedLoopMlhfmHelpView {
     public JEditorPane getPanel() {
         JEditorPane jep = new JEditorPane();
         jep.setContentType("text/html");//set content as html

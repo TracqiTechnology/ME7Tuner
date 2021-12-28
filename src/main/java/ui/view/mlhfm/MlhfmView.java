@@ -30,7 +30,6 @@ public class MlhfmView {
 
     private JFreeChart chart;
     private JPanel mlhfmPanel;
-    private MlhfmViewModel mlhfmViewModel;
     private MapTable mapTable;
     private JLabel fileLabel;
 
@@ -77,7 +76,7 @@ public class MlhfmView {
     }
 
     private void initViewModel() {
-        mlhfmViewModel = new MlhfmViewModel();
+        MlhfmViewModel mlhfmViewModel = new MlhfmViewModel();
         mlhfmViewModel.registerMLHFMOnChange(new Observer<MlhfmViewModel.MlfhmModel>() {
             @Override
             public void onNext(@NonNull MlhfmViewModel.MlfhmModel model) {
@@ -144,8 +143,7 @@ public class MlhfmView {
 
 
     private JButton getDefinitionButton() {
-        JButton button = new JButton("Load Definition");
-        button.setToolTipText("Load the MLHFM definition.");
+        JButton button = new JButton("Set MLFHM Definition");
 
         button.addActionListener(e -> {
             Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
