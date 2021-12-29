@@ -1,6 +1,7 @@
 package ui.view.openloopfueling;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.mlhfm.MlhfmFitter;
@@ -13,8 +14,11 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import preferences.bin.BinFilePreferences;
+import preferences.mlhfm.MlhfmMapPreferences;
 import ui.map.map.MapTable;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingCorrectionViewModel;
+import writer.BinWriter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -23,12 +27,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class OpenLoopFuelingCorrectionUiManager {
+public class OpenLoopFuelingCorrectionView {
 
     private static final int AFR_CORRECTION_POINT_SERIES_INDEX = 1;
     private static final int AFR_CORRECTION_LINE_SERIES_INDEX = 0;
@@ -44,22 +49,23 @@ public class OpenLoopFuelingCorrectionUiManager {
 
     private int polynomialDegree = 6;
 
-    public OpenLoopFuelingCorrectionUiManager() {
-        OpenLoopFuelingCorrectionViewModel.getInstance().getPublishSubject().subscribe(new Observer<OpenLoopMlhfmCorrection>() {
+    public OpenLoopFuelingCorrectionView() {
+        OpenLoopFuelingCorrectionViewModel viewModel = new OpenLoopFuelingCorrectionViewModel();
+        viewModel.register(new Observer<OpenLoopMlhfmCorrection>() {
             @Override
-            public void onNext(OpenLoopMlhfmCorrection openLoopMlhfmCorrection) {
-                OpenLoopFuelingCorrectionUiManager.this.openLoopMlhfmCorrection = openLoopMlhfmCorrection;
+            public void onNext(@NonNull OpenLoopMlhfmCorrection openLoopMlhfmCorrection) {
+                OpenLoopFuelingCorrectionView.this.openLoopMlhfmCorrection = openLoopMlhfmCorrection;
                 drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, openLoopMlhfmCorrection.correctedMlhfm);
                 drawMapTable(openLoopMlhfmCorrection.correctedMlhfm);
                 drawAfrCorrectionChart(openLoopMlhfmCorrection.correctionsAfrMap, openLoopMlhfmCorrection.meanAfrMap, openLoopMlhfmCorrection.modeAfrMap, openLoopMlhfmCorrection.correctedAfrMap);
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(Throwable throwable) {
+            public void onError(@NonNull Throwable throwable) {
             }
 
             @Override
@@ -230,15 +236,21 @@ public class OpenLoopFuelingCorrectionUiManager {
     }
 
     private JButton getFileButton() {
-        JButton button = new JButton("Save MLHFM");
+        JButton button = new JButton("Write MLHFM");
 
         button.addActionListener(e -> {
-            final JFileChooser fc = new JFileChooser();
-
-            int returnValue = fc.showSaveDialog(correctionPanel);
+            int returnValue = JOptionPane.showConfirmDialog(
+                    correctionPanel,
+                    "Are you sure you want to write MLHFM to the binary?",
+                    "Write MLHFM",
+                    JOptionPane.YES_NO_OPTION);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                // TODO Write to binary
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, openLoopMlhfmCorrection.correctedMlhfm);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
             }
         });
 
@@ -284,7 +296,8 @@ public class OpenLoopFuelingCorrectionUiManager {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopMlhfmCorrection.correctedMlhfm, 6);
+                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
+                openLoopMlhfmCorrection = new OpenLoopMlhfmCorrection(openLoopMlhfmCorrection.inputMlhfm, openLoopMlhfmCorrection.correctedMlhfm, correctedFitMlhfm, openLoopMlhfmCorrection.correctionsAfrMap, openLoopMlhfmCorrection.meanAfrMap, openLoopMlhfmCorrection.modeAfrMap, openLoopMlhfmCorrection.correctedAfrMap);
                 drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }

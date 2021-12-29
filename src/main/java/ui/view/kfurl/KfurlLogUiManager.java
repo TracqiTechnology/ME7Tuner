@@ -222,7 +222,7 @@ public class KfurlLogUiManager {
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File afrLogFile = fc.getSelectedFile();
                 afrFileLabel.setText(afrLogFile.getName());
-                KfurlViewModel.getInstance().loadZeitFile(afrLogFile);
+                KfurlViewModel.getInstance().loadAfrFile(afrLogFile);
                 FileChooserPreferences.setDirectory(afrLogFile.getParentFile());
             }
         });

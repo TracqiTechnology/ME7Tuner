@@ -1,5 +1,8 @@
 package ui.viewmodel.openloopfueling;
 
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import parser.afrLog.AfrLogParser;
 
@@ -9,22 +12,24 @@ import java.util.Map;
 
 public class OpenLoopFuelingAfrLogViewModel {
 
-    private AfrLogParser afrLogParser;
-    private PublishSubject<Map<String, List<Double>>> publishSubject;
+    private final PublishSubject<Map<String, List<Double>>> publishSubject = PublishSubject.create();
 
-    private static OpenLoopFuelingAfrLogViewModel instance;
+    public OpenLoopFuelingAfrLogViewModel() {
+        AfrLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
 
-    public static OpenLoopFuelingAfrLogViewModel getInstance() {
-        if (instance == null) {
-            instance = new OpenLoopFuelingAfrLogViewModel();
-        }
+            @Override
+            public void onNext(@NonNull Map<String, List<Double>> logs) {
+                publishSubject.onNext(logs);
+            }
 
-        return instance;
-    }
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
 
-    private OpenLoopFuelingAfrLogViewModel() {
-        afrLogParser = new AfrLogParser();
-        publishSubject = PublishSubject.create();
+            @Override
+            public void onComplete() {}
+        });
     }
 
     public PublishSubject<Map<String, List<Double>>> getPublishSubject() {
@@ -32,10 +37,6 @@ public class OpenLoopFuelingAfrLogViewModel {
     }
 
     public void loadFile(File file) {
-        Map<String, List<Double>> afrLogMap = afrLogParser.parse(file);
-
-        if (afrLogMap != null) {
-            publishSubject.onNext(afrLogMap);
-        }
+       AfrLogParser.getInstance().loadFile(file);
     }
 }

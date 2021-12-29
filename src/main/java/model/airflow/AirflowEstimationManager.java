@@ -7,21 +7,20 @@ import model.openloopfueling.util.AfrLogUtil;
 import model.openloopfueling.util.Me7LogUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class AirflowEstimationManager {
 
+    private static final int LAMBDA_CONTROL_ENABLED = 0;
+
     private final int minPointsMe7;
     private final int minPointsAfr;
     private final double minThrottleAngle;
-    private final int lambdaControlEnabled = 0;
     private final double minRpm;
     private final double maxAfr;
 
     private final double totalFuelFlowGramsPerMinute;
-    private final double totalMethanolFlowGramsPerMinute;
 
     private final List<List<Double>> estimatedAirflowGramsPerSecondLogs;
     private final List<List<Double>> measuredAirflowGramsPerSecondLogs;
@@ -29,15 +28,14 @@ public class AirflowEstimationManager {
 
     private AirflowEstimation airflowEstimation;
 
-    public AirflowEstimationManager(double minThrottleAngle, double minRpm, int minPointsMe7, int minPointsAfr, double maxAfr, double fuelInjectorCubicCentimetersPerMinute, double numFuelInjectors, double methanolInjectorCubicCentimetersPerMinute, double numMethanolInjectors, double gasolineGramsPerCubicCentimeter, double methanolGramsPerCubicCentimeter) {
+    public AirflowEstimationManager(double minThrottleAngle, double minRpm, int minPointsMe7, int minPointsAfr, double maxAfr, double fuelInjectorCubicCentimetersPerMinute, double numFuelInjectors, double gasolineGramsPerCubicCentimeter) {
         this.minThrottleAngle = minThrottleAngle;
         this.minRpm = minRpm;
         this.minPointsMe7 = minPointsMe7;
         this.minPointsAfr = minPointsAfr;
         this.maxAfr = maxAfr;
 
-        this.totalFuelFlowGramsPerMinute = fuelInjectorCubicCentimetersPerMinute *numFuelInjectors* gasolineGramsPerCubicCentimeter;
-        this.totalMethanolFlowGramsPerMinute = methanolInjectorCubicCentimetersPerMinute *numMethanolInjectors* methanolGramsPerCubicCentimeter;
+        this.totalFuelFlowGramsPerMinute = fuelInjectorCubicCentimetersPerMinute * numFuelInjectors * gasolineGramsPerCubicCentimeter;
 
         this.estimatedAirflowGramsPerSecondLogs = new ArrayList<>();
         this.measuredAirflowGramsPerSecondLogs = new ArrayList<>();
@@ -49,7 +47,7 @@ public class AirflowEstimationManager {
     }
 
     public void estimate(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> afrLogMap) {
-        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, minThrottleAngle, lambdaControlEnabled, minRpm, minPointsMe7);
+        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, minThrottleAngle, LAMBDA_CONTROL_ENABLED, minRpm, minPointsMe7);
         List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLogMap, minThrottleAngle, minRpm, maxAfr, minPointsAfr);
 
         List<List<Double>> dutyCycleLogs = new ArrayList<>();
@@ -73,7 +71,7 @@ public class AirflowEstimationManager {
             List<Double> afrRpmLog = afrLogList.get(i).get(AfrLogFileContract.RPM_HEADER);
             List<Double> afrLog = afrLogList.get(i).get(AfrLogFileContract.AFR_HEADER);
             for(int j = 0; j < dutyCycleLogs.get(i).size(); j++) {
-                double totalFuelGramsPerSecond = ((dutyCycleLog.get(j) * totalFuelFlowGramsPerMinute) + totalMethanolFlowGramsPerMinute)/60;
+                double totalFuelGramsPerSecond = ((dutyCycleLog.get(j) * totalFuelFlowGramsPerMinute))/60;
                 int afrIndex = Index.getInsertIndex(afrRpmLog, me7RpmLog.get(j));
                 double afr = afrLog.get(Math.min(afrIndex, afrLog.size() - 1));
                 double airflowGramsPerSecond = totalFuelGramsPerSecond*afr;

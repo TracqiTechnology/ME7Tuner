@@ -44,7 +44,7 @@ public class OpenLoopMlhfmCorrectionManager {
 
         generateMlhfm(mlhfm, me7LogList, afrLogList);
 
-        openLoopMlhfmCorrection = new OpenLoopMlhfmCorrection(mlhfm, correctedMlhfm, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
+        openLoopMlhfmCorrection = new OpenLoopMlhfmCorrection(mlhfm, correctedMlhfm, correctedMlhfm ,correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
     public OpenLoopMlhfmCorrection getOpenLoopCorrection() {

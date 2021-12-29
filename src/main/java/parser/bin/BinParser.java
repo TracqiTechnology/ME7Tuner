@@ -10,6 +10,7 @@ import parser.xdf.AxisDefinition;
 import parser.xdf.TableDefinition;
 import parser.xdf.XdfParser;
 import preferences.bin.BinFilePreferences;
+import writer.BinWriter;
 
 import javax.script.*;
 import java.io.*;
@@ -76,6 +77,28 @@ public class BinParser {
 
             @Override
             public void onComplete() {}
+        });
+
+        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull TableDefinition tableDefinition) {
+                if(binaryFile.exists() && binaryFile.isFile()) {
+                    try {
+                        parse(new BufferedInputStream(new FileInputStream(binaryFile)), XdfParser.getInstance().getTableDefinitions());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() { }
         });
     }
 

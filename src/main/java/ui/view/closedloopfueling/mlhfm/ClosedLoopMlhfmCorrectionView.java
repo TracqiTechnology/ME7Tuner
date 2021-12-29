@@ -3,7 +3,6 @@ package ui.view.closedloopfueling.mlhfm;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import jogamp.opengl.glu.nurbs.Bin;
 import math.map.Map3d;
 import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
 import model.mlhfm.MlhfmFitter;
@@ -289,7 +288,7 @@ public class ClosedLoopMlhfmCorrectionView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, closedLoopMlhfmCorrection.correctedMlhfm);
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, closedLoopMlhfmCorrection.fitMlhfm);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

@@ -1,12 +1,18 @@
 package ui.viewmodel.openloopfueling;
 
+import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.subjects.PublishSubject;
-import math.map.Map2d;
+import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.openloopfueling.correction.OpenLoopMlhfmCorrection;
 import model.openloopfueling.correction.OpenLoopMlhfmCorrectionManager;
+import parser.afrLog.AfrLogParser;
+import parser.bin.BinParser;
+import parser.me7log.OpenLoopLogParser;
+import parser.xdf.TableDefinition;
+import preferences.mlhfm.MlhfmMapPreferences;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
 
 import java.util.List;
@@ -14,87 +20,68 @@ import java.util.Map;
 
 public class OpenLoopFuelingCorrectionViewModel {
 
-    private static OpenLoopFuelingCorrectionViewModel instance;
-
     private Map3d mlhfmMap;
     private Map<String, List<Double>> me7LogMap;
     private Map<String, List<Double>> afrLogMap;
 
-    private PublishSubject<OpenLoopMlhfmCorrection> publishSubject;
+    private final BehaviorSubject<OpenLoopMlhfmCorrection> publishSubject = BehaviorSubject.create();
 
-    public static OpenLoopFuelingCorrectionViewModel getInstance() {
-        if (instance == null) {
-            instance = new OpenLoopFuelingCorrectionViewModel();
-        }
+    public OpenLoopFuelingCorrectionViewModel() {
+        OpenLoopLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
 
-        return instance;
+            @Override
+            public void onNext(@NonNull Map<String, List<Double>> logs) {
+                OpenLoopFuelingCorrectionViewModel.this.me7LogMap = logs;
+                generateCorrection();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        AfrLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Map<String, List<Double>> logs) {
+                OpenLoopFuelingCorrectionViewModel.this.afrLogMap = logs;
+                generateCorrection();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                OpenLoopFuelingCorrectionViewModel.this.mlhfmMap  = tableDefinition.snd;
+                generateCorrection();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
     }
 
-    private OpenLoopFuelingCorrectionViewModel() {
-        publishSubject = PublishSubject.create();
-
-        OpenLoopFuelingMe7LogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
-            @Override
-            public void onNext(Map<String, List<Double>> me7LogMap) {
-                OpenLoopFuelingCorrectionViewModel.this.me7LogMap = me7LogMap;
-                generateCorrection();
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        });
-
-        OpenLoopFuelingAfrLogViewModel.getInstance().getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
-            @Override
-            public void onNext(Map<String, List<Double>> afrLogMap) {
-                OpenLoopFuelingCorrectionViewModel.this.afrLogMap = afrLogMap;
-                generateCorrection();
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-
-//        MlhfmViewModel mlhfmViewModel = MlhfmViewModel.getInstance();
-//        mlhfmViewModel.getMlhfmPublishSubject().subscribe(new Observer<Map2d>() {
-//            @Override
-//            public void onNext(Map2d mlhfmMap) {
-//                OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = mlhfmMap;
-//                generateCorrection();
-//            }
-//
-//            @Override
-//            public void onSubscribe(Disposable disposable) {
-//            }
-//
-//            @Override
-//            public void onError(Throwable throwable) {
-//            }
-//
-//            @Override
-//            public void onComplete() {
-//            }
-//        });
+    public void register(Observer<OpenLoopMlhfmCorrection> observer) {
+        publishSubject.subscribe(observer);
     }
 
     private void generateCorrection() {
@@ -107,9 +94,5 @@ public class OpenLoopFuelingCorrectionViewModel {
                 publishSubject.onNext(openLoopMlhfmCorrection);
             }
         }
-    }
-
-    public PublishSubject<OpenLoopMlhfmCorrection> getPublishSubject() {
-        return publishSubject;
     }
 }

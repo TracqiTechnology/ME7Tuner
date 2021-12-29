@@ -85,7 +85,6 @@ public class MlhfmView {
                     drawChart(model.getMap3d());
                     drawMapTable(model.getMap3d());
                 } else {
-                    System.out.println("No File Selected");
                     fileLabel.setText("No File Selected");
                 }
             }

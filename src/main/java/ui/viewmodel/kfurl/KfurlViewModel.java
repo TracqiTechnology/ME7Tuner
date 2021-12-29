@@ -2,6 +2,9 @@ package ui.viewmodel.kfurl;
 
 import contract.AfrLogFileContract;
 import contract.Me7LogFileContract;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.kfurl.KfurlCalculator;
@@ -36,6 +39,27 @@ public class KfurlViewModel {
         outputSubject = BehaviorSubject.create();
         me7LogsSubject = BehaviorSubject.create();
         zeitLogsSubject = BehaviorSubject.create();
+
+        AfrLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Map<String, List<Double>> logs) {
+                processZeitLogs(logs);
+                zeitLogsSubject.onNext(logs);
+
+                if(me7logs != null) {
+                    outputSubject.onNext(KfurlCalculator.calculateKfurl(inputSubject.getValue(), me7logs, logs));
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
     }
 
     public BehaviorSubject<Map3d> getInputSubject() {
@@ -67,16 +91,15 @@ public class KfurlViewModel {
         me7LogsSubject.onNext(me7logs);
     }
 
-    public void loadZeitFile(File file) {
-        AfrLogParser afrLogParser = new AfrLogParser();
-        Map<String, List<Double>> zeitLogs = afrLogParser.parse(file);
-        processZeitLogs(zeitLogs);
-        zeitLogsSubject.onNext(zeitLogs);
-
-        outputSubject.onNext(KfurlCalculator.calculateKfurl(inputSubject.getValue(), me7logs, zeitLogs));
+    public void loadAfrFile(File file) {
+        AfrLogParser.getInstance().loadFile(file);
     }
 
     private void processZeitLogs(Map<String, List<Double>> zeitLogs) {
+        if(me7logs == null) {
+            return;
+        }
+
         double me7StartTime = me7logs.get(Me7LogFileContract.START_TIME).get(0);
         double zeitStartTime = zeitLogs.get(AfrLogFileContract.START_TIME).get(0);
         double timeOffset = (zeitStartTime - me7StartTime) - zeitStartTime;

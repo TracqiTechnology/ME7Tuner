@@ -3,7 +3,6 @@ package ui.view.closedloopfueling.mlhfm;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import parser.xdf.TableDefinition;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.mlhfm.MlhfmView;
 import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmViewModel;
@@ -34,7 +33,7 @@ public class ClosedLoopMlhfmView implements OnTabSelectedListener {
         enableLogsTab(false);
         enableCorrectionTab(false);
 
-        registerObservers();
+        initViewModel();
 
         return tabbedPane;
     }
@@ -51,9 +50,9 @@ public class ClosedLoopMlhfmView implements OnTabSelectedListener {
         tabbedPane.setSelectedIndex(index);
     }
 
-    private void registerObservers() {
+    private void initViewModel() {
         ClosedLoopMlhfmViewModel viewModel = new ClosedLoopMlhfmViewModel();
-        viewModel.registerMLHFMOnChange(new Observer<ClosedLoopMlhfmViewModel.ClosedLoopMlfhmModel>() {
+        viewModel.register(new Observer<ClosedLoopMlhfmViewModel.ClosedLoopMlfhmModel>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 

@@ -1,9 +1,9 @@
 package ui.view.openloopfueling;
 
-
 import contract.AfrLogFileContract;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import model.airflow.AirflowEstimation;
 import model.openloopfueling.util.AfrLogUtil;
@@ -15,11 +15,10 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.filechooser.FileChooserPreferences;
+import preferences.filechooser.AfrFileChooserPreferences;
+import preferences.filechooser.OpenLoopFileChooserPreferences;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
-import ui.viewmodel.openloopfueling.OpenLoopFuelingAfrLogViewModel;
-import ui.viewmodel.openloopfueling.OpenLoopFuelingAirflowViewModel;
-import ui.viewmodel.openloopfueling.OpenLoopFuelingMe7LogViewModel;
+import ui.viewmodel.openloopfueling.OpenLoopFuelingLogViewModel;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -28,8 +27,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-
-public class OpenLoopFuelingMe7LogUiManager {
+public class OpenLoopFuelingLogView {
 
     private static final int ME7_FUELING_DATA_SERIES_INDEX = 0;
     private static final int AFR_FUELING_AIRFLOW_DATA_SERIES_INDEX = 1;
@@ -42,8 +40,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     private JPanel openLoopLogPanel;
     private JLabel me7FileLabel;
     private JLabel afrFileLabel;
-    private final OpenLoopFuelingMe7LogViewModel openLoopFuelingMe7LogViewModel;
-    private final OpenLoopFuelingAfrLogViewModel openLoopFuelingAfrLogViewModel;
+    private final OpenLoopFuelingLogViewModel viewModel;
 
     private final XYSeriesCollection me7FuelingDataset;
     private final XYSeriesCollection afrFuelingDataset;
@@ -54,7 +51,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     private File me7LogFile;
     private File afrLogFile;
 
-    public OpenLoopFuelingMe7LogUiManager() {
+    public OpenLoopFuelingLogView() {
 
         me7FuelingDataset = new XYSeriesCollection();
         afrFuelingDataset = new XYSeriesCollection();
@@ -62,52 +59,24 @@ public class OpenLoopFuelingMe7LogUiManager {
         measuredAirflowDataset = new XYSeriesCollection();
         estimatedAirflowDataset = new XYSeriesCollection();
 
-        openLoopFuelingMe7LogViewModel = OpenLoopFuelingMe7LogViewModel.getInstance();
-        openLoopFuelingMe7LogViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        viewModel = new OpenLoopFuelingLogViewModel();
+        viewModel.register(new Observer<OpenLoopFuelingLogViewModel.OpenLoopFuelingLogModel>() {
             @Override
-            public void onNext(Map<String, List<Double>> me7LogMap) {
-                drawMe7FuelingLogChart(me7LogMap);
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull OpenLoopFuelingLogViewModel.OpenLoopFuelingLogModel openLoopFuelingLogModel) {
+                drawMe7FuelingLogChart(openLoopFuelingLogModel.getMe7Logs());
+                drawAfrFuelingLogChart(openLoopFuelingLogModel.getAfrLogs());
+                AirflowEstimation airflowEstimation = openLoopFuelingLogModel.getAirflowEstimation();
+                if(airflowEstimation != null) {
+                    drawMeasuredAirflowChart(airflowEstimation.measuredAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
+                    drawEstimatedAirflowChart(airflowEstimation.estimatedAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
+                }
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        openLoopFuelingAfrLogViewModel = OpenLoopFuelingAfrLogViewModel.getInstance();
-        openLoopFuelingAfrLogViewModel.getPublishSubject().subscribe(new Observer<Map<String, List<Double>>>() {
-            @Override
-            public void onNext(Map<String, List<Double>> afrLogMap) {
-                drawAfrFuelingLogChart(afrLogMap);
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        OpenLoopFuelingAirflowViewModel.getInstance().getPublishSubject().subscribe(new Observer<AirflowEstimation>() {
-            @Override
-            public void onNext(AirflowEstimation airflowEstimation) {
-                drawMeasuredAirflowChart(airflowEstimation.measuredAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
-                drawEstimatedAirflowChart(airflowEstimation.estimatedAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {}
 
             @Override
             public void onComplete() {}
@@ -311,14 +280,14 @@ public class OpenLoopFuelingMe7LogUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
-            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
+            fc.setCurrentDirectory(OpenLoopFileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(openLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.me7LogFile = fc.getSelectedFile();
                 loadMe7File(this.me7LogFile);
-                FileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
+                OpenLoopFileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
             }
         });
 
@@ -326,7 +295,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     }
 
     private void loadMe7File(File file) {
-        openLoopFuelingMe7LogViewModel.loadFile(file);
+        viewModel.loadMe7File(file);
         me7FileLabel.setText(file.getName());
     }
 
@@ -336,14 +305,14 @@ public class OpenLoopFuelingMe7LogUiManager {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
-            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
+            fc.setCurrentDirectory(AfrFileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(openLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.afrLogFile = fc.getSelectedFile();
                 loadAfrFile(this.afrLogFile);
-                FileChooserPreferences.setDirectory(this.me7LogFile.getParentFile());
+                AfrFileChooserPreferences.setDirectory(this.afrLogFile.getParentFile());
             }
         });
 
@@ -351,7 +320,7 @@ public class OpenLoopFuelingMe7LogUiManager {
     }
 
     private void loadAfrFile(File file) {
-        openLoopFuelingAfrLogViewModel.loadFile(file);
+        viewModel.loadAfrFile(file);
         afrFileLabel.setText(file.getName());
     }
 
@@ -446,6 +415,10 @@ public class OpenLoopFuelingMe7LogUiManager {
     private void drawMe7FuelingLogChart(Map<String, List<Double>> me7LogMap) {
         me7FuelingDataset.removeAllSeries();
 
+        if(me7LogMap == null) {
+            return;
+        }
+
         List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
 
         int logCount = 1;
@@ -468,6 +441,10 @@ public class OpenLoopFuelingMe7LogUiManager {
 
     private void drawAfrFuelingLogChart(Map<String, List<Double>> afrLogMap) {
         afrFuelingDataset.removeAllSeries();
+
+        if(afrLogMap == null) {
+            return;
+        }
 
         List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLogMap, 80, 2000, 15, 150);
 

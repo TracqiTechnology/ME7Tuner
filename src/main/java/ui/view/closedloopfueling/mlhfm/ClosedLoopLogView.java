@@ -3,6 +3,7 @@ package ui.view.closedloopfueling.mlhfm;
 import derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import org.jfree.chart.ChartFactory;
@@ -20,6 +21,8 @@ import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmLogViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.util.List;
@@ -110,8 +113,8 @@ public class ClosedLoopLogView {
         c.anchor = GridBagConstraints.LINE_START;
         c.insets = new Insets(0, 8, 0, 0);
 
-        JButton button = getConfigureFilterButton();
-        panel.add(button, c);
+        JButton filterButton = getConfigureFilterButton();
+        panel.add(filterButton, c);
 
         c.weightx = 0.9;
         c.gridx = 1;
@@ -119,8 +122,8 @@ public class ClosedLoopLogView {
         c.anchor = GridBagConstraints.CENTER;
         c.insets = new Insets(0, 0, 0, 0);
 
-        button = getFileButton();
-        panel.add(button, c);
+        final JButton logsButton = getFileButton();
+        panel.add(logsButton, c);
 
         c.gridx = 1;
         c.gridy = 1;
@@ -212,34 +215,35 @@ public class ClosedLoopLogView {
         plot.getRenderer().setSeriesPaint(1, Color.GREEN);
     }
 
-    private void drawChart(Map<String, List<Double>> me7LogMap, Map3d mlhfm) {
-
-        Map<Double, List<Double>> dtMap = Derivative.getMlfhm(me7LogMap, mlhfm);
-        Double[] voltages = mlhfm.yAxis;
-
-        XYSeries invalidDtSeries = new XYSeries("Excluded Sample");
-        XYSeries validDtSeries = new XYSeries("Included Sample");
-
-        double maxFilterVoltage = ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference();
-
-        for (Double voltage : voltages) {
-            List<Double> values = dtMap.get(voltage);
-
-            for (Double value : values) {
-                if(value > maxFilterVoltage) {
-                    invalidDtSeries.add(voltage, value);
-                } else {
-                    validDtSeries.add(voltage, value);
-                }
-            }
-        }
-
+    private void drawChart(@Nullable Map<String, List<Double>> me7LogMap, @Nullable Map3d mlhfm) {
 
         XYPlot plot = (XYPlot) chart.getPlot();
         ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
-        ((XYSeriesCollection) plot.getDataset()).addSeries(invalidDtSeries);
-        ((XYSeriesCollection) plot.getDataset()).addSeries(validDtSeries);
+
+        if(me7LogMap != null && mlhfm != null) {
+            Map<Double, List<Double>> dtMap = Derivative.getMlfhm(me7LogMap, mlhfm);
+            Double[] voltages = mlhfm.yAxis;
+
+            XYSeries invalidDtSeries = new XYSeries("Excluded Sample");
+            XYSeries validDtSeries = new XYSeries("Included Sample");
+
+            double maxFilterVoltage = ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference();
+
+            for (Double voltage : voltages) {
+                List<Double> values = dtMap.get(voltage);
+
+                for (Double value : values) {
+                    if (value > maxFilterVoltage) {
+                        invalidDtSeries.add(voltage, value);
+                    } else {
+                        validDtSeries.add(voltage, value);
+                    }
+                }
+            }
+
+
+            ((XYSeriesCollection) plot.getDataset()).addSeries(invalidDtSeries);
+            ((XYSeriesCollection) plot.getDataset()).addSeries(validDtSeries);
+        }
     }
-
-
 }

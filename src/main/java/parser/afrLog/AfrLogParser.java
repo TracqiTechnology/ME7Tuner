@@ -1,9 +1,19 @@
 package parser.afrLog;
 
 import contract.AfrLogFileContract;
+import io.reactivex.Observer;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import parser.me7log.Me7LogParser;
+import parser.me7log.OpenLoopLogParser;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,15 +25,52 @@ import java.util.Map;
 
 public class AfrLogParser {
 
-    private int timeColumnIndex = -1;
-    private int rpmColumnIndex = -1;
-    private int tpsColumnIndex = -1;
-    private int afrColumnIndex = -1;
-    private int boostColumnIndex = -1;
+    private static AfrLogParser instance;
 
-    private double lastPsi = 0;
+    private final PublishSubject<Map<String, List<Double>>> publishSubject = PublishSubject.create();
 
-    public Map<String, List<Double>> parse(File file) {
+    private AfrLogParser() {}
+
+    public static AfrLogParser getInstance() {
+        if (instance == null) {
+            synchronized (AfrLogParser.class) {
+                if (instance == null) {
+                    instance = new AfrLogParser();
+                }
+            }
+        }
+
+        return instance;
+    }
+
+    public void register(Observer<Map<String, List<Double>>> observer){
+        SwingUtilities.invokeLater(() -> publishSubject.subscribe(observer));
+    }
+
+    public void loadFile(File file) {
+        Single.fromCallable(() -> parse(file)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
+                SwingUtilities.invokeLater(() -> publishSubject.onNext(logMap));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+        });
+    }
+
+    private Map<String, List<Double>> parse(File file) {
+
+        int timeColumnIndex = -1;
+        int rpmColumnIndex = -1;
+        int tpsColumnIndex = -1;
+        int afrColumnIndex = -1;
+        int boostColumnIndex = -1;
+
+        double lastPsi = 0;
 
         Map<String, List<Double>> map = new HashMap<>();
         map.put(AfrLogFileContract.START_TIME, new ArrayList<>());
@@ -58,7 +105,7 @@ public class AfrLogParser {
                             break;
                     }
 
-                    if (headersFound = headersFound()) {
+                    if (headersFound = headersFound(timeColumnIndex, rpmColumnIndex, tpsColumnIndex, afrColumnIndex, boostColumnIndex)) {
                         break;
                     }
                 }
@@ -111,10 +158,10 @@ public class AfrLogParser {
             e.printStackTrace();
         }
 
-        return null;
+        return new HashMap<>();
     }
 
-    private boolean headersFound() {
+    private boolean headersFound(int timeColumnIndex, int rpmColumnIndex, int tpsColumnIndex, int afrColumnIndex, int boostColumnIndex) {
         return tpsColumnIndex != -1 && rpmColumnIndex != -1 && afrColumnIndex != -1 && timeColumnIndex != -1 && boostColumnIndex != -1;
     }
 }

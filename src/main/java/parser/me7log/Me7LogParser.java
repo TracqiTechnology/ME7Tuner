@@ -1,6 +1,5 @@
 package parser.me7log;
 
-import com.oracle.tools.packager.Log;
 import contract.Me7LogFileContract;
 import io.reactivex.annotations.NonNull;
 import org.apache.commons.csv.CSVFormat;
@@ -10,7 +9,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Me7LogParser {
 
@@ -150,14 +152,46 @@ public class Me7LogParser {
                 for (CSVRecord record : records) {
                     try {
                         if (logType == LogType.CLOSED_LOOP || logType == LogType.OPEN_LOOP) {
-                            double time = Double.parseDouble(record.get(timeColumnIndex));
-                            double rpm = Double.parseDouble(record.get(rpmColumnIndex));
-                            double stft = Double.parseDouble(record.get(stftColumnIndex));
-                            double ltft = Double.parseDouble(record.get(ltftColumnIndex));
-                            double mafVoltage = Double.parseDouble(record.get(mafVoltageIndex));
-                            double throttlePlateAngle = Double.parseDouble(record.get(throttlePlateAngleIndex));
-                            double lambdaControlActive = Double.parseDouble(record.get(lambdaControlActiveIndex));
-                            double engineLoad = Double.parseDouble(record.get(engineLoadIndex));
+                            double time = 0;
+                            double rpm = 0;
+                            double stft = 0;
+                            double ltft = 0;
+                            double mafVoltage = 0;
+                            double throttlePlateAngle = 0;
+                            double lambdaControlActive = 0;
+                            double engineLoad = 0;
+
+                            if(timeColumnIndex < record.size()) {
+                                time = Double.parseDouble(record.get(timeColumnIndex));
+                            }
+
+                            if(rpmColumnIndex < record.size()) {
+                                rpm = Double.parseDouble(record.get(rpmColumnIndex));
+                            }
+
+                            if(stftColumnIndex < record.size()) {
+                                stft = Double.parseDouble(record.get(stftColumnIndex));
+                            }
+
+                            if(ltftColumnIndex < record.size()) {
+                                ltft = Double.parseDouble(record.get(ltftColumnIndex));
+                            }
+
+                            if(mafVoltageIndex < record.size()) {
+                                mafVoltage = Double.parseDouble(record.get(mafVoltageIndex));
+                            }
+
+                            if(throttlePlateAngleIndex < record.size()) {
+                                throttlePlateAngle = Double.parseDouble(record.get(throttlePlateAngleIndex));
+                            }
+
+                            if(lambdaControlActiveIndex < record.size()) {
+                                lambdaControlActive = Double.parseDouble(record.get(lambdaControlActiveIndex));
+                            }
+
+                            if(engineLoadIndex < record.size()) {
+                                engineLoad = Double.parseDouble(record.get(engineLoadIndex));
+                            }
 
                             if (logType == LogType.OPEN_LOOP) {
                                 double mafGsec = Double.parseDouble(record.get(mafGramsPerSecondIndex));

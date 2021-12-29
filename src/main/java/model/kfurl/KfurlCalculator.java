@@ -14,6 +14,10 @@ public class KfurlCalculator {
 
 
     public static KfurlCorrection calculateKfurl(Map3d kfurl, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> zeitLogMap) {
+        if(me7LogMap == null || zeitLogMap == null) {
+            return null;
+        }
+
         List<Double> zeitTimestamps = zeitLogMap.get(AfrLogFileContract.TIMESTAMP);
         List<Double> zeitRelativeBoosts = zeitLogMap.get(AfrLogFileContract.BOOST_HEADER);
 

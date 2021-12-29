@@ -109,7 +109,7 @@ public class ClosedLoopMlhfmViewModel {
         });
     }
 
-    public void registerMLHFMOnChange(Observer<ClosedLoopMlfhmModel> observer) {
+    public void register(Observer<ClosedLoopMlfhmModel> observer) {
         behaviorSubject.subscribe(observer);
     }
 

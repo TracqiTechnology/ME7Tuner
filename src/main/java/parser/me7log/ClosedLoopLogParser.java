@@ -22,7 +22,11 @@ public class ClosedLoopLogParser {
 
     public static ClosedLoopLogParser getInstance() {
         if (instance == null) {
-            instance = new ClosedLoopLogParser();
+            synchronized (ClosedLoopLogParser.class) {
+                if (instance == null) {
+                    instance = new ClosedLoopLogParser();
+                }
+            }
         }
 
         return instance;

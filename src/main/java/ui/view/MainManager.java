@@ -7,7 +7,6 @@ import preferences.bin.BinFilePreferences;
 import preferences.filechooser.BinFileChooserPreferences;
 import preferences.filechooser.XdfFileChooserPreferences;
 import preferences.xdf.XdfFilePreferences;
-import ui.view.closedloopfueling.kfkhfm.ClosedLoopKfkhfmUiManager;
 import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmView;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
@@ -18,7 +17,7 @@ import ui.view.kfzwop.KfzwopUiManager;
 import ui.view.krkte.KrkteUiManager;
 import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.openloopfueling.OpenLoopFuelingUiManager;
+import ui.view.openloopfueling.OpenLoopFuelingView;
 import ui.view.wdkugdn.WdkugdnUiManager;
 
 import javax.swing.*;
@@ -97,15 +96,11 @@ public class MainManager {
         // first tab is selected
         closedLoopMlhfmView.onTabSelected(true);
         tabSelectedListeners.add(closedLoopMlhfmView);
-        tabbedPane.addTab("Closed Loop MLHFM", null, closedLoopMlhfmView.getPanel(), "Closed Loop MLFHM Compensation");
+        tabbedPane.addTab("Closed Loop Fueling", null, closedLoopMlhfmView.getPanel(), "Closed Loop MLHFM Compensation");
 
-        ClosedLoopKfkhfmUiManager closedLoopKfkhfmUiManager = new ClosedLoopKfkhfmUiManager();
-        tabSelectedListeners.add(closedLoopKfkhfmUiManager);
-        tabbedPane.addTab("Closed Loop KFKHFM", null, closedLoopKfkhfmUiManager.getPanel(), "Closed Loop KFKHFM Compensation");
-
-        OpenLoopFuelingUiManager openLoopFuelingUiManager = new OpenLoopFuelingUiManager();
-        tabSelectedListeners.add(openLoopFuelingUiManager);
-        tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingUiManager.getPanel(), "Open Loop Fueling Compensation");
+        OpenLoopFuelingView openLoopFuelingView = new OpenLoopFuelingView();
+        tabSelectedListeners.add(openLoopFuelingView);
+        tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingView.getPanel(), "Open Loop MLHFMCompensation");
 
         KfmirlUiManager kfmirlUiManager = new KfmirlUiManager();
         tabSelectedListeners.add(kfmirlUiManager);
