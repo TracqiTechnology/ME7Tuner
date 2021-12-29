@@ -1,4 +1,4 @@
-package ui.view.closedloopfueling.mlhfm;
+package ui.view.closedloopfueling;
 
 import derivative.Derivative;
 import io.reactivex.Observer;
@@ -17,18 +17,16 @@ import parser.me7log.ClosedLoopLogParser;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
 import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
-import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmLogViewModel;
+import ui.viewmodel.closedloopfueling.ClosedLoopFuelingLogViewModel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopLogView {
+public class ClosedLoopFuelingLogView {
 
     private JFreeChart chart;
     private JPanel closedLoopLogPanel;
@@ -36,14 +34,14 @@ public class ClosedLoopLogView {
 
     private File me7LogFile;
 
-    ClosedLoopLogView() {
-        ClosedLoopMlhfmLogViewModel viewModel = new ClosedLoopMlhfmLogViewModel();
-        viewModel.registerMLHFMOnChange(new Observer<ClosedLoopMlhfmLogViewModel.ClosedLoopMlhfmLogModel>() {
+    ClosedLoopFuelingLogView() {
+        ClosedLoopFuelingLogViewModel viewModel = new ClosedLoopFuelingLogViewModel();
+        viewModel.registerMLHFMOnChange(new Observer<ClosedLoopFuelingLogViewModel.ClosedLoopMlhfmLogModel>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull ClosedLoopMlhfmLogViewModel.ClosedLoopMlhfmLogModel closedLoopMlhfmLogModel) {
+            public void onNext(@NonNull ClosedLoopFuelingLogViewModel.ClosedLoopMlhfmLogModel closedLoopMlhfmLogModel) {
                 drawChart(closedLoopMlhfmLogModel.getMe7LogMap(), closedLoopMlhfmLogModel.getMlhfm());
             }
 

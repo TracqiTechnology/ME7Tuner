@@ -1,4 +1,4 @@
-package ui.viewmodel.closedloopfueling.mlhfm;
+package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
@@ -15,11 +15,11 @@ import writer.BinWriter;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopMlhfmLogViewModel {
+public class ClosedLoopFuelingLogViewModel {
 
     private final PublishSubject<ClosedLoopMlhfmLogModel> behaviorSubject = PublishSubject.create();
 
-    public ClosedLoopMlhfmLogViewModel() {
+    public ClosedLoopFuelingLogViewModel() {
         ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {

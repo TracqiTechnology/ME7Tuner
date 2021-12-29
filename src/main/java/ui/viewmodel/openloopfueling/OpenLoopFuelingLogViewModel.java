@@ -15,7 +15,6 @@ import parser.me7log.OpenLoopLogParser;
 import parser.xdf.TableDefinition;
 import preferences.mlhfm.MlhfmMapPreferences;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
-import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmLogViewModel;
 import writer.BinWriter;
 
 import java.io.File;

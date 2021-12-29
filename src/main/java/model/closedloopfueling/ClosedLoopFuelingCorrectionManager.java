@@ -1,4 +1,4 @@
-package model.closedloopfueling.mlfhm;
+package model.closedloopfueling;
 
 import contract.Me7LogFileContract;
 import derivative.Derivative;
@@ -10,7 +10,7 @@ import util.Util;
 
 import java.util.*;
 
-public class ClosedLoopMlhfmCorrectionManager {
+public class ClosedLoopFuelingCorrectionManager {
 
     private static final int MIN_SAMPLES_THRESHOLD = 5;
     private static final int LAMBDA_CONTROL_ENABLED = 1;
@@ -26,16 +26,16 @@ public class ClosedLoopMlhfmCorrectionManager {
     private final Map<Double, double[]> modeAfrMap = new HashMap<>();
     private final Map<Double, Double> correctedAfrMap = new HashMap<>();
 
-    private ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection;
+    private ClosedLoopFuelingCorrection closedLoopFuelingCorrection;
 
-    public ClosedLoopMlhfmCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
+    public ClosedLoopFuelingCorrectionManager(double minThrottleAngle, double minRpm, double maxDerivative) {
         this.minThrottleAngle = minThrottleAngle;
         this.minRpm = minRpm;
         this.maxDerivative = maxDerivative;
     }
 
-    public ClosedLoopMlhfmCorrection getClosedLoopMlhfmCorrection() {
-        return closedLoopMlhfmCorrection;
+    public ClosedLoopFuelingCorrection getClosedLoopMlhfmCorrection() {
+        return closedLoopFuelingCorrection;
     }
 
     public void correct(Map<String, List<Double>> me7LogMap, Map3d mlhfm) {
@@ -62,7 +62,7 @@ public class ClosedLoopMlhfmCorrectionManager {
 
         applyCorrections(correctionErrorList, mlhfm);
 
-        closedLoopMlhfmCorrection = new ClosedLoopMlhfmCorrection(mlhfm, correctedMlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
+        closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(mlhfm, correctedMlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
     private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map3d mlhfm) {

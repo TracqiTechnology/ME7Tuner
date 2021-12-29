@@ -1,11 +1,11 @@
-package ui.view.closedloopfueling.mlhfm;
+package ui.view.closedloopfueling;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 
-public class ClosedLoopMlhfmHelpView {
+public class ClosedLoopFuelingHelpView {
     public JEditorPane getPanel() {
         JEditorPane jep = new JEditorPane();
         jep.setContentType("text/html");//set content as html

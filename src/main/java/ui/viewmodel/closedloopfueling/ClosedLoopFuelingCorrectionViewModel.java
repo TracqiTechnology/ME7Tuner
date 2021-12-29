@@ -1,29 +1,26 @@
-package ui.viewmodel.closedloopfueling.mlhfm;
+package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
-import math.map.Map2d;
 import math.map.Map3d;
-import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
-import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrectionManager;
+import model.closedloopfueling.ClosedLoopFuelingCorrection;
+import model.closedloopfueling.ClosedLoopFuelingCorrectionManager;
 import parser.xdf.TableDefinition;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import parser.me7log.ClosedLoopLogParser;
 import preferences.mlhfm.MlhfmMapPreferences;
-import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-public class ClosedLoopMlhfmCorrectionViewModel {
+public class ClosedLoopFuelingCorrectionViewModel {
 
-    private final PublishSubject<ClosedLoopMlhfmCorrection> publishSubject = PublishSubject.create();
+    private final PublishSubject<ClosedLoopFuelingCorrection> publishSubject = PublishSubject.create();
 
-    public ClosedLoopMlhfmCorrectionViewModel() {
+    public ClosedLoopFuelingCorrectionViewModel() {
         ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
@@ -50,18 +47,18 @@ public class ClosedLoopMlhfmCorrectionViewModel {
         });
     }
 
-    public void registerMLHFMOnChange(Observer<ClosedLoopMlhfmCorrection> observer) {
+    public void registerMLHFMOnChange(Observer<ClosedLoopFuelingCorrection> observer) {
         publishSubject.subscribe(observer);
     }
 
     private void generateCorrection(Map<String, List<Double>> me7LogMap, Map3d mlhfmMap) {
 
-        ClosedLoopMlhfmCorrectionManager closedLoopMlhfmCorrectionManager = new ClosedLoopMlhfmCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
-        closedLoopMlhfmCorrectionManager.correct(me7LogMap, mlhfmMap);
-        ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection = closedLoopMlhfmCorrectionManager.getClosedLoopMlhfmCorrection();
+        ClosedLoopFuelingCorrectionManager closedLoopFuelingCorrectionManager = new ClosedLoopFuelingCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
+        closedLoopFuelingCorrectionManager.correct(me7LogMap, mlhfmMap);
+        ClosedLoopFuelingCorrection closedLoopFuelingCorrection = closedLoopFuelingCorrectionManager.getClosedLoopMlhfmCorrection();
 
-        if (closedLoopMlhfmCorrection != null) {
-            publishSubject.onNext(closedLoopMlhfmCorrection);
+        if (closedLoopFuelingCorrection != null) {
+            publishSubject.onNext(closedLoopFuelingCorrection);
         }
 
     }

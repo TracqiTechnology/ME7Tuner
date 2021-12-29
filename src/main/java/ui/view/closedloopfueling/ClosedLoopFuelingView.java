@@ -1,16 +1,16 @@
-package ui.view.closedloopfueling.mlhfm;
+package ui.view.closedloopfueling;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.mlhfm.MlhfmView;
-import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmViewModel;
+import ui.viewmodel.closedloopfueling.ClosedLoopFuelingViewModel;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class ClosedLoopMlhfmView implements OnTabSelectedListener {
+public class ClosedLoopFuelingView implements OnTabSelectedListener {
 
     private JTabbedPane tabbedPane;
 
@@ -26,9 +26,9 @@ public class ClosedLoopMlhfmView implements OnTabSelectedListener {
         tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
         tabbedPane.addTab("MLHFM", null, new MlhfmView().getMlhfmPanel(), "Base MLHFM");
-        tabbedPane.addTab("ME7 Logs", null, new ClosedLoopLogView().getMe7LogPanel(), "Closed Loop ME7 Logs");
-        tabbedPane.addTab("Correction", null, new ClosedLoopMlhfmCorrectionView().getCorrectionPanel(), "Corrected MLHFM");
-        tabbedPane.addTab("Help", null, new ClosedLoopMlhfmHelpView().getPanel(),"");
+        tabbedPane.addTab("ME7 Logs", null, new ClosedLoopFuelingLogView().getMe7LogPanel(), "Closed Loop ME7 Logs");
+        tabbedPane.addTab("Correction", null, new ClosedLoopFuelingCorrectionView().getCorrectionPanel(), "Corrected MLHFM");
+        tabbedPane.addTab("Help", null, new ClosedLoopFuelingHelpView().getPanel(),"");
 
         enableLogsTab(false);
         enableCorrectionTab(false);
@@ -51,13 +51,13 @@ public class ClosedLoopMlhfmView implements OnTabSelectedListener {
     }
 
     private void initViewModel() {
-        ClosedLoopMlhfmViewModel viewModel = new ClosedLoopMlhfmViewModel();
-        viewModel.register(new Observer<ClosedLoopMlhfmViewModel.ClosedLoopMlfhmModel>() {
+        ClosedLoopFuelingViewModel viewModel = new ClosedLoopFuelingViewModel();
+        viewModel.register(new Observer<ClosedLoopFuelingViewModel.ClosedLoopMlfhmModel>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull ClosedLoopMlhfmViewModel.ClosedLoopMlfhmModel closedLoopMlfhmModel) {
+            public void onNext(@NonNull ClosedLoopFuelingViewModel.ClosedLoopMlfhmModel closedLoopMlfhmModel) {
                 enableLogsTab(closedLoopMlfhmModel.isLogsTabEnabled());
                 enableCorrectionTab(closedLoopMlfhmModel.isCorrectionsTabEnabled());
                 setSelectedTab(closedLoopMlfhmModel.getSelectedTabIndex());

@@ -7,7 +7,7 @@ import preferences.bin.BinFilePreferences;
 import preferences.filechooser.BinFileChooserPreferences;
 import preferences.filechooser.XdfFileChooserPreferences;
 import preferences.xdf.XdfFilePreferences;
-import ui.view.closedloopfueling.mlhfm.ClosedLoopMlhfmView;
+import ui.view.closedloopfueling.ClosedLoopFuelingView;
 import ui.view.kfmiop.KfmiopUiManager;
 import ui.view.kfmirl.KfmirlUiManager;
 import ui.view.kfmsnwdk.KfmsnwdkUiManager;
@@ -92,11 +92,11 @@ public class MainManager {
         tabSelectedListeners.add(krkteUiManager);
         tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiManager.getPanel()), "KRKTE Calculator");
 
-        ClosedLoopMlhfmView closedLoopMlhfmView = new ClosedLoopMlhfmView();
+        ClosedLoopFuelingView closedLoopFuelingView = new ClosedLoopFuelingView();
         // first tab is selected
-        closedLoopMlhfmView.onTabSelected(true);
-        tabSelectedListeners.add(closedLoopMlhfmView);
-        tabbedPane.addTab("Closed Loop Fueling", null, closedLoopMlhfmView.getPanel(), "Closed Loop MLHFM Compensation");
+        closedLoopFuelingView.onTabSelected(true);
+        tabSelectedListeners.add(closedLoopFuelingView);
+        tabbedPane.addTab("Closed Loop Fueling", null, closedLoopFuelingView.getPanel(), "Closed Loop MLHFM Compensation");
 
         OpenLoopFuelingView openLoopFuelingView = new OpenLoopFuelingView();
         tabSelectedListeners.add(openLoopFuelingView);

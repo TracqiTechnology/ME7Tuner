@@ -1,4 +1,4 @@
-package ui.viewmodel.closedloopfueling.mlhfm;
+package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class ClosedLoopMlhfmViewModel {
+public class ClosedLoopFuelingViewModel {
 
     private final BehaviorSubject<ClosedLoopMlfhmModel> behaviorSubject = BehaviorSubject.create();
 
-    public ClosedLoopMlhfmViewModel() {
+    public ClosedLoopFuelingViewModel() {
 
         BinWriter.getInstance().register(new Observer<TableDefinition>() {
             @Override

@@ -1,10 +1,10 @@
-package ui.view.closedloopfueling.mlhfm;
+package ui.view.closedloopfueling;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import model.closedloopfueling.mlfhm.ClosedLoopMlhfmCorrection;
+import model.closedloopfueling.ClosedLoopFuelingCorrection;
 import model.mlhfm.MlhfmFitter;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.jfree.chart.ChartFactory;
@@ -17,7 +17,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import preferences.bin.BinFilePreferences;
 import preferences.mlhfm.MlhfmMapPreferences;
 import ui.map.map.MapTable;
-import ui.viewmodel.closedloopfueling.mlhfm.ClosedLoopMlhfmCorrectionViewModel;
+import ui.viewmodel.closedloopfueling.ClosedLoopFuelingCorrectionViewModel;
 import writer.BinWriter;
 
 import javax.swing.*;
@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class ClosedLoopMlhfmCorrectionView {
+public class ClosedLoopFuelingCorrectionView {
 
     private static final int CORRECTION_POINT_SERIES_INDEX = 1;
     private static final int CORRECTION_LINE_SERIES_INDEX = 0;
@@ -42,7 +42,7 @@ public class ClosedLoopMlhfmCorrectionView {
     private JFreeChart stdDevChart;
     private JFreeChart afrCorrectionChart;
     private JPanel correctionPanel;
-    private ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection;
+    private ClosedLoopFuelingCorrection closedLoopFuelingCorrection;
     private MapTable mapTable;
 
     private XYSeriesCollection afrCorrectionPointDataSet;
@@ -50,17 +50,17 @@ public class ClosedLoopMlhfmCorrectionView {
 
     private int polynomialDegree = 6;
 
-    ClosedLoopMlhfmCorrectionView() {
-        ClosedLoopMlhfmCorrectionViewModel closedLoopMlhfmCorrectionViewModel = new ClosedLoopMlhfmCorrectionViewModel();
-        closedLoopMlhfmCorrectionViewModel.registerMLHFMOnChange(new Observer<ClosedLoopMlhfmCorrection>() {
+    ClosedLoopFuelingCorrectionView() {
+        ClosedLoopFuelingCorrectionViewModel closedLoopFuelingCorrectionViewModel = new ClosedLoopFuelingCorrectionViewModel();
+        closedLoopFuelingCorrectionViewModel.registerMLHFMOnChange(new Observer<ClosedLoopFuelingCorrection>() {
 
             @Override
-            public void onNext(@NonNull ClosedLoopMlhfmCorrection closedLoopMlhfmCorrection) {
-                ClosedLoopMlhfmCorrectionView.this.closedLoopMlhfmCorrection = closedLoopMlhfmCorrection;
-                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, closedLoopMlhfmCorrection.correctedMlhfm);
-                drawMapTable(closedLoopMlhfmCorrection.correctedMlhfm);
-                drawStdDevChart(closedLoopMlhfmCorrection.filteredVoltageDt, closedLoopMlhfmCorrection.correctedMlhfm);
-                drawAfrCorrectionChart(closedLoopMlhfmCorrection.correctionsAfrMap, closedLoopMlhfmCorrection.meanAfrMap, closedLoopMlhfmCorrection.modeAfrMap, closedLoopMlhfmCorrection.correctedAfrMap);
+            public void onNext(@NonNull ClosedLoopFuelingCorrection closedLoopFuelingCorrection) {
+                ClosedLoopFuelingCorrectionView.this.closedLoopFuelingCorrection = closedLoopFuelingCorrection;
+                drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm, closedLoopFuelingCorrection.correctedMlhfm);
+                drawMapTable(closedLoopFuelingCorrection.correctedMlhfm);
+                drawStdDevChart(closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctedMlhfm);
+                drawAfrCorrectionChart(closedLoopFuelingCorrection.correctionsAfrMap, closedLoopFuelingCorrection.meanAfrMap, closedLoopFuelingCorrection.modeAfrMap, closedLoopFuelingCorrection.correctedAfrMap);
             }
 
             @Override
@@ -288,7 +288,7 @@ public class ClosedLoopMlhfmCorrectionView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, closedLoopMlhfmCorrection.fitMlhfm);
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, closedLoopFuelingCorrection.fitMlhfm);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -338,9 +338,9 @@ public class ClosedLoopMlhfmCorrectionView {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
-                closedLoopMlhfmCorrection = new ClosedLoopMlhfmCorrection(closedLoopMlhfmCorrection.inputMlhfm, closedLoopMlhfmCorrection.correctedMlhfm, correctedFitMlhfm, closedLoopMlhfmCorrection.filteredVoltageDt, closedLoopMlhfmCorrection.correctionsAfrMap, closedLoopMlhfmCorrection.meanAfrMap, closedLoopMlhfmCorrection.modeAfrMap, closedLoopMlhfmCorrection.correctedAfrMap);
-                drawMlhfmChart(closedLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
+                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(closedLoopFuelingCorrection.correctedMlhfm, polynomialDegree);
+                closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(closedLoopFuelingCorrection.inputMlhfm, closedLoopFuelingCorrection.correctedMlhfm, correctedFitMlhfm, closedLoopFuelingCorrection.filteredVoltageDt, closedLoopFuelingCorrection.correctionsAfrMap, closedLoopFuelingCorrection.meanAfrMap, closedLoopFuelingCorrection.modeAfrMap, closedLoopFuelingCorrection.correctedAfrMap);
+                drawMlhfmChart(closedLoopFuelingCorrection.inputMlhfm, correctedFitMlhfm);
                 drawMapTable(correctedFitMlhfm);
             }
         });
