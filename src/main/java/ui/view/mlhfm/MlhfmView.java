@@ -14,7 +14,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import ui.map.map.MapTable;
 import ui.view.map.MapPickerDialog;
 import ui.viewmodel.mlmhfm.MlhfmViewModel;
@@ -77,11 +77,11 @@ public class MlhfmView {
 
     private void initViewModel() {
         MlhfmViewModel mlhfmViewModel = new MlhfmViewModel();
-        mlhfmViewModel.registerMLHFMOnChange(new Observer<MlhfmViewModel.MlfhmModel>() {
+        mlhfmViewModel.register(new Observer<MlhfmViewModel.MlfhmModel>() {
             @Override
             public void onNext(@NonNull MlhfmViewModel.MlfhmModel model) {
                 if(model.isMapSelected()) {
-                    fileLabel.setText(model.getTableDefinition().toString());
+                    fileLabel.setText(model.getTableDefinition().getTableName() + " " + model.getTableDefinition().getTableDescription());
                     drawChart(model.getMap3d());
                     drawMapTable(model.getMap3d());
                 } else {
@@ -145,12 +145,12 @@ public class MlhfmView {
         JButton button = new JButton("Set MLFHM Definition");
 
         button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+            Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
 
             if(tableDefinition != null) {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmMapPreferences::setSelectedMlhfmTableDefinition);
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmPreferences::setSelectedMlhfmMap);
             } else {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmMapPreferences::setSelectedMlhfmTableDefinition);
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmPreferences::setSelectedMlhfmMap);
             }
         });
 

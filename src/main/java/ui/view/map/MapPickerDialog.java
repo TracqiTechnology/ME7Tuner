@@ -35,7 +35,7 @@ public class MapPickerDialog extends JDialog
     private static MapPickerDialog dialog;
     private static TableDefinition value;
     private final JList<TableDefinition> list;
-    private OnSelectedChangedListener onSelectedChangedListener;
+    private final OnSelectedChangedListener onSelectedChangedListener;
 
     /**
      * Set up and show the dialog.  The first Component argument

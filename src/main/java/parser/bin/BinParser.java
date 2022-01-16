@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BinParser {
@@ -149,12 +150,12 @@ public class BinParser {
 
         if(address != 0) { // Parse from the bin
             buffer.position(address);
+            int strideBytes = axisDefinition.getSizeBits()/8;
             // Determine how many bytes per row to get the last index of the axis
-            buffer.limit(address + ((axisDefinition.getSizeBits()/8)*axisDefinition.getRowCount()));
+            buffer.limit(address + (strideBytes*axisDefinition.getColumnCount()));
 
-            ByteBuffer slice = buffer.slice();
-            ShortBuffer shortBuffer = slice.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-            shortBuffer.position(0);
+            ByteBuffer slice = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
+            slice.position(0);
 
             try {
                 CompiledScript compiledScript = ((Compilable)engine)
@@ -164,18 +165,23 @@ public class BinParser {
 
                 Invocable funcEngine = (Invocable) compiledScript.getEngine();
 
-                Double[] axis = new Double[shortBuffer.capacity()];
+                Double[] axis = new Double[axisDefinition.getColumnCount()];
 
-                for (int i = 0; i < shortBuffer.capacity(); i++) {
-                    axis[i] = ((Number)funcEngine.invokeFunction("func", shortBuffer.get(i))).doubleValue();;
+                for (int i = 0; i < axis.length; i++) {
+                    int value;
+                    if(strideBytes == 1) {
+                        value = Short.toUnsignedInt(slice.get());
+                    } else {
+                        value = Short.toUnsignedInt(slice.getShort());
+                    }
+
+                    axis[i] = ((Number)funcEngine.invokeFunction("func", value)).doubleValue();
                 }
 
                 return axis;
             } catch (ScriptException | NoSuchMethodException e) {
                 e.printStackTrace();
             }
-
-
         } else if(axisDefinition.getIndexCount() != 0) { // Parse from xdf
             Double[] axis = new Double[axisDefinition.getIndexCount()];
             for(int i = 0; i < axis.length; i++) {
@@ -219,9 +225,9 @@ public class BinParser {
                     for (int j = 0; j < axis[i].length; j++) {
                         int value;
                         if(stride == 1) {
-                            value = slice.get();
+                            value = Short.toUnsignedInt(slice.get());
                         } else {
-                            value = slice.getShort();
+                            value = Short.toUnsignedInt(slice.getShort());
                         }
 
                         axis[i][j] = ((Number)funcEngine.invokeFunction("func", value)).doubleValue();

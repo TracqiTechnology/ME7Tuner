@@ -13,7 +13,7 @@ import parser.afrLog.AfrLogParser;
 import parser.bin.BinParser;
 import parser.me7log.OpenLoopLogParser;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
 import writer.BinWriter;
 
@@ -90,7 +90,7 @@ public class OpenLoopFuelingLogViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
                 OpenLoopFuelingLogModel model = behaviorSubject.getValue();
                 OpenLoopFuelingLogModel.Builder builder;
                 if (model == null) {

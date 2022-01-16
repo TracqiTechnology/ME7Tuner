@@ -10,7 +10,7 @@ import parser.afrLog.AfrLogParser;
 import parser.bin.BinParser;
 import parser.me7log.OpenLoopLogParser;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import writer.BinWriter;
 
 import java.util.List;
@@ -59,7 +59,7 @@ public class OpenLoopFuelingViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
                 OpenLoopMlfhmModel model = behaviorSubject.getValue();
                 OpenLoopMlfhmModel.Builder builder;
                 if(model == null) {

@@ -12,19 +12,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
-public class MlhfmMapPreferences {
+public class MlhfmPreferences {
     private static final String MLHFM_TITLE_PREFERENCE = "mlfhm_title_preference";
     private static final String MLHFM_DESCRIPTION_PREFERENCE = "mlfhm_description_preference";
 
-    private static final Preferences prefs = Preferences.userNodeForPackage(MlhfmMapPreferences.class);
+    private static final Preferences prefs = Preferences.userNodeForPackage(MlhfmPreferences.class);
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
 
     @Nullable
-    public static Pair<TableDefinition, Map3d> getSelectedMlhfmTableDefinition() {
+    public static Pair<TableDefinition, Map3d> getSelectedMlhfmMap() {
         List<Pair<TableDefinition, Map3d>> mapList = BinParser.getInstance().getMapList();
 
-        String mapTitle = MlhfmMapPreferences.getMlhfmTitlePreference();
-        String mapDescription = MlhfmMapPreferences.getMlhfmDescriptionPreference();
+        String mapTitle = MlhfmPreferences.getMlhfmTitlePreference();
+        String mapDescription = MlhfmPreferences.getMlhfmDescriptionPreference();
 
         if(mapTitle.isEmpty() && mapDescription.isEmpty()) {
            return null;
@@ -39,7 +39,7 @@ public class MlhfmMapPreferences {
         return null;
     }
 
-    public static void setSelectedMlhfmTableDefinition(@Nullable TableDefinition tableDefinition) {
+    public static void setSelectedMlhfmMap(@Nullable TableDefinition tableDefinition) {
         if(tableDefinition != null) {
             setMlhfmTitlePreference(tableDefinition.getTableName());
             setMlhfmDescriptionPreference(tableDefinition.getTableDescription());
@@ -48,10 +48,10 @@ public class MlhfmMapPreferences {
             setMlhfmDescriptionPreference("");
         }
 
-        publishSubject.onNext(Optional.ofNullable(getSelectedMlhfmTableDefinition()));
+        publishSubject.onNext(Optional.ofNullable(getSelectedMlhfmMap()));
     }
 
-    public static void registerOnSelectedChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
+    public static void registerOnSelectedMlhfmChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
         publishSubject.subscribe(observer);
     }
 

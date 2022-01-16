@@ -9,6 +9,9 @@ public class Map3d {
 
     public Map3d() {
         super();
+        xAxis = new Double[0];
+        yAxis = new Double[0];
+        zAxis = new Double[0][];
     }
 
     public Map3d(Double[] xAxis, Double[] yAxis, Double[][] zAxis) {

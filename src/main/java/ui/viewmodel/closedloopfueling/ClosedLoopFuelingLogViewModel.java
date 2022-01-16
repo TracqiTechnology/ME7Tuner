@@ -9,7 +9,7 @@ import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import parser.me7log.ClosedLoopLogParser;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import writer.BinWriter;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class ClosedLoopFuelingLogViewModel {
         ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
-                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMlhfmMap();
 
                 if(mlhfmDefinition != null) {
                     Map3d mlhfm = mlhfmDefinition.snd;

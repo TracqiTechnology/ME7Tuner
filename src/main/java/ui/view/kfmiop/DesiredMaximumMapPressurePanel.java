@@ -1,6 +1,6 @@
-package ui.view.kfmirl;
+package ui.view.kfmiop;
 
-import preferences.kfmirl.KfmirlPreferences;
+import preferences.kfmiop.KfmiopPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -12,17 +12,17 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-class DesiredLoadCalculatorPanel extends JPanel {
+class DesiredMaximumMapPressurePanel extends JPanel {
     private static final Insets WEST_INSETS = new Insets(5, 0, 5, 5);
     private static final Insets EAST_INSETS = new Insets(5, 5, 5, 0);
 
     enum FieldTitle {
-        MAX_DESIRED_BOOST("Max Desired Boost",  "", "mbar (absolute)", true), KFURL("KFURL", "Conversion constant for ps->rl (pressure to load)","%", true), MAX_DESIRED_LOAD("Max Desired Load", "","%", false);
+        MAP_SENSOR_MAX("MAP Sensor Maximum",  "", "mbar (absolute)", true), BOOST_PRESSURE_MAX("Boost Pressure Maximum",  "", "mbar (absolute)", true);
 
-        private String title;
-        private String units;
-        private String hint;
-        private boolean editable;
+        private final String title;
+        private final String units;
+        private final String hint;
+        private final boolean editable;
 
         FieldTitle(String title, String hint, String units, boolean editable) {
             this.title = title;
@@ -55,12 +55,12 @@ class DesiredLoadCalculatorPanel extends JPanel {
         void onValueChanged(FieldTitle fieldTitle);
     }
 
-    DesiredLoadCalculatorPanel(OnValueChangedListener listener) {
+    DesiredMaximumMapPressurePanel(OnValueChangedListener listener) {
         this.listener = listener;
 
         setLayout(new GridBagLayout());
         setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Configure Maximum Boost"),
+                BorderFactory.createTitledBorder("Desired Maximum Boost"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         GridBagConstraints gbc;
 
@@ -91,38 +91,62 @@ class DesiredLoadCalculatorPanel extends JPanel {
             gbc = createGbc(1, i);
 
             switch (fieldTitle) {
-                case MAX_DESIRED_BOOST:
+                case MAP_SENSOR_MAX:
+                    addMaxDesiredMap(fieldTitle, gbc, integerFormatter);
+                    break;
+                case BOOST_PRESSURE_MAX:
                     addMaxDesiredBoost(fieldTitle, gbc, integerFormatter);
-                    break;
-                case KFURL:
-                    addKfurl(fieldTitle, gbc, decimalFormatter);
-                    break;
-                case MAX_DESIRED_LOAD:
-                    addMaxDesiredLoad(fieldTitle, gbc, integerFormatter);
                     break;
             }
         }
     }
 
+    private void addMaxDesiredMap(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
+        final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
+        textField.setValue(KfmiopPreferences.getMaxMapPressurePreference());
+
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {}
+
+            public void removeUpdate(DocumentEvent e) {
+                try {
+                    KfmiopPreferences.setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
+                    listener.onValueChanged(fieldTitle);
+                } catch (NumberFormatException exception) {}
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+                try {
+                    KfmiopPreferences.setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
+                    listener.onValueChanged(fieldTitle);
+                } catch (NumberFormatException exception) {}
+            }
+        });
+
+        textField.setEditable(fieldTitle.isEditable());
+        textField.setColumns(5);
+        add(textField, gbc);
+
+        fieldMap.put(fieldTitle, textField);
+    }
+
     private void addMaxDesiredBoost(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(KfmirlPreferences.getMaxDesiredBoostPreference());
+        textField.setValue(KfmiopPreferences.getMaxBoostPressurePreference());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {}
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    KfmirlPreferences.setMaxDesiredBoostPreference(Integer.parseInt(textField.getText()));
-                    caclulateMaximumDesiredLoad();
+                    KfmiopPreferences.setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    KfmirlPreferences.setMaxDesiredBoostPreference(Integer.parseInt(textField.getText()));
-                    caclulateMaximumDesiredLoad();
+                    KfmiopPreferences.setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
@@ -135,63 +159,6 @@ class DesiredLoadCalculatorPanel extends JPanel {
         fieldMap.put(fieldTitle, textField);
     }
 
-    private void addKfurl(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
-        final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(KfmirlPreferences.getKfurlPreference());
-        textField.setToolTipText(fieldTitle.getHint());
-
-        textField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {}
-
-            public void removeUpdate(DocumentEvent e) {
-                try {
-                    if(textField.getText() != null && textField.getText().length() > 0) {
-                        KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
-                        caclulateMaximumDesiredLoad();
-                        listener.onValueChanged(fieldTitle);
-                    }
-                } catch (NumberFormatException exception) {
-                    exception.printStackTrace();
-                }
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-                try {
-                    if(textField.getText() != null && textField.getText().length() > 0) {
-                        KfmirlPreferences.setKfurlPreference(Double.parseDouble(textField.getText()));
-                        caclulateMaximumDesiredLoad();
-                        listener.onValueChanged(fieldTitle);
-                    }
-                } catch (NumberFormatException exception) {
-                    exception.printStackTrace();
-                }
-            }
-        });
-
-        textField.setEditable(fieldTitle.isEditable());
-        textField.setColumns(5);
-        add(textField, gbc);
-
-        fieldMap.put(fieldTitle, textField);
-    }
-
-    private void addMaxDesiredLoad(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter integerFormat) {
-        final JFormattedTextField textField = new JFormattedTextField(integerFormat);
-
-        textField.setEditable(fieldTitle.isEditable());
-        textField.setColumns(5);
-        add(textField, gbc);
-
-        fieldMap.put(fieldTitle, textField);
-    }
-
-    private void caclulateMaximumDesiredLoad() {
-        double kfurl = Double.parseDouble(getFieldText(FieldTitle.KFURL));
-        double maximumBoost = Integer.parseInt(getFieldText(FieldTitle.MAX_DESIRED_BOOST));
-        // Give it some headroom
-        double maximumSpecifiedLoad = ((maximumBoost - 300)*kfurl)*1.2;
-        fieldMap.get(FieldTitle.MAX_DESIRED_LOAD).setValue(maximumSpecifiedLoad);
-    }
 
     private GridBagConstraints createGbc(int x, int y) {
         GridBagConstraints gbc = new GridBagConstraints();

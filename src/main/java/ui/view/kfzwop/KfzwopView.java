@@ -1,7 +1,9 @@
 package ui.view.kfzwop;
 
 
+import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfzwop.Kfzwop;
@@ -14,121 +16,173 @@ import org.jzy3d.colors.ColorMapper;
 import org.jzy3d.maths.Coord3d;
 import org.jzy3d.plot3d.primitives.Polygon;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
+import parser.xdf.TableDefinition;
+import preferences.bin.BinFilePreferences;
+import preferences.kfmiop.KfmiopPreferences;
+import preferences.kfzwop.KfzwopPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
 import ui.view.listener.OnTabSelectedListener;
+import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfzwop.KfzwopViewModel;
+import writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 
-public class KfzwopUiManager implements OnTabSelectedListener {
+public class KfzwopView implements OnTabSelectedListener {
 
-    private MapTable kfzwopIn;
-    private MapTable kfzwopOut;
+    private final MapTable kfzwopInput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);;
+    private final MapTable kfzwopOutput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);;
 
-    private MapAxis kfzwopXAxis;
+    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
 
     private Chart inChart3d;
     private Chart inOut3d;
 
-    private KfzwopViewModel viewModel;
+    private final KfzwopViewModel viewModel;
 
-    public KfzwopUiManager() {
+    private JPanel panel;
+    private JLabel kfzwopFileLabel;
+    private boolean isKfzwopInitialized;
+
+    public KfzwopView() {
         viewModel = new KfzwopViewModel();
 
-        viewModel.getKfzwopMapPublishSubject().subscribe(new Observer<Map3d>() {
-            @Override
-            public void onNext(Map3d map3d) {
-                kfzwopOut.setColumnHeaders(map3d.xAxis);
-                kfzwopOut.setRowHeaders(map3d.yAxis);
-                kfzwopOut.setTableData(map3d.zAxis);
-            }
-
-            @Override
-            public void onSubscribe(Disposable disposable) {}
-
-            @Override
-            public void onError(Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
     }
 
     public JPanel getPanel() {
-
         GridBagConstraints constraints = new GridBagConstraints();
-        JPanel mainPanel = new JPanel();
+        panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
 
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 0.5;
         constraints.gridx = 0;
         constraints.gridy = 0;
 
         JPanel kfzwopInPanel = new JPanel();
         kfzwopInPanel.setPreferredSize(new Dimension(700, 500));
 
-        kfzwopInPanel.add(getKfzwopInMapPanel(), new GridBagLayout());
+        kfzwopInPanel.add(getKfzwopInputPanel(), new GridBagLayout());
 
-        mainPanel.add(kfzwopInPanel, constraints);
+        panel.add(kfzwopInPanel, constraints);
 
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 0.5;
         constraints.gridx = 1;
         constraints.gridy = 0;
+        constraints.insets.top = 105;
 
         JPanel kfzwopOutPanel = new JPanel();
         kfzwopOutPanel.setPreferredSize(new Dimension(700, 500));
 
         kfzwopOutPanel.add(getKfzwopOutMapPanel(), new GridBagLayout());
 
-        mainPanel.add(kfzwopOutPanel, constraints);
+        panel.add(kfzwopOutPanel, constraints);
 
-        return mainPanel;
+        initViewModel();
+
+        return panel;
     }
 
-    private JPanel getKfzwopInMapPanel() {
+    private void initViewModel() {
+        viewModel.register(new Observer<KfzwopViewModel.KfzwopModel>() {
+            @Override
+            public void onNext(@NonNull KfzwopViewModel.KfzwopModel model) {
+                System.out.println("onNext()");
+                if(model.getKfzwop() != null && !isKfzwopInitialized) {
+                    kfzwopInput.setColumnHeaders(model.getKfzwop().snd.xAxis);
+                    kfzwopInput.setRowHeaders(model.getKfzwop().snd.yAxis);
+                    kfzwopInput.setTableData(model.getKfzwop().snd.zAxis);
+
+                    Double[][] kfmiopXAxisValues = new Double[1][];
+                    kfmiopXAxisValues[0] = model.getKfzwop().snd.xAxis;
+                    kfmiopXAxis.setTableData(kfmiopXAxisValues);
+
+                    kfzwopFileLabel.setText(model.getKfzwop().fst.getTableName());
+
+                    isKfzwopInitialized = true;
+                }
+
+                if(model.getOutputKfzwop() != null) {
+                    kfzwopOutput.setColumnHeaders(model.getOutputKfzwop().xAxis);
+                    kfzwopOutput.setRowHeaders(model.getOutputKfzwop().yAxis);
+                    kfzwopOutput.setTableData(model.getOutputKfzwop().zAxis);
+                }
+            }
+
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+    }
+
+    private JPanel getKfzwopInputPanel() {
 
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
         initKfmirlMap();
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 0;;
-        c.insets.left = 52;
-        c.insets.top = 68;
-        c.fill = GridBagConstraints.CENTER;
-        c.anchor = GridBagConstraints.WEST;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.insets.top = 16;
+
+        panel.add(new JLabel("KFMIOP/KFZWOP X-Axis (Input)"), constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 0;
+
+        JScrollPane kfzwXAxisScrollPane = kfmiopXAxis.getScrollPane();
+        kfzwXAxisScrollPane.setPreferredSize(new Dimension(615, 20));
+        panel.add(kfzwXAxisScrollPane, constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.insets.left = 52;
 
         panel.add(getHeader("KFZWOP (Input)", new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showInChart3d();
             }
-        }),c);
+        }),constraints);
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.ipadx = -50;
-        c.insets.left = 0;
-        c.insets.top = 8;
-        c.fill = GridBagConstraints.EAST;
-        c.anchor = GridBagConstraints.EAST;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.ipadx = -50;
+        constraints.insets.left = 0;
 
-        JScrollPane scrollPane = kfzwopIn.getScrollPane();
+        JScrollPane scrollPane = kfzwopInput.getScrollPane();
         scrollPane.setPreferredSize(new Dimension(705, 275));
 
-        panel.add(scrollPane,c);
+        panel.add(scrollPane,constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.ipadx = 0;
+        constraints.insets.left = 0;
+        constraints.insets.top = 16;
+
+        panel.add(getKfmirlDefinitionButton(),constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 5;
+        constraints.ipadx = 0;
+        constraints.insets.top = 0;
+
+        kfzwopFileLabel = new JLabel("No Map Selected");
+        panel.add(kfzwopFileLabel, constraints);
 
         return panel;
     }
@@ -139,37 +193,11 @@ public class KfzwopUiManager implements OnTabSelectedListener {
         JPanel mapPanel = new JPanel();
         mapPanel.setLayout(new GridBagLayout());
 
-        constraints.weightx = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.ipadx = 0;
-        constraints.insets.top = 16;
-        constraints.insets.left = 54;
-        constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
-
-        mapPanel.add(new JLabel("KFZWOP X-Axis (Input)"),constraints);
-
-        constraints.weightx = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.insets.top = 8;
-        constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.CENTER;
-
         initKfmirlXAxis();
 
-        JScrollPane kfmiopXAxisScrollPane = kfzwopXAxis.getScrollPane();
-        kfmiopXAxisScrollPane.setPreferredSize(new Dimension(608, 20));
-
-        mapPanel.add(kfmiopXAxisScrollPane ,constraints);
-
-        constraints.weightx = 1;
         constraints.gridx = 0;
-        constraints.gridy = 2;
+        constraints.gridy = 0;
         constraints.insets.left = 58;
-        constraints.fill = GridBagConstraints.CENTER;
-        constraints.anchor = GridBagConstraints.WEST;
 
         mapPanel.add(getHeader("KFZWOP (Output)", new ActionListener() {
             @Override
@@ -178,20 +206,23 @@ public class KfzwopUiManager implements OnTabSelectedListener {
             }
         }),constraints);
 
-        constraints.weightx = 1;
         constraints.gridx = 0;
         constraints.gridy = 3;
         constraints.ipadx = -50;
         constraints.insets.left = 0;
-        constraints.fill = GridBagConstraints.EAST;
-        constraints.anchor = GridBagConstraints.EAST;
 
-        kfzwopOut = MapTable.getMapTable(Kfzwop.getStockYAxis(), Kfzwop.getStockXAxis(), Kfzwop.getStockMap());
-
-        JScrollPane kfmiopMapScrollPane = kfzwopOut.getScrollPane();
+        JScrollPane kfmiopMapScrollPane = kfzwopOutput.getScrollPane();
         kfmiopMapScrollPane.setPreferredSize(new Dimension(705, 275));
 
         mapPanel.add(kfmiopMapScrollPane,constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.ipadx = 0;
+        constraints.insets.top = 16;
+
+        mapPanel.add(getFileButton(),constraints);
+
 
         return mapPanel;
     }
@@ -221,26 +252,18 @@ public class KfzwopUiManager implements OnTabSelectedListener {
     }
 
     private void initKfmirlXAxis() {
-        Double[][] kfmiopXAxisValues = new Double[1][];
-        kfmiopXAxisValues[0] = Kfzwop.getStockXAxis();
-        kfzwopXAxis = MapAxis.getMapAxis(kfmiopXAxisValues);
-
-        kfzwopXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
+        kfmiopXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
 
             @Override
-            public void onNext(Double[][] data) {
-                Map3d map3d = new Map3d();
-                map3d.xAxis = Kfzwop.getStockXAxis();
-                map3d.yAxis = kfzwopIn.getRowHeaders();
-                map3d.zAxis = kfzwopIn.getData();
-                viewModel.cacluateKfzwop(map3d, data[0]);
+            public void onNext(@NonNull Double[][] data) {
+                viewModel.cacluateKfzwop(kfzwopInput.getMap3d(), data[0]);
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {}
 
             @Override
             public void onComplete() {}
@@ -248,20 +271,18 @@ public class KfzwopUiManager implements OnTabSelectedListener {
     }
 
     private void initKfmirlMap() {
-        kfzwopIn = MapTable.getMapTable(Kfzwop.getStockYAxis(), Kfzwop.getStockXAxis(), Kfzwop.getStockMap());
-
-        kfzwopIn.getPublishSubject().subscribe(new Observer<Map3d>() {
+        kfzwopInput.getPublishSubject().subscribe(new Observer<Map3d>() {
 
             @Override
-            public void onNext(Map3d map3d) {
-                viewModel.cacluateKfzwop(map3d, kfzwopXAxis.getData()[0]);
+            public void onNext(@NonNull Map3d map3d) {
+                viewModel.cacluateKfzwop(map3d, kfmiopXAxis.getData()[0]);
             }
 
             @Override
-            public void onSubscribe(Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {}
 
             @Override
             public void onComplete() {}
@@ -307,10 +328,10 @@ public class KfzwopUiManager implements OnTabSelectedListener {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(inChart3d);
 
-        Double[][] data = kfzwopIn.getData();
+        Double[][] data = kfzwopInput.getData();
 
-        Double[] xAxis = Kfzwop.getStockXAxis();
-        Double[] yAxis = Kfzwop.getStockYAxis();
+        Double[] xAxis = (Double[]) kfzwopInput.getColumnHeaders();
+        Double[] yAxis = kfzwopInput.getRowHeaders();
 
         ArrayList<Polygon> polygons = new ArrayList<>();
         for(int i = 0; i < xAxis.length -1; i++){
@@ -373,10 +394,10 @@ public class KfzwopUiManager implements OnTabSelectedListener {
 
         NewtCameraMouseController controller = new NewtCameraMouseController(inOut3d);
 
-        Double[][] data = kfzwopOut.getData();
+        Double[][] data = kfzwopOutput.getData();
 
-        Double[] xAxis = kfzwopXAxis.getData()[0];
-        Double[] yAxis = Kfzwop.getStockYAxis();
+        Double[] xAxis = kfmiopXAxis.getData()[0];
+        Double[] yAxis = kfzwopInput.getRowHeaders();
 
         ArrayList<Polygon> polygons = new ArrayList<>();
         for(int i = 0; i < xAxis.length -1; i++){
@@ -398,6 +419,46 @@ public class KfzwopUiManager implements OnTabSelectedListener {
         surface.setWireframeDisplayed(true);
 
         inOut3d.getScene().add(surface, true);
+    }
+
+    private JButton getKfmirlDefinitionButton() {
+        JButton button = new JButton("Set KFZWOP Definition");
+
+        button.addActionListener(e -> {
+            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
+
+            isKfzwopInitialized = false;
+
+            if(tableDefinition != null) {
+                MapPickerDialog.showDialog(panel, panel, "Select KFZWOP", "Map Selection", tableDefinition.fst, KfzwopPreferences::setSelectedMap);
+            } else {
+                MapPickerDialog.showDialog(panel, panel, "Select KFZWOP", "Map Selection", null, KfzwopPreferences::setSelectedMap);
+            }
+        });
+
+        return button;
+    }
+
+    private JButton getFileButton() {
+        JButton button = new JButton("Write KFZWOP");
+
+        button.addActionListener(e -> {
+            int returnValue = JOptionPane.showConfirmDialog(
+                    panel,
+                    "Are you sure you want to write KFZWOP to the binary?",
+                    "Write KFZWOP",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfzwopPreferences.getSelectedMap().fst, kfzwopOutput.getMap3d());
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+
+        return button;
     }
 
     @Override

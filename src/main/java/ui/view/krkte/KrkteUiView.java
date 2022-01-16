@@ -12,9 +12,8 @@ import java.awt.*;
 import java.text.DecimalFormat;
 
 
-public class KrkteUiManager implements OnTabSelectedListener {
+public class KrkteUiView implements OnTabSelectedListener {
 
-    private KrkteConstantsPanel krkteConstantsPanel;
     private JFormattedTextField outputTextField;
     private DecimalFormat decimalFormat;
 
@@ -30,7 +29,7 @@ public class KrkteUiManager implements OnTabSelectedListener {
         c.gridx = 0;
         c.gridy = 0;
 
-        krkteConstantsPanel = new KrkteConstantsPanel(new KrkteConstantsPanel.OnValueChangedListener() {
+        KrkteConstantsPanel krkteConstantsPanel = new KrkteConstantsPanel(new KrkteConstantsPanel.OnValueChangedListener() {
             @Override
             public void onValueChanged(KrkteConstantsPanel.FieldTitle fieldTitle) {
                 double krkte = calculateKrkte();

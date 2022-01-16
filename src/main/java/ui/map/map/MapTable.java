@@ -191,7 +191,7 @@ public class MapTable extends JList implements TableModelListener {
 
     private class DecimalFormatRenderer extends DefaultTableCellRenderer {
 
-        private final DecimalFormat formatter = new DecimalFormat("#.000");
+        private final DecimalFormat formatter = new DecimalFormat("#.###");
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 

@@ -1,4 +1,4 @@
-package preferences.kfmirl;
+package preferences.kfzwop;
 
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.annotations.Nullable;
@@ -11,19 +11,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
-public class KfmirlPreferences {
+public class KfzwopPreferences {
 
-    private static final String TABLE_TITLE_PREFERENCE = "kfmirl_title_preference";
-    private static final String TABLE_DESCRIPTION_PREFERENCE = "kfmirl_description_preference";
+    private static final String TABLE_TITLE_PREFERENCE = "kfzwop_title_preference";
+    private static final String TABLE_DESCRIPTION_PREFERENCE = "kfzwop_description_preference";
 
-    private static final Preferences prefs = Preferences.userNodeForPackage(KfmirlPreferences.class);
+    private static final Preferences prefs = Preferences.userNodeForPackage(KfzwopPreferences.class);
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
 
     @Nullable
     public static Pair<TableDefinition, Map3d> getSelectedMap() {
         List<Pair<TableDefinition, Map3d>> mapList = BinParser.getInstance().getMapList();
 
-        String mapTitle = getKfmirlTitlePreference();
+        String mapTitle = getTableTitlePreference();
         String mapDescription = getTableDescriptionPreference();
 
         if (mapTitle.isEmpty() && mapDescription.isEmpty()) {
@@ -41,17 +41,17 @@ public class KfmirlPreferences {
 
     public static void setSelectedMap(@Nullable TableDefinition tableDefinition) {
         if (tableDefinition != null) {
-            setKfmirlTitlePreference(tableDefinition.getTableName());
+            setTableTitlePreference(tableDefinition.getTableName());
             setTableDescriptionPreference(tableDefinition.getTableDescription());
         } else {
-            setKfmirlTitlePreference("");
+            setTableTitlePreference("");
             setTableDescriptionPreference("");
         }
 
         publishSubject.onNext(Optional.ofNullable(getSelectedMap()));
     }
 
-    private static String getKfmirlTitlePreference() {
+    private static String getTableTitlePreference() {
         return prefs.get(TABLE_TITLE_PREFERENCE, "");
     }
 
@@ -59,7 +59,7 @@ public class KfmirlPreferences {
         return prefs.get(TABLE_DESCRIPTION_PREFERENCE, "");
     }
 
-    private static void setKfmirlTitlePreference(String title) {
+    private static void setTableTitlePreference(String title) {
         prefs.put(TABLE_TITLE_PREFERENCE, title);
     }
 

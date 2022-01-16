@@ -15,7 +15,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import preferences.bin.BinFilePreferences;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import ui.map.map.MapTable;
 import ui.viewmodel.openloopfueling.OpenLoopFuelingCorrectionViewModel;
 import writer.BinWriter;
@@ -247,7 +247,7 @@ public class OpenLoopFuelingCorrectionView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmMapPreferences.getSelectedMlhfmTableDefinition().fst, openLoopMlhfmCorrection.correctedMlhfm);
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getSelectedMlhfmMap().fst, openLoopMlhfmCorrection.correctedMlhfm);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

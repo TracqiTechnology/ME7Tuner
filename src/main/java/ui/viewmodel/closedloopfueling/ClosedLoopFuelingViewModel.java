@@ -9,12 +9,11 @@ import math.map.Map3d;
 import parser.bin.BinParser;
 import parser.me7log.ClosedLoopLogParser;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 import writer.BinWriter;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class ClosedLoopFuelingViewModel {
 
@@ -59,7 +58,7 @@ public class ClosedLoopFuelingViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
                 ClosedLoopMlfhmModel model = behaviorSubject.getValue();
                 ClosedLoopMlfhmModel.Builder builder;
                 if(model == null) {

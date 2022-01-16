@@ -9,7 +9,7 @@ import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmMapPreferences;
+import preferences.mlhfm.MlhfmPreferences;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +24,7 @@ public class MlhfmViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmMapPreferences.getSelectedMlhfmTableDefinition();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
                 if(tableDefinition != null) {
                     mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.fst, tableDefinition.snd)); // Found the map
                 } else {
@@ -39,7 +39,7 @@ public class MlhfmViewModel {
             public void onComplete() {}
         });
 
-        MlhfmMapPreferences.registerOnSelectedChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        MlhfmPreferences.registerOnSelectedMlhfmChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
@@ -57,7 +57,7 @@ public class MlhfmViewModel {
         });
     }
 
-    public void registerMLHFMOnChange(Observer<MlfhmModel> observer) {
+    public void register(Observer<MlfhmModel> observer) {
         mlhfmPublishSubject.subscribe(observer);
     }
 

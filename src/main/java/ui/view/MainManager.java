@@ -8,16 +8,15 @@ import preferences.filechooser.BinFileChooserPreferences;
 import preferences.filechooser.XdfFileChooserPreferences;
 import preferences.xdf.XdfFilePreferences;
 import ui.view.closedloopfueling.ClosedLoopFuelingView;
-import ui.view.kfmiop.KfmiopUiManager;
-import ui.view.kfmirl.KfmirlUiManager;
-import ui.view.kfmsnwdk.KfmsnwdkUiManager;
-import ui.view.kfurl.KfurlUiManager;
+import ui.view.kfmirl.KfmirlView;
+import ui.view.kfmiop.KfmiopView;
 import ui.view.kfzw.KfzwUiManager;
-import ui.view.kfzwop.KfzwopUiManager;
-import ui.view.krkte.KrkteUiManager;
+import ui.view.kfzwop.KfzwopView;
+import ui.view.krkte.KrkteUiView;
 import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingView;
+import ui.view.plsol.PlsolView;
 import ui.view.wdkugdn.WdkugdnUiManager;
 
 import javax.swing.*;
@@ -88,9 +87,9 @@ public class MainManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        KrkteUiManager krkteUiManager = new KrkteUiManager();
-        tabSelectedListeners.add(krkteUiManager);
-        tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiManager.getPanel()), "KRKTE Calculator");
+        KrkteUiView krkteUiView = new KrkteUiView();
+        tabSelectedListeners.add(krkteUiView);
+        tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiView.getPanel()), "KRKTE Calculator");
 
         ClosedLoopFuelingView closedLoopFuelingView = new ClosedLoopFuelingView();
         // first tab is selected
@@ -102,33 +101,28 @@ public class MainManager {
         tabSelectedListeners.add(openLoopFuelingView);
         tabbedPane.addTab("Open Loop Fueling", null, openLoopFuelingView.getPanel(), "Open Loop MLHFMCompensation");
 
-        KfmirlUiManager kfmirlUiManager = new KfmirlUiManager();
-        tabSelectedListeners.add(kfmirlUiManager);
-        tabbedPane.addTab("KFMIRL", null, new JScrollPane(kfmirlUiManager.getPanel()), "KFMIRL Calculator");
+        PlsolView plsolView = new PlsolView();
+        tabbedPane.addTab("PLSOL", null, plsolView.getPanel(), "Requested Boost");
 
-        KfmiopUiManager kfmiopUiManager = new KfmiopUiManager();
-        tabSelectedListeners.add(kfmiopUiManager);
-        tabbedPane.addTab("KFMIOP", null, new JScrollPane(kfmiopUiManager.getPanel()), "KFMIOP Calculator");
+        KfmiopView kfmiopView = new KfmiopView();
+        tabSelectedListeners.add(kfmiopView);
+        tabbedPane.addTab("KFMIOP", null, new JScrollPane(kfmiopView.getPanel()), "KFMIOP Calculator");
 
-        KfzwopUiManager kfzwopUiManager = new KfzwopUiManager();
-        tabSelectedListeners.add(kfzwopUiManager);
-        tabbedPane.addTab("KFZWOP", null, new JScrollPane(kfzwopUiManager.getPanel()), "KFZWOP Calculator");
+        KfmirlView kfmirlView = new KfmirlView();
+        tabSelectedListeners.add(kfmirlView);
+        tabbedPane.addTab("KFMIRL", null, new JScrollPane(kfmirlView.getPanel()), "KFMIRL Calculator");
+
+        KfzwopView kfzwopView = new KfzwopView();
+        tabSelectedListeners.add(kfzwopView);
+        tabbedPane.addTab("KFZWOP", null, new JScrollPane(kfzwopView.getPanel()), "KFZWOP Calculator");
 
         KfzwUiManager kfzwUiManager = new KfzwUiManager();
         tabSelectedListeners.add(kfzwUiManager);
         tabbedPane.addTab("KFZW", null, new JScrollPane(kfzwUiManager.getPanel()), "KFZW Calculator");
 
-        KfurlUiManager kfurlUiManager = new KfurlUiManager();
-        tabSelectedListeners.add(kfurlUiManager);
-        tabbedPane.addTab("KFURL", null, new JScrollPane(kfurlUiManager.getPanel()), "KFURL");
-
         WdkugdnUiManager wdkugdnUiManager = new WdkugdnUiManager();
         tabSelectedListeners.add(wdkugdnUiManager);
         tabbedPane.addTab("WDKUGDN", null, wdkugdnUiManager.getPanel(), "KFURL");
-
-        KfmsnwdkUiManager kfmsnwdkUiManager = new KfmsnwdkUiManager();
-        tabSelectedListeners.add(kfmsnwdkUiManager);
-        tabbedPane.addTab("KFWDKMSN", null, new JScrollPane(kfmsnwdkUiManager.getPanel()), "KFWDKMSN");
 
         LdrpidUiManager ldrpidUiManager = new LdrpidUiManager();
         tabbedPane.addTab("LDRPID", null, new JScrollPane(ldrpidUiManager.getPanel()), "LDRPID");

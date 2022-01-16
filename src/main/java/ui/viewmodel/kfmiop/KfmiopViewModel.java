@@ -1,47 +1,196 @@
 package ui.viewmodel.kfmiop;
 
-import io.reactivex.subjects.PublishSubject;
-import math.FindMax;
-import math.Inverse;
-import math.RescaleAxis;
+import com.sun.tools.javac.util.Pair;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.kfmiop.Kfmiop;
-import model.kfzw.Kfzw;
+import model.rlsol.Rlsol;
+import parser.xdf.TableDefinition;
+import preferences.kfmiop.KfmiopPreferences;
+
+import java.util.Optional;
 
 public class KfmiopViewModel {
 
-    private final PublishSubject<Double[]> kfmiopXAxisPublishSubject;
-    private final PublishSubject<Double[]> kfzwXAxisPublishSubject;
-    private final PublishSubject<Map3d> kfmiopMapPublishSubject;
-
+    private final BehaviorSubject<KfmiopModel> behaviorSubject = BehaviorSubject.create();
 
     public KfmiopViewModel() {
-        kfmiopXAxisPublishSubject = PublishSubject.create();
-        kfzwXAxisPublishSubject = PublishSubject.create();
-        kfmiopMapPublishSubject = PublishSubject.create();
+        behaviorSubject.onNext(new KfmiopModel.Builder().build());
+
+        onTableSelected(getSelectedKfmiopTableDefinition());
+
+        KfmiopPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
+               onTableSelected(selectedTableDefinitionPair.get());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
     }
 
-    public PublishSubject<Double[]> getKfzwXAxisPublishSubject() {
-        return kfzwXAxisPublishSubject;
+    public void register(Observer<KfmiopModel> observer) {
+        behaviorSubject.subscribe(observer);
     }
 
-    public PublishSubject<Double[]> getKfmiopXAxisPublishSubject() {
-        return kfmiopXAxisPublishSubject;
+    public void calculateKfmiop() {
+        double maxMapSensorLoad = Rlsol.rlsol(1030, KfmiopPreferences.getMaxMapPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getMaxMapPressurePreference());
+        double maxBoostPressureLoad = Rlsol.rlsol(1030, KfmiopPreferences.getMaxBoostPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getMaxBoostPressurePreference());
+
+        cacluateKfmiop(getSelectedKfmiopTableDefinition().snd, maxMapSensorLoad, maxBoostPressureLoad);
     }
 
-    public PublishSubject<Map3d> getKfmiopMapPublishSubject() {
-        return kfmiopMapPublishSubject;
+    private void onTableSelected(@Nullable  Pair<TableDefinition, Map3d> selectedTable) {
+        // Found the map
+        KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
+        if(selectedTable != null) {
+            builder.tableDefinition(selectedTable.fst).inputKfmiop(selectedTable.snd);
+            behaviorSubject.onNext(builder.build());
+            calculateKfmiop();
+        } else {
+            builder.tableDefinition(null).inputKfmiop(null).outputKfmiop(null).inputBoost(null).outputBoost(null).maxMapSensorPressure(0).maxBoostPressure(0);
+            behaviorSubject.onNext(builder.build());
+        }
     }
 
-    public void recalcuateKfmiopXAxis(Double[][] kfmirl) {
-        // Find the maximum load specified in KFMIRL
-        Double max = FindMax.findMax(kfmirl);
-        // And rescale it against the stock KFMIOP X-Axis
-        kfmiopXAxisPublishSubject.onNext(RescaleAxis.rescaleAxis(Kfmiop.getXAxis(), max));
-        kfzwXAxisPublishSubject.onNext(RescaleAxis.rescaleAxis(Kfzw.getXAxis(), max));
+    private Pair<TableDefinition, Map3d> getSelectedKfmiopTableDefinition() {
+         return KfmiopPreferences.getSelectedMap();
     }
 
-    public void cacluateKfmiop(Map3d kfmirl, Map3d kfmiop) {
-        kfmiopMapPublishSubject.onNext(Inverse.calculateInverse(kfmirl, kfmiop));
+    private void cacluateKfmiop(Map3d baseKfmiop, double maxMapSensorLoad, double maxBoostPressureLoad) {
+        KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
+        Kfmiop kfmiop = Kfmiop.calculateKfmiop(baseKfmiop, maxMapSensorLoad, maxBoostPressureLoad);
+        builder.outputKfmiop(kfmiop.getOutputKfmiop()).inputBoost(kfmiop.getInputBoost()).outputBoost(kfmiop.getOutputBoost()).maxMapSensorPressure(kfmiop.getMaxMapSensorPressure()).maxBoostPressure(kfmiop.getMaxBoostPressure());
+        behaviorSubject.onNext(builder.build());
+    }
+
+    public static class KfmiopModel {
+        private final TableDefinition tableDefinition;
+        private final Map3d inputKfmiop;
+        private final Map3d outputKfmiop;
+        private final Map3d inputBoost;
+        private final Map3d outputBoost;
+        private final double maxMapSensorPressure;
+        private final double maxBoostPressure;
+
+        private KfmiopModel(Builder builder) {
+            this.tableDefinition = builder.tableDefinition;
+            this.inputKfmiop = builder.inputKfmiop;
+            this.outputKfmiop = builder.outputKfmiop;
+            this.inputBoost = builder.inputBoost;
+            this.outputBoost = builder.outputBoost;
+            this.maxMapSensorPressure = builder.maxMapSensorPressure;
+            this.maxBoostPressure = builder.maxBoostPressure;
+        }
+
+        @Nullable
+        public TableDefinition getTableDefinition() { return tableDefinition; }
+
+        @Nullable
+        public Map3d getInputKfmiop() {
+            return inputKfmiop;
+        }
+
+        @Nullable
+        public Map3d getOutputKfmiop() {
+            return outputKfmiop;
+        }
+
+        @Nullable
+        public Map3d getInputBoost() {
+            return inputBoost;
+        }
+
+        @Nullable
+        public Map3d getOutputBoost() {
+            return outputBoost;
+        }
+
+        public double getMaxMapSensorPressure() {
+            return maxMapSensorPressure;
+        }
+
+        public double getMaxBoostPressure() {
+            return maxBoostPressure;
+        }
+
+        public static class Builder {
+            private TableDefinition tableDefinition;
+            private Map3d inputKfmiop;
+            private Map3d outputKfmiop;
+            private Map3d inputBoost;
+            private Map3d outputBoost;
+            private double maxMapSensorPressure;
+            private double maxBoostPressure;
+
+            private Builder(){}
+
+            private Builder(KfmiopModel model) {
+                this.tableDefinition = model.tableDefinition;
+                this.inputKfmiop = model.inputKfmiop;
+                this.outputKfmiop = model.outputKfmiop;
+                this.inputBoost = model.inputBoost;
+                this.outputBoost = model.outputBoost;
+                this.maxBoostPressure = model.maxBoostPressure;
+                this.maxMapSensorPressure = model.maxMapSensorPressure;
+            }
+
+            public Builder tableDefinition(TableDefinition tableDefinition) {
+                this.tableDefinition =tableDefinition;
+
+                return this;
+            }
+
+            public Builder inputKfmiop(Map3d map) {
+                this.inputKfmiop = map;
+
+                return this;
+            }
+
+            public Builder outputKfmiop(Map3d map) {
+                this.outputKfmiop = map;
+
+                return this;
+            }
+
+            public Builder inputBoost(Map3d map) {
+                this.inputBoost = map;
+
+                return this;
+            }
+
+            public Builder outputBoost(Map3d map) {
+                this.outputBoost = map;
+
+                return this;
+            }
+
+            public Builder maxMapSensorPressure(double pressure) {
+                this.maxMapSensorPressure = pressure;
+
+                return this;
+            }
+
+            public Builder maxBoostPressure(double pressure) {
+                this.maxBoostPressure = pressure;
+
+                return this;
+            }
+
+            public KfmiopModel build() {
+                return new KfmiopModel(this);
+            }
+        }
     }
 }
