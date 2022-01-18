@@ -16,7 +16,6 @@ import org.jzy3d.plot3d.rendering.canvas.Quality;
 import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.kfmiop.KfmiopPreferences;
-import preferences.mlhfm.MlhfmPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.color.ColorMapGreenYellowRed;
@@ -63,7 +62,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.gridy = 0;
         c.insets.top = -55;
 
-        panel.add(geOutputPanel(), c);
+        panel.add(getOutputPanel(), c);
 
         initViewModel();
 
@@ -75,81 +74,78 @@ public class KfmiopView implements OnTabSelectedListener {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
         calculatedMaximumMapPressurePanel = getCalculatedMaxPressurePanel();
 
-        panel.add(calculatedMaximumMapPressurePanel, c);
+        panel.add(calculatedMaximumMapPressurePanel, constraints);
 
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.top = 16;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         tabbedPane.addTab("Torque", null, getInputKfmioplMapPanel(), "Optimal Torque Map");
         tabbedPane.addTab("Boost", null, getInputBoostMapPanel(), "Optimal Boost Map");
 
-        panel.add(tabbedPane, c);
+        panel.add(tabbedPane, constraints);
 
-        c.gridy = 2;
+        constraints.gridy = 2;
 
-        panel.add(getDefinitionButton(), c);
+        panel.add(getDefinitionButton(), constraints);
 
-        c.gridy = 3;
-        c.insets.top = 0;
+        constraints.gridy = 3;
+        constraints.insets.top = 0;
 
         fileLabel = new JLabel("No Map Selected");
-        panel.add(fileLabel, c);
-
-        c.gridy = 4;
-        c.insets.top = 16;
+        panel.add(fileLabel, constraints);
 
         return panel;
     }
 
-    public JPanel geOutputPanel() {
+    public JPanel getOutputPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getDesiredMaxMapPressurePanel(), c);
+        panel.add(getDesiredMaxMapPressurePanel(), constraints);
 
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.top = 16;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
-        panel.add(new JLabel("KFMIOP X-Axis (Output)"), c);
+        panel.add(new JLabel("KFMIOP X-Axis (Output)"), constraints);
 
-        c.gridx = 0;
-        c.gridy = 2;
-        c.insets.top = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.insets.top = 0;
 
         JScrollPane kfzwXAxisScrollPane = kfmiopXAxis.getScrollPane();
         kfzwXAxisScrollPane.setPreferredSize(new Dimension(615, 20));
-        panel.add(kfzwXAxisScrollPane, c);
+        panel.add(kfzwXAxisScrollPane, constraints);
 
-        c.gridx = 0;
-        c.gridy = 3;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         tabbedPane.addTab("Torque", null, getOutputKfmiopMapPanel(), "Optimal Torque Map");
         tabbedPane.addTab("Boost", null, getOutputBoostMapPanel(), "Optimal Boost Map");
 
-        panel.add(tabbedPane, c);
+        panel.add(tabbedPane, constraints);
 
-        c.gridx = 0;
-        c.gridy = 4;
-        c.insets.top = 16;
-        panel.add(getFileButton(), c);
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.insets.top = 16;
+        panel.add(getFileButton(), constraints);
 
         return panel;
     }

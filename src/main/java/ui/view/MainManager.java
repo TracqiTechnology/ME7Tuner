@@ -10,7 +10,7 @@ import preferences.xdf.XdfFilePreferences;
 import ui.view.closedloopfueling.ClosedLoopFuelingView;
 import ui.view.kfmirl.KfmirlView;
 import ui.view.kfmiop.KfmiopView;
-import ui.view.kfzw.KfzwUiManager;
+import ui.view.kfzw.KfzwView;
 import ui.view.kfzwop.KfzwopView;
 import ui.view.krkte.KrkteUiView;
 import ui.view.ldrpid.LdrpidUiManager;
@@ -116,9 +116,9 @@ public class MainManager {
         tabSelectedListeners.add(kfzwopView);
         tabbedPane.addTab("KFZWOP", null, new JScrollPane(kfzwopView.getPanel()), "KFZWOP Calculator");
 
-        KfzwUiManager kfzwUiManager = new KfzwUiManager();
-        tabSelectedListeners.add(kfzwUiManager);
-        tabbedPane.addTab("KFZW", null, new JScrollPane(kfzwUiManager.getPanel()), "KFZW Calculator");
+        KfzwView kfzwView = new KfzwView();
+        tabSelectedListeners.add(kfzwView);
+        tabbedPane.addTab("KFZW", null, new JScrollPane(kfzwView.getPanel()), "KFZW Calculator");
 
         WdkugdnUiManager wdkugdnUiManager = new WdkugdnUiManager();
         tabSelectedListeners.add(wdkugdnUiManager);

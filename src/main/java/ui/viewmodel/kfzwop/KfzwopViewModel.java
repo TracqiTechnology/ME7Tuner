@@ -12,6 +12,7 @@ import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.kfzwop.KfzwopPreferences;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class KfzwopViewModel {
@@ -45,6 +46,7 @@ public class KfzwopViewModel {
     }
 
     public void cacluateKfzwop(Map3d kfzwop, Double[] newXAxis) {
+        // TODO we are duplicating the columns
         Map3d newKfzwop = new Map3d();
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
