@@ -59,7 +59,7 @@ public class OpenLoopFuelingViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
                 OpenLoopMlfhmModel model = behaviorSubject.getValue();
                 OpenLoopMlfhmModel.Builder builder;
                 if(model == null) {

@@ -1,82 +1,55 @@
 package model.wdkugdn;
-
-import contract.Me7LogFileContract;
-import math.Index;
+import math.LinearInterpolation;
 import math.map.Map3d;
+import model.load.EngineLoad;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class WdkugdnCalculator {
 
-    public static WdkugdnCorrection calculateWdkugdn(Map3d wdkugdn, Map<String, List<Double>> me7LogMap) {
-        List<Double> throttlePlateAngle = me7LogMap.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
-        List<Double> maf = me7LogMap.get(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER);
-        List<Double> mafAtThrottlePlate = me7LogMap.get(Me7LogFileContract.MAF_AT_THROTTLE_PLATE);
-        List<Double> rpm = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+    public static Map3d calculateWdkugdn(Map3d wdkugdn, Map3d kfwdkmsn, double displacement) {
+        Double[] xAxis = wdkugdn.xAxis;
 
-        List<List<Double>> corrections = new ArrayList<>();
+        Map3d correctedWdkugdn = new Map3d(wdkugdn);
 
-        for(int i = 0; i < Wdkugdn.getXAxis().length; i++) {
-            corrections.add(new ArrayList<>());
-        }
+        for(int i = 0; i < xAxis.length; i++) {
+            Double rpm = xAxis[i];
+            // https://en.wikipedia.org/wiki/Choked_flow#Choking_in_change_of_cross_section_flow
+            double chokedAirflow = EngineLoad.getAirflow(1, rpm, displacement)*3.6/0.528;
 
-        double[][] sums = new double[Wdkugdn.getYAxis().length][Wdkugdn.getXAxis().length];
-        double[][] counts = new double[Wdkugdn.getYAxis().length][Wdkugdn.getXAxis().length];
+            System.out.println("rpm: " + rpm + " airflow: " + chokedAirflow);
 
-        for (int i = 0; i < throttlePlateAngle.size(); i++) {
+            int rpmIndex = Arrays.binarySearch(kfwdkmsn.xAxis, rpm);
 
-            if (throttlePlateAngle.get(i) >= 90) {
-                double mafValue = maf.get(i);
-                double mafAtThrottlePlateValue = mafAtThrottlePlate.get(i);
-
-                double correction = mafValue / mafAtThrottlePlateValue;
-                double me7Rpm = rpm.get(i);
-
-                int wdkugdnRpmIndex = Index.getInsertIndex(Arrays.asList(Wdkugdn.getXAxis()), me7Rpm);
-
-                corrections.get(wdkugdnRpmIndex).add(correction);
-                sums[0][wdkugdnRpmIndex] += correction;
-                counts[0][wdkugdnRpmIndex] += 1;
+            if (rpmIndex < 0) {
+                rpmIndex = Math.abs(rpmIndex + 1);
             }
-        }
 
-        Double[][] correction = new Double[Wdkugdn.getYAxis().length][Wdkugdn.getXAxis().length];
-        for (int i = 0; i < correction.length; i++) {
-            for (int j = 0; j < correction[i].length; j++) {
-                correction[i][j] = sums[i][j] / counts[i][j];
+            rpmIndex = Math.min(rpmIndex, kfwdkmsn.xAxis.length - 1);
 
-                if (Double.isNaN(correction[i][j]) || counts[i][j]< 20) {
-                    correction[i][j] = 1d;
-                }
+            double[] throttleAngle = new double[kfwdkmsn.yAxis.length];
+
+            for(int j = 0; j < throttleAngle.length; j++) {
+                throttleAngle[j] = kfwdkmsn.zAxis[j][rpmIndex];
             }
-        }
 
-//        System.out.println("Sums");
-//        for(double[] array: sums) {
-//            System.out.println(Arrays.toString(array));
-//        }
-//
-//        System.out.println("Counts");
-//        for(double[] array: counts) {
-//            System.out.println(Arrays.toString(array));
-//        }
-//
-//        System.out.println("Corrections");
-//        for(Double[] array: correction) {
-//            System.out.println(Arrays.toString(array));
-//        }
+            int airflowIndex = Arrays.binarySearch(kfwdkmsn.yAxis, chokedAirflow);
 
-        Map3d result = new Map3d(wdkugdn);
-
-        for (int i = 0; i < wdkugdn.zAxis.length; i++) {
-            for (int j = 0; j < wdkugdn.zAxis[i].length; j++) {
-                result.zAxis[i][j] = wdkugdn.zAxis[i][j] * correction[i][j];
+            if (airflowIndex < 0) {
+                airflowIndex = Math.abs(airflowIndex + 1);
             }
+
+            airflowIndex = Math.min(airflowIndex, kfwdkmsn.yAxis.length - 1);
+
+            Double[] x = new Double[]{kfwdkmsn.yAxis[airflowIndex - 1], kfwdkmsn.yAxis[airflowIndex]};
+            Double[] y = new Double[]{throttleAngle[airflowIndex - 1], throttleAngle[airflowIndex]};
+            Double[] xi = new Double[]{chokedAirflow};
+
+            Double[] chockedThrottleAngle = LinearInterpolation.interpolate(x, y, xi);
+
+            correctedWdkugdn.zAxis[0][i] = chockedThrottleAngle[0];
         }
 
-        return new WdkugdnCorrection(result, correction, corrections);
+        return correctedWdkugdn;
     }
 }

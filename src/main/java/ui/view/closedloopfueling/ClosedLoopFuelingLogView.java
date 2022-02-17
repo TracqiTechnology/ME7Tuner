@@ -16,7 +16,6 @@ import org.jfree.data.xy.XYSeriesCollection;
 import parser.me7log.ClosedLoopLogParser;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import preferences.filechooser.FileChooserPreferences;
-import ui.view.closedloopfueling.ClosedLoopMe7LogFilterConfigPanel;
 import ui.viewmodel.closedloopfueling.ClosedLoopFuelingLogViewModel;
 
 import javax.swing.*;
@@ -36,7 +35,7 @@ public class ClosedLoopFuelingLogView {
 
     ClosedLoopFuelingLogView() {
         ClosedLoopFuelingLogViewModel viewModel = new ClosedLoopFuelingLogViewModel();
-        viewModel.registerMLHFMOnChange(new Observer<ClosedLoopFuelingLogViewModel.ClosedLoopMlhfmLogModel>() {
+        viewModel.registerOnChange(new Observer<ClosedLoopFuelingLogViewModel.ClosedLoopMlhfmLogModel>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 

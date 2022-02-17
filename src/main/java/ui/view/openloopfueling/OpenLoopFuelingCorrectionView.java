@@ -247,7 +247,7 @@ public class OpenLoopFuelingCorrectionView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getSelectedMlhfmMap().fst, openLoopMlhfmCorrection.correctedMlhfm);
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getSelectedMap().fst, openLoopMlhfmCorrection.correctedMlhfm);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

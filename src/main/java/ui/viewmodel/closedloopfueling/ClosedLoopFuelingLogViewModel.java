@@ -17,18 +17,18 @@ import java.util.Map;
 
 public class ClosedLoopFuelingLogViewModel {
 
-    private final PublishSubject<ClosedLoopMlhfmLogModel> behaviorSubject = PublishSubject.create();
+    private final PublishSubject<ClosedLoopMlhfmLogModel> publishSubject = PublishSubject.create();
 
     public ClosedLoopFuelingLogViewModel() {
         ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
-                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMlhfmMap();
+                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMap();
 
                 if(mlhfmDefinition != null) {
                     Map3d mlhfm = mlhfmDefinition.snd;
                     if (mlhfm != null) {
-                        behaviorSubject.onNext(new ClosedLoopMlhfmLogModel(me7LogMap, mlhfm));
+                        publishSubject.onNext(new ClosedLoopMlhfmLogModel(me7LogMap, mlhfm));
                     }
                 }
             }
@@ -50,7 +50,7 @@ public class ClosedLoopFuelingLogViewModel {
             @Override
             public void onNext(@NonNull TableDefinition tableDefinition) {
                 if(tableDefinition.getTableName().contains("MLHFM")) {
-                    behaviorSubject.onNext(new ClosedLoopMlhfmLogModel(null, null));
+                    publishSubject.onNext(new ClosedLoopMlhfmLogModel(null, null));
                 }
             }
 
@@ -62,8 +62,8 @@ public class ClosedLoopFuelingLogViewModel {
         });
     }
 
-    public void registerMLHFMOnChange(Observer<ClosedLoopMlhfmLogModel> observer) {
-        behaviorSubject.subscribe(observer);
+    public void registerOnChange(Observer<ClosedLoopMlhfmLogModel> observer) {
+        publishSubject.subscribe(observer);
     }
 
     public static class ClosedLoopMlhfmLogModel {

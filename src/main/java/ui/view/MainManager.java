@@ -10,6 +10,7 @@ import preferences.xdf.XdfFilePreferences;
 import ui.view.closedloopfueling.ClosedLoopFuelingView;
 import ui.view.kfmirl.KfmirlView;
 import ui.view.kfmiop.KfmiopView;
+import ui.view.kfvpdksd.KfvpdksdView;
 import ui.view.kfzw.KfzwView;
 import ui.view.kfzwop.KfzwopView;
 import ui.view.krkte.KrkteUiView;
@@ -17,7 +18,7 @@ import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingView;
 import ui.view.plsol.PlsolView;
-import ui.view.wdkugdn.WdkugdnUiManager;
+import ui.view.wdkugdn.WdkugdnView;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -120,9 +121,12 @@ public class MainManager {
         tabSelectedListeners.add(kfzwView);
         tabbedPane.addTab("KFZW", null, new JScrollPane(kfzwView.getPanel()), "KFZW Calculator");
 
-        WdkugdnUiManager wdkugdnUiManager = new WdkugdnUiManager();
-        tabSelectedListeners.add(wdkugdnUiManager);
-        tabbedPane.addTab("WDKUGDN", null, wdkugdnUiManager.getPanel(), "KFURL");
+        KfvpdksdView kfvpdksdView = new KfvpdksdView();
+        tabSelectedListeners.add(kfvpdksdView);
+        tabbedPane.addTab("KFVPDKSD/E", null, new JScrollPane(kfvpdksdView.getPanel()), "KFVPDKSD/E Calculator");
+
+        WdkugdnView wdkugdnView = new WdkugdnView();
+        tabbedPane.addTab("WDKUGDN", null, wdkugdnView.getPanel(), "KFURL");
 
         LdrpidUiManager ldrpidUiManager = new LdrpidUiManager();
         tabbedPane.addTab("LDRPID", null, new JScrollPane(ldrpidUiManager.getPanel()), "LDRPID");

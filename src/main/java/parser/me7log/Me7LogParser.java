@@ -20,8 +20,8 @@ public class Me7LogParser {
         OPEN_LOOP,
         CLOSED_LOOP,
         LDRPID,
-        KFURL,
-        WDKUGDN
+        KFVPDKSD,
+        KFURL
     }
 
     private int timeColumnIndex = -1;
@@ -227,7 +227,19 @@ public class Me7LogParser {
                             map.get(Me7LogFileContract.WASTEGATE_DUTY_CYCLE_HEADER).add(wastegateDutyCycle);
                             map.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER).add(absoluteBoostPressure);
                             map.get(Me7LogFileContract.SELECTED_GEAR_HEADER).add(selectedGear);
-                        } else if(logType == LogType.KFURL) {
+                        } else if(logType ==  LogType.KFVPDKSD) {
+                            double time = Double.parseDouble(record.get(timeColumnIndex));
+                            double rpm = Double.parseDouble(record.get(rpmColumnIndex));
+                            double throttlePlateAngle = Double.parseDouble(record.get(throttlePlateAngleIndex));
+                            double barometricPressure = Double.parseDouble(record.get(barometricPressureIndex));
+                            double absoluteBoostPressure = Double.parseDouble(record.get(absoluteBoostPressureActualIndex));
+
+                            map.get(Me7LogFileContract.TIME_COLUMN_HEADER).add(time);
+                            map.get(Me7LogFileContract.RPM_COLUMN_HEADER).add(rpm);
+                            map.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER).add(throttlePlateAngle);
+                            map.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER).add(barometricPressure);
+                            map.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER).add(absoluteBoostPressure);
+                        }else if(logType == LogType.KFURL) {
                             double time = Double.parseDouble(record.get(timeColumnIndex));
                             double rpm = Double.parseDouble(record.get(rpmColumnIndex));
                             double barometricPressure = Double.parseDouble(record.get(barometricPressureIndex));
@@ -237,18 +249,6 @@ public class Me7LogParser {
                             map.get(Me7LogFileContract.RPM_COLUMN_HEADER).add(rpm);
                             map.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER).add(barometricPressure);
                             map.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER).add(absoluteModeledBoostPressure);
-                        } else if(logType == LogType.WDKUGDN) {
-                            double time = Double.parseDouble(record.get(timeColumnIndex));
-                            double rpm = Double.parseDouble(record.get(rpmColumnIndex));
-                            double throttlePlateAngle = Double.parseDouble(record.get(throttlePlateAngleIndex));
-                            double mafGsec = Double.parseDouble(record.get(mafGramsPerSecondIndex));
-                            double mafAtThrottlePlateGsec = Double.parseDouble(record.get(mafAtThrottlePlateIndex));
-
-                            map.get(Me7LogFileContract.TIME_COLUMN_HEADER).add(time);
-                            map.get(Me7LogFileContract.RPM_COLUMN_HEADER).add(rpm);
-                            map.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER).add(throttlePlateAngle);
-                            map.get(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER).add(mafGsec);
-                            map.get((Me7LogFileContract.MAF_AT_THROTTLE_PLATE)).add(mafAtThrottlePlateGsec);
                         }
                     } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
                         e.printStackTrace();
@@ -299,10 +299,10 @@ public class Me7LogParser {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && stftColumnIndex != -1 && ltftColumnIndex != -1 && mafVoltageIndex != -1 && throttlePlateAngleIndex != -1 && lambdaControlActiveIndex != -1 && engineLoadIndex != -1;
         } else if (logType == LogType.LDRPID) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && selectedGearIndex != -1;
+        } else if (logType == LogType.KFVPDKSD) {
+            return timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1;
         } else if(logType == LogType.KFURL) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureModeledIndex != -1;
-        } else if(logType == LogType.WDKUGDN) {
-            return timeColumnIndex != -1 && rpmColumnIndex != -1 && mafGramsPerSecondIndex != -1 && mafAtThrottlePlateIndex != -1 && throttlePlateAngleIndex != -1;
         }
 
         return false;
@@ -336,17 +336,17 @@ public class Me7LogParser {
             map.put(Me7LogFileContract.WASTEGATE_DUTY_CYCLE_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.SELECTED_GEAR_HEADER, new ArrayList<>());
+        } else if (logType == LogType.KFVPDKSD) {
+            map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.RPM_COLUMN_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER, new ArrayList<>());
+            map.put(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER, new ArrayList<>());
         } else if(logType == LogType.KFURL) {
             map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.RPM_COLUMN_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER, new ArrayList<>());
-        } else if(logType == LogType.WDKUGDN) {
-            map.put(Me7LogFileContract.TIME_COLUMN_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.RPM_COLUMN_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.MAF_AT_THROTTLE_PLATE, new ArrayList<>());
         }
 
         return map;

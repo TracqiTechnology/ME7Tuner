@@ -1,58 +1,113 @@
 package ui.viewmodel.wdkugdn;
 
-import io.reactivex.subjects.BehaviorSubject;
+import com.sun.tools.javac.util.Pair;
+import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import math.map.Map3d;
 import model.wdkugdn.WdkugdnCalculator;
-import model.wdkugdn.WdkugdnCorrection;
-import parser.me7log.Me7LogParser;
+import parser.xdf.TableDefinition;
+import preferences.kfwdkmsn.KfwdkmsnPreferences;
+import preferences.wdkugdn.WdkugdnPreferences;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
+import javax.swing.*;
+import java.util.Optional;
 
 public class WdkugdnViewModel {
-    private final BehaviorSubject<Map3d> inputSubject;
-    private final BehaviorSubject<WdkugdnCorrection> outputSubject;
-    private final BehaviorSubject<Map<String, List<Double>>> me7LogsSubject;
 
-    private static WdkugdnViewModel instance;
+    private final Subject<WdkugnModel> subject = PublishSubject.create();
 
-    public static WdkugdnViewModel getInstance() {
-        if (instance == null) {
-            instance = new WdkugdnViewModel();
+    public WdkugdnViewModel() {
+
+        WdkugdnPreferences.register(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                calculateWdkugdn();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+
+        KfwdkmsnPreferences.register(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                calculateWdkugdn();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        calculateWdkugdn();
+    }
+
+    public void calculateWdkugdn() {
+        SwingUtilities.invokeLater(() -> {
+            Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getSelectedMap();
+            Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getSelectedMap();
+            if (wdkugdn != null && kfwdkmsn != null) {
+                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.snd, kfwdkmsn.snd, WdkugdnPreferences.getEngineDisplacementPreference()), wdkugdn.fst.getTableName(), kfwdkmsn.fst.getTableName()));
+            } else if(wdkugdn != null) {
+                subject.onNext(new WdkugnModel(null, wdkugdn.fst.getTableName(), null));
+            }else if(kfwdkmsn != null) {
+                subject.onNext(new WdkugnModel(null, null, kfwdkmsn.fst.getTableName()));
+            }
+        });
+    }
+
+    public void registerOnChange(Observer<WdkugnModel> observer) {
+        subject.subscribe(observer);
+    }
+
+    public static class WdkugnModel {
+        private final String wdkudgnDefinitionTitle;
+        private final String kfwdkmsnDefinitionTitle;
+        private final Map3d wdkudgn;
+
+        private WdkugnModel(@Nullable Map3d wdkudgn, @Nullable String wdkudgnDefinitionTitle, @Nullable String kfwdkmsnDefinitionTitle) {
+            this.wdkudgn = wdkudgn;
+            this.wdkudgnDefinitionTitle = wdkudgnDefinitionTitle;
+            this.kfwdkmsnDefinitionTitle = kfwdkmsnDefinitionTitle;
         }
 
-        return instance;
-    }
-
-    private WdkugdnViewModel() {
-        inputSubject = BehaviorSubject.create();
-        outputSubject = BehaviorSubject.create();
-        me7LogsSubject = BehaviorSubject.create();
-    }
-
-    public BehaviorSubject<Map3d> getInputSubject() {
-        return inputSubject;
-    }
-
-    public BehaviorSubject<WdkugdnCorrection> getOutputSubject() {
-        return outputSubject;
-    }
-
-    public BehaviorSubject<Map<String, List<Double>>> getMe7LogsSubject() {
-        return me7LogsSubject;
-    }
-
-    public void setMap(Map3d map) {
-        if (map != null) {
-            inputSubject.onNext(map);
+        @Nullable
+        public Map3d getWdkugdn() {
+            return wdkudgn;
         }
-    }
 
-    public void loadMe7File(File file) {
-        Me7LogParser me7LogParser = new Me7LogParser();
-        Map<String, List<Double>> me7logs = me7LogParser.parseLogFile(Me7LogParser.LogType.WDKUGDN, file);
-        outputSubject.onNext(WdkugdnCalculator.calculateWdkugdn(inputSubject.getValue(), me7logs));
-        me7LogsSubject.onNext(me7logs);
+        @Nullable
+        public String getWdkudgnDefinitionTitle() {
+            return wdkudgnDefinitionTitle;
+        }
+
+        @Nullable
+        public String getKfwdkmsnDefinitionTitle() {
+            return kfwdkmsnDefinitionTitle;
+        }
     }
 }

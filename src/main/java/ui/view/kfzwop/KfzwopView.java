@@ -101,10 +101,6 @@ public class KfzwopView implements OnTabSelectedListener {
                     if(model.getOutputKfzwop() != null) {
                         kfzwopOutput.setColumnHeaders(model.getOutputKfzwop().xAxis);
                         kfzwopOutput.setRowHeaders(model.getOutputKfzwop().yAxis);
-                        System.out.println("Output");
-                        for(Double[] row: model.getOutputKfzwop().zAxis) {
-                            System.out.println(Arrays.toString(row));
-                        }
                         kfzwopOutput.setTableData(model.getOutputKfzwop().zAxis);
                     }
                 });

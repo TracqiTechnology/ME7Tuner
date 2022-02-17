@@ -81,7 +81,6 @@ public class KfzwView implements OnTabSelectedListener {
         viewModel.register(new Observer<KfzwViewModel.KfzwModel>() {
             @Override
             public void onNext(@NonNull KfzwViewModel.KfzwModel model) {
-                System.out.println("onNext()");
                 if(model.getKfzw() != null && !isKfzwInitialized) {
                     kfzwInput.setColumnHeaders(model.getKfzw().snd.xAxis);
                     kfzwInput.setRowHeaders(model.getKfzw().snd.yAxis);

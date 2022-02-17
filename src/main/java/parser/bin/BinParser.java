@@ -168,7 +168,7 @@ public class BinParser {
                 for (int i = 0; i < axis.length; i++) {
                     int value;
                     if(strideBytes == 1) {
-                        value = Short.toUnsignedInt(slice.get());
+                        value = Byte.toUnsignedInt(slice.get());
                     } else {
                         value = Short.toUnsignedInt(slice.getShort());
                     }
@@ -223,7 +223,7 @@ public class BinParser {
                     for (int j = 0; j < axis[i].length; j++) {
                         int value;
                         if(stride == 1) {
-                            value = Short.toUnsignedInt(slice.get());
+                            value = Byte.toUnsignedInt(slice.get());
                         } else {
                             value = Short.toUnsignedInt(slice.getShort());
                         }

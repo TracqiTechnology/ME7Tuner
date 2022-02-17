@@ -23,13 +23,11 @@ public class Index {
     public static int getInsertIndex(List<Double> values, double value) {
         int index = Collections.binarySearch(values, value);
 
-        Arrays.binarySearch(new Double[0], 1);
 
         if (index < 0) {
             index = Math.abs(index + 1);
         }
 
-        index = Math.max(index, 0);
         index = Math.min(index, values.size() - 1);
 
         // binarySearch() always returns the index with the greater value, even if the input is closer to the lesser value

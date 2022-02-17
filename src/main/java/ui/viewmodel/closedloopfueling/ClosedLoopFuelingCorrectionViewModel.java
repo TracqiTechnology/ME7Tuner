@@ -24,7 +24,7 @@ public class ClosedLoopFuelingCorrectionViewModel {
         ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
             @Override
             public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
-                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMlhfmMap();
+                Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMap();
                 if (mlhfmDefinition != null) {
                     Map3d mlhfm = mlhfmDefinition.snd;
                     if (mlhfm != null) {

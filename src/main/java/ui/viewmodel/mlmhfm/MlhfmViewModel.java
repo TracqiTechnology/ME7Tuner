@@ -24,7 +24,7 @@ public class MlhfmViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
                 if(tableDefinition != null) {
                     mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.fst, tableDefinition.snd)); // Found the map
                 } else {

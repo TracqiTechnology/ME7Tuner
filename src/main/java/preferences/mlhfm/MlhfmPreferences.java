@@ -20,7 +20,7 @@ public class MlhfmPreferences {
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
 
     @Nullable
-    public static Pair<TableDefinition, Map3d> getSelectedMlhfmMap() {
+    public static Pair<TableDefinition, Map3d> getSelectedMap() {
         List<Pair<TableDefinition, Map3d>> mapList = BinParser.getInstance().getMapList();
 
         String mapTitle = MlhfmPreferences.getMlhfmTitlePreference();
@@ -39,7 +39,7 @@ public class MlhfmPreferences {
         return null;
     }
 
-    public static void setSelectedMlhfmMap(@Nullable TableDefinition tableDefinition) {
+    public static void setSelectedMap(@Nullable TableDefinition tableDefinition) {
         if(tableDefinition != null) {
             setMlhfmTitlePreference(tableDefinition.getTableName());
             setMlhfmDescriptionPreference(tableDefinition.getTableDescription());
@@ -48,7 +48,7 @@ public class MlhfmPreferences {
             setMlhfmDescriptionPreference("");
         }
 
-        publishSubject.onNext(Optional.ofNullable(getSelectedMlhfmMap()));
+        publishSubject.onNext(Optional.ofNullable(getSelectedMap()));
     }
 
     public static void registerOnSelectedMlhfmChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {

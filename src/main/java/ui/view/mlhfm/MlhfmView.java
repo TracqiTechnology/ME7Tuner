@@ -145,12 +145,12 @@ public class MlhfmView {
         JButton button = new JButton("Set MLFHM Definition");
 
         button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMlhfmMap();
+            Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
 
             if(tableDefinition != null) {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmPreferences::setSelectedMlhfmMap);
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmPreferences::setSelectedMap);
             } else {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmPreferences::setSelectedMlhfmMap);
+                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmPreferences::setSelectedMap);
             }
         });
 
