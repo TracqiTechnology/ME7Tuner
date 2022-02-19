@@ -17,7 +17,7 @@ import java.awt.*;
 
 public class WdkugdnView {
 
-    private MapTable wdkudgn = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable wdkudgn = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
     private JPanel panel;
     private JLabel wdkugdnFileLabel;
     private JLabel kfwdkmsnFileLabel;
@@ -78,10 +78,7 @@ public class WdkugdnView {
         constraints.gridx = 0;
         constraints.gridy = 2;
 
-        JScrollPane scrollPane = wdkudgn.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(715, 40));
-
-        panel.add(scrollPane, constraints);
+        panel.add(wdkudgn.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;

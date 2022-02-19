@@ -5,20 +5,11 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import model.kfmirl.Kfmirl;
-import org.jzy3d.chart.Chart;
-import org.jzy3d.chart.factories.AWTChartComponentFactory;
-import org.jzy3d.chart.factories.IChartComponentFactory;
-import org.jzy3d.colors.Color;
-import org.jzy3d.colors.ColorMapper;
-import org.jzy3d.maths.Coord3d;
-import org.jzy3d.plot3d.rendering.canvas.Quality;
 import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.kfmiop.KfmiopPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
-import ui.view.color.ColorMapGreenYellowRed;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfmiop.KfmiopViewModel;
@@ -27,10 +18,7 @@ import writer.BinWriter;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class KfmiopView implements OnTabSelectedListener {
     private final MapTable inputKfmiop = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
@@ -42,7 +30,6 @@ public class KfmiopView implements OnTabSelectedListener {
     private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
 
     private JLabel fileLabel;
-    private Chart chart3d;
     private JPanel panel;
     private CalculatedMaximumMapPressurePanel calculatedMaximumMapPressurePanel;
     private final KfmiopViewModel viewModel = new KfmiopViewModel();
@@ -128,9 +115,7 @@ public class KfmiopView implements OnTabSelectedListener {
         constraints.gridy = 2;
         constraints.insets.top = 0;
 
-        JScrollPane kfzwXAxisScrollPane = kfmiopXAxis.getScrollPane();
-        kfzwXAxisScrollPane.setPreferredSize(new Dimension(615, 20));
-        panel.add(kfzwXAxisScrollPane, constraints);
+        panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
@@ -225,7 +210,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.gridy = 0;
         c.insets.left = 52;
 
-        panel.add(getHeader("KFMIOP (Input)", e -> showChart3d()),c);
+        panel.add(getHeader("KFMIOP (Input)"),c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -233,10 +218,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.insets.left = 0;
         c.insets.top = 8;
 
-        JScrollPane scrollPane = inputKfmiop.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(655, 275));
-
-        panel.add(scrollPane ,c);
+        panel.add(inputKfmiop.getScrollPane() ,c);
 
         return panel;
     }
@@ -254,7 +236,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.gridy = 0;
         c.insets.left = 52;
 
-        panel.add(getHeader("Boost (Input)", e -> showChart3d()),c);
+        panel.add(getHeader("Boost (Input)"),c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -262,10 +244,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.insets.left = 0;
         c.insets.top = 8;
 
-        JScrollPane scrollPane = inputBoost.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(655, 275));
-
-        panel.add(scrollPane ,c);
+        panel.add(inputBoost.getScrollPane(),c);
 
         return panel;
     }
@@ -283,12 +262,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.gridy = 0;
         c.insets.left = 52;
 
-        panel.add(getHeader("KFMIOP (Output)", new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showChart3d();
-            }
-        }),c);
+        panel.add(getHeader("KFMIOP (Output)"),c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -296,10 +270,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.insets.left = 0;
         c.insets.top = 8;
 
-        JScrollPane scrollPane =  outputKfmiop.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(655, 275));
-
-        panel.add(scrollPane ,c);
+        panel.add(outputKfmiop.getScrollPane() ,c);
 
         return panel;
     }
@@ -317,7 +288,7 @@ public class KfmiopView implements OnTabSelectedListener {
         c.gridy = 0;
         c.insets.left = 52;
 
-        panel.add(getHeader("Boost (Output)", e -> showChart3d()),c);
+        panel.add(getHeader("Boost (Output)"),c);
 
         c.weightx = 0;
         c.gridx = 0;
@@ -325,15 +296,12 @@ public class KfmiopView implements OnTabSelectedListener {
         c.insets.left = 0;
         c.insets.top = 8;
 
-        JScrollPane scrollPane = outputBoost.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(655, 275));
-
-        panel.add(scrollPane ,c);
+        panel.add(outputBoost.getScrollPane() ,c);
 
         return panel;
     }
 
-    private JPanel getHeader(String title, ActionListener chartActionListener) {
+    private JPanel getHeader(String title) {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -342,17 +310,6 @@ public class KfmiopView implements OnTabSelectedListener {
 
         JLabel label = new JLabel(title);
         panel.add(label,c);
-
-        c.gridx = 1;
-
-        java.net.URL imgURL = getClass().getResource("/insert_chart.png");
-        ImageIcon icon = new ImageIcon(imgURL, "");
-        JButton button = new JButton(icon);
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.addActionListener(chartActionListener);
-        panel.add(button, c);
 
         return panel;
     }
@@ -407,70 +364,6 @@ public class KfmiopView implements OnTabSelectedListener {
         });
 
         return jep;
-    }
-
-    private void showChart3d() {
-        JDialog jd = new JDialog();
-        jd.setSize(500,500);
-        jd.setLocationRelativeTo(null);
-        jd.add(getChart3d());
-        jd.setVisible(true);
-    }
-
-    private JPanel getChart3d() {
-        initChart3d();
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-
-        GridBagConstraints c = new GridBagConstraints();
-
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.gridheight = 1;
-        c.gridwidth = 1;
-        c.weightx = 1.0;
-        c.weighty = 1.0;
-
-        panel.add((Component)chart3d.getCanvas(), c);
-
-        return panel;
-    }
-
-    private void initChart3d() {
-        // Create a chart and add scatterAfr
-        chart3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
-        chart3d.getAxeLayout().setMainColor(Color.BLACK);
-        chart3d.getView().setBackgroundColor(Color.WHITE);
-        chart3d.getAxeLayout().setXAxeLabel("Torque Request (mifa)");
-        chart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
-        chart3d.getAxeLayout().setZAxeLabel("Specified Load (rlsol)");
-
-        Double[][] data = inputKfmiop.getData();
-
-        Double[] xAxis = Kfmirl.getStockKfmirlXAxis();
-        Double[] yAxis = Kfmirl.getStockKfmirlYAxis();
-
-        ArrayList<org.jzy3d.plot3d.primitives.Polygon> polygons = new ArrayList<>();
-        for(int i = 0; i < xAxis.length -1; i++){
-            for(int j = 0; j < yAxis.length -1; j++){
-                org.jzy3d.plot3d.primitives.Polygon polygon = new org.jzy3d.plot3d.primitives.Polygon();
-                polygon.add(new org.jzy3d.plot3d.primitives.Point(new Coord3d(xAxis[i], yAxis[j], data[j][i])));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i], yAxis[j + 1], data[j + 1][i]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j + 1], data[j+1][i+1]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j], data[j][i+1])));
-                polygons.add(polygon);
-            }
-        }
-
-        // Create the object to represent the function over the given range.
-        final org.jzy3d.plot3d.primitives.Shape surface = new org.jzy3d.plot3d.primitives.Shape(polygons);
-        surface.setColorMapper(new ColorMapper(new ColorMapGreenYellowRed(), surface.getBounds().getZmin(), surface.getBounds().getZmax()));
-        surface.setFaceDisplayed(true);
-        surface.setWireframeColor(Color.BLACK);
-        surface.setWireframeDisplayed(true);
-
-        chart3d.getScene().add(surface, true);
     }
 
     private JButton getDefinitionButton() {

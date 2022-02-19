@@ -43,7 +43,8 @@ public class ClosedLoopLogParser {
     public void loadDirectory(File directory) {
         if (directory.isDirectory()) {
             Me7LogParser me7LogParser = new Me7LogParser();
-            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.CLOSED_LOOP, directory)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.CLOSED_LOOP, directory, (value, max) -> {
+            })).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable disposable) {}
 

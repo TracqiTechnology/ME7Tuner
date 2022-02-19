@@ -38,10 +38,10 @@ public class KfvpdksdLogParser {
         publishSubject.subscribe(observer);
     }
 
-    public void loadDirectory(File directory) {
+    public void loadDirectory(File directory, Me7LogParser.ProgressCallback progressCallback) {
         if (directory.isDirectory()) {
             Me7LogParser me7LogParser = new Me7LogParser();
-            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory, progressCallback)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable disposable) {}
 

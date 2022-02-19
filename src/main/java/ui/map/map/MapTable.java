@@ -282,6 +282,7 @@ public class MapTable extends JList implements TableModelListener {
         setRange(data);
         tableModel.setDataVector(this.data, this.columnHeaders);
         enforceTableColumnWidth(this.table);
+        updateHeight();
     }
 
     public void setColumnHeaders(Double[] columnHeaders) {

@@ -1,6 +1,5 @@
 package ui.view.kfzwop;
 
-
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -33,7 +32,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class KfzwopView implements OnTabSelectedListener {
 
@@ -41,9 +39,6 @@ public class KfzwopView implements OnTabSelectedListener {
     private final MapTable kfzwopOutput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);;
 
     private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
-
-    private Chart inputChart3d;
-    private Chart initOutput3d;
 
     private final KfzwopViewModel viewModel;
 
@@ -136,30 +131,20 @@ public class KfzwopView implements OnTabSelectedListener {
         constraints.gridy = 1;
         constraints.insets.top = 0;
 
-        JScrollPane kfzwXAxisScrollPane = kfmiopXAxis.getScrollPane();
-        kfzwXAxisScrollPane.setPreferredSize(new Dimension(615, 20));
-        panel.add(kfzwXAxisScrollPane, constraints);
+        panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 2;
         constraints.insets.left = 52;
 
-        panel.add(getHeader("KFZWOP (Input)", new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showInChart3d();
-            }
-        }),constraints);
+        panel.add(getHeader("KFZWOP (Input)"),constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
         constraints.ipadx = -50;
         constraints.insets.left = 0;
 
-        JScrollPane scrollPane = kfzwopInput.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(705, 275));
-
-        panel.add(scrollPane,constraints);
+        panel.add(kfzwopInput.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 4;
@@ -192,22 +177,14 @@ public class KfzwopView implements OnTabSelectedListener {
         constraints.gridy = 0;
         constraints.insets.left = 58;
 
-        mapPanel.add(getHeader("KFZWOP (Output)", new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showOutChart3d();
-            }
-        }),constraints);
+        mapPanel.add(getHeader("KFZWOP (Output)"),constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
         constraints.ipadx = -50;
         constraints.insets.left = 0;
 
-        JScrollPane kfmiopMapScrollPane = kfzwopOutput.getScrollPane();
-        kfmiopMapScrollPane.setPreferredSize(new Dimension(705, 275));
-
-        mapPanel.add(kfmiopMapScrollPane,constraints);
+        mapPanel.add(kfzwopOutput.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 4;
@@ -220,7 +197,7 @@ public class KfzwopView implements OnTabSelectedListener {
         return mapPanel;
     }
 
-    private JPanel getHeader(String title, ActionListener chartActionListener) {
+    private JPanel getHeader(String title) {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -229,17 +206,6 @@ public class KfzwopView implements OnTabSelectedListener {
 
         JLabel label = new JLabel(title);
         panel.add(label,c);
-
-        c.gridx = 1;
-
-        java.net.URL imgURL = getClass().getResource("/insert_chart.png");
-        ImageIcon icon = new ImageIcon(imgURL, "");
-        JButton button = new JButton(icon);
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.addActionListener(chartActionListener);
-        panel.add(button, c);
 
         return panel;
     }
@@ -280,138 +246,6 @@ public class KfzwopView implements OnTabSelectedListener {
             @Override
             public void onComplete() {}
         });
-    }
-
-    private void showInChart3d() {
-        JDialog jd = new JDialog();
-        jd.setSize(500,500);
-        jd.setLocationRelativeTo(null);
-        jd.add(getInputChart3d());
-        jd.setVisible(true);
-    }
-
-    private JPanel getInputChart3d() {
-        initInputChart3d();
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-
-        GridBagConstraints c = new GridBagConstraints();
-
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.gridheight = 1;
-        c.gridwidth = 1;
-        c.weightx = 1.0;
-        c.weighty = 1.0;
-
-        panel.add((Component) inputChart3d.getCanvas(), c);
-
-        return panel;
-    }
-
-    private void initInputChart3d() {
-        // Create a chart and add scatterAfr
-        inputChart3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
-        inputChart3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
-        inputChart3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
-        inputChart3d.getAxeLayout().setXAxeLabel("Engine Load");
-        inputChart3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
-        inputChart3d.getAxeLayout().setZAxeLabel("Ignition Advance");
-
-        NewtCameraMouseController controller = new NewtCameraMouseController(inputChart3d);
-
-        Double[][] data = kfzwopInput.getData();
-
-        Double[] xAxis = (Double[]) kfzwopInput.getColumnHeaders();
-        Double[] yAxis = kfzwopInput.getRowHeaders();
-
-        ArrayList<Polygon> polygons = new ArrayList<>();
-        for(int i = 0; i < xAxis.length -1; i++){
-            for(int j = 0; j < yAxis.length -1; j++){
-                org.jzy3d.plot3d.primitives.Polygon polygon = new org.jzy3d.plot3d.primitives.Polygon();
-                polygon.add(new org.jzy3d.plot3d.primitives.Point(new Coord3d(xAxis[i], yAxis[j], data[j][i])));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i], yAxis[j + 1], data[j + 1][i]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j + 1], data[j+1][i+1]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j], data[j][i+1])));
-                polygons.add(polygon);
-            }
-        }
-
-        // Create the object to represent the function over the given range.
-        final org.jzy3d.plot3d.primitives.Shape surface = new org.jzy3d.plot3d.primitives.Shape(polygons);
-        surface.setColorMapper(new ColorMapper(new ColorMapGreenYellowRed(), surface.getBounds().getZmin(), surface.getBounds().getZmax()));
-        surface.setFaceDisplayed(true);
-        surface.setWireframeColor(Color.BLACK);
-        surface.setWireframeDisplayed(true);
-
-        inputChart3d.getScene().add(surface, true);
-    }
-
-    private void showOutChart3d() {
-        JDialog jd = new JDialog();
-        jd.setSize(500,500);
-        jd.setLocationRelativeTo(null);
-        jd.add(getOutChart3d());
-        jd.setVisible(true);
-    }
-
-    private JPanel getOutChart3d() {
-        initOutputChart3d();
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-
-        GridBagConstraints c = new GridBagConstraints();
-
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.gridheight = 1;
-        c.gridwidth = 1;
-        c.weightx = 1.0;
-        c.weighty = 1.0;
-
-        panel.add((Component) initOutput3d.getCanvas(), c);
-
-        return panel;
-    }
-
-    private void initOutputChart3d() {
-        // Create a chart and add scatterAfr
-        initOutput3d = AWTChartComponentFactory.chart(Quality.Nicest, IChartComponentFactory.Toolkit.newt);
-        initOutput3d.getAxeLayout().setMainColor(org.jzy3d.colors.Color.BLACK);
-        initOutput3d.getView().setBackgroundColor(org.jzy3d.colors.Color.WHITE);
-        initOutput3d.getAxeLayout().setXAxeLabel("Engine Load");
-        initOutput3d.getAxeLayout().setYAxeLabel("Engine RPM (nmot)");
-        initOutput3d.getAxeLayout().setZAxeLabel("Ignition Advance");
-
-        NewtCameraMouseController controller = new NewtCameraMouseController(initOutput3d);
-
-        Double[][] data = kfzwopOutput.getData();
-
-        Double[] xAxis = kfmiopXAxis.getData()[0];
-        Double[] yAxis = kfzwopInput.getRowHeaders();
-
-        ArrayList<Polygon> polygons = new ArrayList<>();
-        for(int i = 0; i < xAxis.length -1; i++){
-            for(int j = 0; j < yAxis.length -1; j++){
-                org.jzy3d.plot3d.primitives.Polygon polygon = new org.jzy3d.plot3d.primitives.Polygon();
-                polygon.add(new org.jzy3d.plot3d.primitives.Point(new Coord3d(xAxis[i], yAxis[j], data[j][i])));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i], yAxis[j + 1], data[j + 1][i]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j + 1], data[j+1][i+1]) ));
-                polygon.add(new org.jzy3d.plot3d.primitives.Point( new Coord3d(xAxis[i + 1], yAxis[j], data[j][i+1])));
-                polygons.add(polygon);
-            }
-        }
-
-        // Create the object to represent the function over the given range.
-        final org.jzy3d.plot3d.primitives.Shape surface = new org.jzy3d.plot3d.primitives.Shape(polygons);
-        surface.setColorMapper(new ColorMapper(new ColorMapGreenYellowRed(), surface.getBounds().getZmin(), surface.getBounds().getZmax()));
-        surface.setFaceDisplayed(true);
-        surface.setWireframeColor(Color.BLACK);
-        surface.setWireframeDisplayed(true);
-
-        initOutput3d.getScene().add(surface, true);
     }
 
     private JButton getKfmirlDefinitionButton() {

@@ -42,11 +42,19 @@ public class Me7LogParser {
     private int absoluteBoostPressureModeledIndex = -1;
     private int selectedGearIndex = -1;
 
-    public Map<String, List<Double>> parseLogDirectory(LogType logType, File directory) {
-        Map<String, List<Double>> map = generateMap(logType);
+    public interface ProgressCallback {
+        void onProgress(int value, int max);
+    }
 
-        for (File file : directory.listFiles()) {
+    public Map<String, List<Double>> parseLogDirectory(LogType logType, File directory, ProgressCallback callback) {
+        Map<String, List<Double>> map = generateMap(logType);
+        File[] files = directory.listFiles();
+        int numFiles = files.length;
+        int count = 0;
+
+        for (File file : files) {
             parse(file, logType, map);
+            callback.onProgress(count++, numFiles);
         }
 
         return map;

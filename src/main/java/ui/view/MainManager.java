@@ -14,7 +14,7 @@ import ui.view.kfvpdksd.KfvpdksdView;
 import ui.view.kfzw.KfzwView;
 import ui.view.kfzwop.KfzwopView;
 import ui.view.krkte.KrkteView;
-import ui.view.ldrpid.LdrpidUiManager;
+import ui.view.ldrpid.LdrpidView;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingView;
 import ui.view.plsol.PlsolView;
@@ -128,8 +128,8 @@ public class MainManager {
         WdkugdnView wdkugdnView = new WdkugdnView();
         tabbedPane.addTab("WDKUGDN", null, wdkugdnView.getPanel(), "KFURL");
 
-        LdrpidUiManager ldrpidUiManager = new LdrpidUiManager();
-        tabbedPane.addTab("LDRPID", null, new JScrollPane(ldrpidUiManager.getPanel()), "LDRPID");
+        LdrpidView ldrpidView = new LdrpidView();
+        tabbedPane.addTab("LDRPID", null, new JScrollPane(ldrpidView.getPanel()), "LDRPID");
 
         tabbedPane.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {

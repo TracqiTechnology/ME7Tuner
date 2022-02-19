@@ -11,6 +11,7 @@ import math.map.Map3d;
 import model.kfvpdksd.Kfvpdksd;
 import parser.bin.BinParser;
 import parser.me7log.KfvpdksdLogParser;
+import parser.me7log.Me7LogParser;
 import parser.xdf.TableDefinition;
 import preferences.kfvpdksd.KfvpdksdPreferences;
 
@@ -74,8 +75,8 @@ public class KfvpdksdViewModel {
         subject.subscribe(observer);
     }
 
-    public void loadLogs(File file) {
-        KfvpdksdLogParser.getInstance().loadDirectory(file);
+    public void loadLogs(File file, Me7LogParser.ProgressCallback progressCallback) {
+        KfvpdksdLogParser.getInstance().loadDirectory(file, progressCallback);
     }
 
     public void cacluateKfvpdksd(Double[] maxPressure) {
@@ -90,8 +91,7 @@ public class KfvpdksdViewModel {
 
 
     private double getMax(Double[] values) {
-        double max = Collections.max(Arrays.asList(values.clone()));
-        return max;
+        return Collections.max(Arrays.asList(values.clone()));
     }
 
     public static class KfvpdksdModel {

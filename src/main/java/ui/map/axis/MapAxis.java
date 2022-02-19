@@ -65,6 +65,7 @@ public class MapAxis {
         setRange(data);
         tableModel.setDataVector(this.data, new Double[data[0].length]);
         enforceTableColumnWidth(this.table);
+        updateHeight();
     }
 
     private JTable createAxis(final Double[][] data) {
