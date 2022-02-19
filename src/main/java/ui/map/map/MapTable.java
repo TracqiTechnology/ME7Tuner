@@ -57,13 +57,21 @@ public class MapTable extends JList implements TableModelListener {
         setFixedCellWidth(50);
         setFocusable(false);
         setModel(new TableListModel());
-        setOpaque(false);
         setSelectionModel(table.getSelectionModel());
         table.getModel().addTableModelListener(this);
         scrollPane = new JScrollPane(table);
         scrollPane.setRowHeaderView(this);
-        scrollPane.setMinimumSize(new Dimension(120, 100));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        updateHeight();
+    }
+
+    private void updateHeight() {
+        table.setPreferredScrollableViewportSize(
+                new Dimension(
+                        table.getPreferredSize().width,
+                        table.getRowHeight() * rowHeaders.length));
     }
 
     public void setEditable(boolean editable) {
@@ -102,6 +110,8 @@ public class MapTable extends JList implements TableModelListener {
         setColumnHeaders(map3d.xAxis);
         setRowHeaders(map3d.yAxis);
         setTableData(map3d.zAxis);
+
+        updateHeight();
     }
 
     public Map3d getMap3d() {
@@ -129,7 +139,7 @@ public class MapTable extends JList implements TableModelListener {
 
         RowHeaderRenderer() {
             setHorizontalAlignment(CENTER);
-            setOpaque(true);
+            setOpaque(false);
             setBorder(BorderFactory.createRaisedBevelBorder());
             setFont(table.getTableHeader().getFont());
             setBackground(table.getTableHeader().getBackground());
@@ -157,7 +167,6 @@ public class MapTable extends JList implements TableModelListener {
         ColumnHeaderRenderer() {
             setBorder(BorderFactory.createRaisedBevelBorder());
             setFont(getFont().deriveFont(11.0f));
-            setOpaque(true);
             setHorizontalAlignment(CENTER);
         }
 
@@ -207,11 +216,11 @@ public class MapTable extends JList implements TableModelListener {
                 if (column >= table.getSelectedColumns()[0] && column <= table.getSelectedColumns()[table.getSelectedColumns().length - 1] && row >= table.getSelectedRows()[0] && row <= table.getSelectedRows()[table.getSelectedRows().length - 1]) {
                     setBackground(Util.newColorWithAlpha(Color.CYAN, 50));
                 } else {
-                    if(value instanceof String) {
+                    if (value instanceof String) {
                         double v = Double.parseDouble((String) value);
                         double norm;
                         if (maxValue - minValue != 0) {
-                            norm = 1-(v-minValue)/(maxValue - minValue);
+                            norm = 1 - (v - minValue) / (maxValue - minValue);
                             setBackground(getColor(norm));
                         } else {
                             setBackground(Color.GREEN);
@@ -221,11 +230,11 @@ public class MapTable extends JList implements TableModelListener {
                     }
                 }
             } else {
-                if(value instanceof String) {
+                if (value instanceof String) {
                     double v = Double.parseDouble((String) value);
                     double norm;
                     if (maxValue - minValue != 0) {
-                        norm = 1-(v-minValue)/(maxValue - minValue);
+                        norm = 1 - (v - minValue) / (maxValue - minValue);
                         setBackground(getColor(norm));
                     } else {
                         setBackground(Color.GREEN);
@@ -243,7 +252,7 @@ public class MapTable extends JList implements TableModelListener {
             double S = 0.9; // Saturation
             double B = 0.9; // Brightness
 
-            return Color.getHSBColor((float)H, (float)S, (float)B);
+            return Color.getHSBColor((float) H, (float) S, (float) B);
         }
     }
 
@@ -283,6 +292,7 @@ public class MapTable extends JList implements TableModelListener {
 
     public void setRowHeaders(Double[] rowHeaders) {
         this.rowHeaders = rowHeaders;
+        updateHeight();
     }
 
     public JScrollPane getScrollPane() {
@@ -306,7 +316,6 @@ public class MapTable extends JList implements TableModelListener {
         };
 
         final JTable table = new JTable(tableModel) {
-
             @Override
             protected JTableHeader createDefaultTableHeader() {
                 // subclassing to take advantage of super's auto-wiring
@@ -320,13 +329,10 @@ public class MapTable extends JList implements TableModelListener {
 
                 };
             }
-
         };
-       // table.setCellSelectionEnabled(true);
 
         table.getTableHeader().setDefaultRenderer(new ColumnHeaderRenderer());
         table.getTableHeader().setReorderingAllowed(false);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setGridColor(Color.BLACK);
         table.setRowSelectionAllowed(false);
 

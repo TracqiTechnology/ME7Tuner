@@ -13,7 +13,7 @@ import ui.view.kfmiop.KfmiopView;
 import ui.view.kfvpdksd.KfvpdksdView;
 import ui.view.kfzw.KfzwView;
 import ui.view.kfzwop.KfzwopView;
-import ui.view.krkte.KrkteUiView;
+import ui.view.krkte.KrkteView;
 import ui.view.ldrpid.LdrpidUiManager;
 import ui.view.listener.OnTabSelectedListener;
 import ui.view.openloopfueling.OpenLoopFuelingView;
@@ -88,9 +88,9 @@ public class MainManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        KrkteUiView krkteUiView = new KrkteUiView();
-        tabSelectedListeners.add(krkteUiView);
-        tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteUiView.getPanel()), "KRKTE Calculator");
+        KrkteView krkteView = new KrkteView();
+        tabSelectedListeners.add(krkteView);
+        tabbedPane.addTab("KRKTE", null, new JScrollPane(krkteView.getPanel()), "KRKTE Calculator");
 
         ClosedLoopFuelingView closedLoopFuelingView = new ClosedLoopFuelingView();
         // first tab is selected

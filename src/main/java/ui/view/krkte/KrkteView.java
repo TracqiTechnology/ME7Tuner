@@ -12,7 +12,7 @@ import java.awt.*;
 import java.text.DecimalFormat;
 
 
-public class KrkteUiView implements OnTabSelectedListener {
+public class KrkteView implements OnTabSelectedListener {
 
     private JFormattedTextField outputTextField;
     private DecimalFormat decimalFormat;

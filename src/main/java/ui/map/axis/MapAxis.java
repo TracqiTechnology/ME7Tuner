@@ -38,7 +38,18 @@ public class MapAxis {
         this.debouncer = new Debouncer();
 
         this.scrollPane = new JScrollPane(table);
+        this.scrollPane.setOpaque(false);
+        this.scrollPane.getViewport().setOpaque(false);
+        this.scrollPane.setBorder(BorderFactory.createEmptyBorder());
         this.publishSubject = PublishSubject.create();
+
+        updateHeight();
+    }
+    private void updateHeight() {
+        table.setPreferredScrollableViewportSize(
+                new Dimension(
+                        table.getPreferredSize().width,
+                        table.getRowHeight()));
     }
 
     public void setEditable(boolean editable) {
@@ -71,7 +82,6 @@ public class MapAxis {
                 return editable;
             }
         };
-
 
         final JTable table = new JTable(tableModel);
 

@@ -46,51 +46,41 @@ public class LdrpidUiManager {
 
     public JPanel getPanel() {
 
-        GridLayout tableGridLayout = new GridLayout(2,2);
-
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new GridBagLayout());
 
-        JPanel tablePanel = new JPanel();
-        tablePanel.setBackground(java.awt.Color.BLUE);
-        tablePanel.setLayout(tableGridLayout);
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        JPanel nonLinearPanel = new JPanel();
-        nonLinearPanel.add(getNonLinearMapPanel(), new GridBagLayout());
+        constraints.fill = GridBagConstraints.BOTH; // not HORIZONTAL
 
-        tablePanel.add(nonLinearPanel);
+        constraints.weightx = 0.5;
+        constraints.weighty = 0.5;
 
-        JPanel linearPanel = new JPanel();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        linearPanel.add(getLinearMapPanel(), new GridBagLayout());
+        mainPanel.add(getNonLinearMapPanel(), constraints);
 
-        tablePanel.add(linearPanel);
+        constraints.gridx = 1;
+        constraints.gridy = 0;
 
-        JPanel kfldrlPanel = new JPanel();
+        mainPanel.add(getLinearMapPanel(), constraints);
 
-        kfldrlPanel.add(getKflDrlMapPanel(), new GridBagLayout());
+        constraints.gridx = 0;
+        constraints.gridy = 1;
 
-        tablePanel.add(kfldrlPanel);
+        mainPanel.add(getKflDrlMapPanel(), constraints);
 
-        JPanel kfldimxPanel = new JPanel();
+        constraints.gridx = 1;
+        constraints.gridy = 1;
 
-        kfldimxPanel.add(getKfldimxMapPanel(), new GridBagLayout());
+        mainPanel.add(getKfldimxMapPanel(), constraints);
 
-        tablePanel.add(kfldimxPanel);
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 2;
 
-        GridBagConstraints c = new GridBagConstraints();
-
-        c.gridx = 0;
-        c.gridy = 0;
-        c.weighty = 0.9;
-
-        mainPanel.add(tablePanel, c);
-
-        c.gridx = 0;
-        c.gridy = 1;
-        c.weighty = 0.1;
-
-        mainPanel.add(getLogsButton(tablePanel), c);
+        mainPanel.add(getLogsButton(mainPanel), constraints);
 
         return mainPanel;
     }
@@ -149,27 +139,18 @@ public class LdrpidUiManager {
 
         c.gridx = 0;
         c.gridy = 0;
-        c.insets.left = 55;
-        c.anchor = GridBagConstraints.WEST;
 
         panel.add(new JLabel("KFLDIMX X-Axis"),c);
 
         c.gridx = 0;
         c.gridy = 1;
-        c.insets.left = -165;
-        c.anchor = GridBagConstraints.CENTER;
 
         initKfldimxAxis();
 
-        JScrollPane xAxisScrollPane = kfldimxXAxis.getScrollPane();
-        xAxisScrollPane.setPreferredSize(new Dimension(443, 20));
-
-        panel.add(xAxisScrollPane ,c);
+        panel.add(kfldimxXAxis.getScrollPane() ,c);
 
         c.gridx = 0;
         c.gridy = 2;
-        c.insets.left = 55;
-        c.anchor = GridBagConstraints.WEST;
 
         panel.add(getHeader("KFLDIMX", new ActionListener() {
             @Override
@@ -178,18 +159,12 @@ public class LdrpidUiManager {
             }
         }), c);
 
-        c.weightx = 1;
         c.gridx = 0;
         c.gridy = 3;
-        c.insets.left = 0;
-        c.anchor = GridBagConstraints.EAST;
 
         initKflimxMap();
 
-        JScrollPane scrollPane = kfldimxTable.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(710, 275));
-
-        panel.add(scrollPane,c);
+        panel.add(kfldimxTable.getScrollPane(),c);
 
         return panel;
     }
@@ -202,9 +177,6 @@ public class LdrpidUiManager {
 
         c.gridx = 0;
         c.gridy = 0;
-        c.insets.left = 55;
-        c.insets.top = 35;
-        c.anchor = GridBagConstraints.WEST;
 
         panel.add(getHeader("KFLDRL", new ActionListener() {
             @Override
@@ -213,19 +185,12 @@ public class LdrpidUiManager {
             }
         }), c);
 
-        c.weightx = 1;
         c.gridx = 0;
         c.gridy = 1;
-        c.insets.left = 0;
-        c.insets.top = 0;
-        c.anchor = GridBagConstraints.EAST;
 
         initKfldrlMap();
 
-        JScrollPane scrollPane = kfldrlTable.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(710, 275));
-
-        panel.add(scrollPane,c);
+        panel.add(kfldrlTable.getScrollPane(),c);
 
         return panel;
     }
@@ -304,34 +269,29 @@ public class LdrpidUiManager {
     private JPanel getNonLinearMapPanel() {
 
         JPanel panel = new JPanel();
+
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 55;
-        c.anchor = GridBagConstraints.WEST;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
         panel.add(getHeader("Non Linear Boost", new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showNonLinearChart3d();
             }
-        }), c);
+        }), constraints);
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.left = 0;
-        c.anchor = GridBagConstraints.EAST;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
 
         initNonLinearMap();
 
         JScrollPane scrollPane = nonLinearTable.getScrollPane();
-        scrollPane.setPreferredSize(new Dimension(710, 275));
 
-        panel.add(scrollPane,c);
+        panel.add(scrollPane,constraints);
 
         return panel;
     }
@@ -340,32 +300,26 @@ public class LdrpidUiManager {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 55;
-        c.anchor = GridBagConstraints.WEST;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
         panel.add(getHeader("Linear Boost", new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showLinearChart3d();
             }
-        }), c);
+        }), constraints);
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 3;
-        c.insets.left = 0;
-        c.anchor = GridBagConstraints.EAST;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
 
         initLinearMap();
 
         JScrollPane kfmiopMapScrollPane = linearTable.getScrollPane();
-        kfmiopMapScrollPane.setPreferredSize(new Dimension(710, 275));
 
-        panel.add(kfmiopMapScrollPane,c);
+        panel.add(kfmiopMapScrollPane,constraints);
 
         return panel;
     }
@@ -418,7 +372,6 @@ public class LdrpidUiManager {
 
     private void initNonLinearMap() {
         nonLinearTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
-
         nonLinearTable.getPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
             public void onNext(Map3d map3d) {
