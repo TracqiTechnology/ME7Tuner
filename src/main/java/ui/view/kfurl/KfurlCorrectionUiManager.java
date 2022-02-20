@@ -6,7 +6,6 @@ import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.kfurl.Kfurl;
 import model.kfurl.KfurlCorrection;
-import model.wdkugdn.Wdkugdn;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;

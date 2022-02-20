@@ -83,12 +83,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
         constraints.gridy = 2;
 
-        panel.add(getDefinitionButton(), constraints);
-
-        constraints.gridy = 3;
-        constraints.insets.top = 0;
-
-        fileLabel = new JLabel("No Map Selected");
+        fileLabel = new JLabel("No Definition Selected");
         panel.add(fileLabel, constraints);
 
         return panel;
@@ -364,22 +359,6 @@ public class KfmiopView implements OnTabSelectedListener {
         });
 
         return jep;
-    }
-
-    private JButton getDefinitionButton() {
-        JButton button = new JButton("Set KFMIOP Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIOP", "Map Selection", tableDefinition.fst, KfmiopPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIOP", "Map Selection", null, KfmiopPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
     }
 
     @Override

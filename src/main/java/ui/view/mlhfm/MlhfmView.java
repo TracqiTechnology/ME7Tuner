@@ -128,34 +128,14 @@ public class MlhfmView {
         c.gridx = 0;
         c.gridy = 0;
 
-        JButton button = getDefinitionButton();
-        panel.add(button, c);
-
-        c.gridx = 0;
-        c.gridy = 1;
-
-        fileLabel = new JLabel("No File Selected");
+        fileLabel = new JLabel("No Definition Selected");
         panel.add(fileLabel, c);
 
         return panel;
     }
 
 
-    private JButton getDefinitionButton() {
-        JButton button = new JButton("Set MLFHM Definition");
 
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", tableDefinition.fst, MlhfmPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(mlhfmPanel, mlhfmPanel, "Select MLHFM", "Map Selection", null, MlhfmPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
-    }
 
     private void initChart() {
         XYSeriesCollection dataset = new XYSeriesCollection();

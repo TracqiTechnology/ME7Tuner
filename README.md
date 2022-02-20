@@ -363,7 +363,37 @@ The algorithm takes an **absolute** pressure request (don't forget to account fo
 
 # KFMIOP (Load/Fill to Torque)
 
-If you modify you KFMIRL you want to regenerate KFMIOP as the inverse of KFMIRL to keep torque monitoring sane.
+KFMIOP describes optimal engine torque. KFMIRL is the inverse of the KFMIOP map and exists entirely as
+an optimization so the ECU doesn't have to search KFMIOP every time it wants to covert a torque request into a load request.
+
+The key is that KFMIOP is the map to modify and then KFMIRL will be produced from KFMIOP. Most of the available information
+suggests the that relationship is inverted and KFMIOP is generated from KFMIRL, but this is almost certainly not the case.
+
+So what is KFMIOP?
+
+First, we need clarify that in this case 'torque' is a normalized value between 0 and 1 (or 0% and 100%). KFMIOP represents
+a table of optimum torque values for the engine at a given load and RPM. The question is what is the torque normalized too? 
+It seems to be normalized to the maximum manifold pressure that can be achieved for a given load and RPM. The normalization 
+is provided by a maximum boost (or load if you want to think about it that way).
+
+When we look at KFMIOP for a B5 S4 (in this case an M-box) we can see that the map is generally setup around a 2.5 bar MAP sensor
+(the stock MAP sensor). 2500 mbar run through rlsol to convert to a load request ends up being ~215 load. Then if you
+multiply the peak torque request of ~89% by 215% (we want 89% of our peak load) you end up with 191%. Each column in KFMIOP is
+mapping itself to a normalized peak torque value given by the peak load of 215% which is defined by the 2.5 bar MAP sensor.
+
+KFMIOP can be converted to a boost table via the plsol calculation after you have derived peak load from the map. When you look at the boost table it
+is obviously created empirically (probably on an engine dyno) and is tuned specifically for stock hardware (K03 turbos, etc...).
+The boost map was then used to create KFMIOP via rlsol and the 2.5 bar MAP sensor.
+
+Unless you have access to an engine dyno there is no way to easily derive an OEM quality KFMIOP for your specific hardware configuration.
+
+Despite this, I think we can do much better than simply extrapolating torque or rescaling the load axis. ME7Tuner takes a new 
+maximum MAP pressure, rescales the load axis and then rescales the torque based on the new maximum load. For example, if you go from
+a max load of ~215% for a 2.5 MAP bar sensor to ~400% for 4 bar map sensor you would expect the torque request in the 9.75 load column
+to be reduced by ~50% so the normalized torque isn't requesting a dramatically different value than 9.75. In other words, with
+the 4 bar MAP sensor optimum torque at 9.75 has been reduced from ~4% to ~2% because the torque is normalized to the maximum load
+dictated by the MAP sensor.
+
 
 ### Algorithm
 
@@ -419,77 +449,25 @@ The input KFZW/2 is extrapolated to the input KFZW/2 x-axis range (engine load f
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFZW.png "KFZW")
 
-# KFURL (VE)
-
-If you have scaled your MAF correctly and your load is reasonable, KFURL should take minimal tweaking. If you are approaching values much greater than 0.11 or less than 0.9 you need to revisit your MAF scaling.
-
-### Algorithm
-
-You will need a pressure sensor that you can log in the intake manifold to correct KFURL. ME7Tuner is intented to use Zeitronix logs.
-
-The average corrections are calculated as the difference between ps_w (calculated pressure in the intake manifold) and a second pressure sensor mounted in the intake manifold. Corrections are only taken in places where the throttle plate is more than 80% open. For currently unknown reasons, applying the correction in partial or closed throttle situations isn't producing corrections that correspond well to WOT situations.
-
-Note that the correction is calculated and applied as a constant across the ignition advance (meaning only RPM is considered and ignition advance is ignored). This is done because getting enough samples for all ignition advance and RPM combinations isn't possible and the table starts looking strange.
-
-### Useage
-
-All logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. 
-
-* Log RPM (nmot), Barometric Pressure (pvdks_w) and Absolute Manifold Pressure (ps_w) along with the Zeitronix
-
-* Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
-
-* Copy KFURL into the KFURL table.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_INPUT.png "KFURL Input")
-
-* Load the ME7 Logs
-* Load the Zeitronix Logs
-* Check the time alignment of the logs! The Zeitronix logs can't be stopped and started (it can only be started once) or the time alignment will fail.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_LOGS.png "KFURL Logs")
-
-* The corrected KFURL will be output in the Corrected KFURL table. These can be copy/pasted into TunerPro.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_OUTPUT.png "KFURL Output")
-
-* The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/KFURL_CORRECTION.png "KFRUL Corrections")
-
 # WDKUGDN (Alpha-N Fueling)
 
-With larger turbos you will likely need to adjust WDKUGDN so airflow at the throttle plate can be predicted accurately.
+WDKUGDN is the choked flow point of the throttle body at a given RPM. This value is critical for the ECU to estimate airflow based on a throttle angle. The ECU needs to know at what throttle angle airflow becomes throttled/unthrottled. 
+For a given displacement and RPM there is a range where increasing the throttle angle will not increase airflow. Inversely, there is a range where decreasing the throttle will not decrease airflow until it has been reached. 
+The point that these two ranges share is called the choke point and is the point at which the throttle angle becomes either throttled or unthrottled. 
 
-### Algorithm
+See https://en.wikipedia.org/wiki/Choked_flow.
 
-The correction is calculated based on the difference between the mass airflow measured at the MAF (mshfm_w) and the airflow calculated at the throttle plate (msdk_w) when the throttle plate is more than 80% open.
+The model assumes that a gas velocity will reach a maximum of the speed of sound at which point it is choked. 
 
-### Useage
+Note that the mass flow rate can still be increased if the upstream pressure is increased as this increases the density of the gas entering the orifice, but the model assumes a fixed upstream pressure of 1013mbar (standard sea level).
 
-* Log RPM (nmot), Throttle Plate Angle (pvdks_w), Airflow from MAF (mshfm_w) and Airflow at Throttle Plate (msdk_w)
+Assuming ideal gas behaviour, steady-state choked flow occurs when the downstream pressure falls below a critical value which is '0.528 * upstreamPressure'. For example '0.528 * 1013mbar = 535mbar'. 535mbar on the intake manifold
+side of the throttle body would cause the velocity of the air moving through the throttle body to reach the speed of sound and become choked.
 
-* Get as many WOT pulls starting from as low as an RPM as possible to as high as an RPM as possible.
+The amount of air (or pressure assuming a constant density) an engine will consume for a given displacement and RPM can be calculated. How much air the throttle body will flow at a given throttle angle can be determined (KFWDKMSN/KFMSNWDK). 
+Therefore, using the critical value of 0.528, the throttle angle at which choking occurs can be determined to produce WDKUGDN.
 
-* Copy WDKUGDN into the WDKUGDN table.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_OUTPUT.png "WDKUGDN Input")
-
-* Load the ME7 Logs
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_LOGS.png "WDKUGDN Logs")
-
-* The corrected WDKUGDN will be output in the Corrected WDKUGDN table. These can be copy/pasted into TunerPro.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_INPUT.png "WDKUGDN Output")
-
-* The corrections can be viewed. Pay attention to where there were enough samples to calculate a correction as you may need to interpret/guess the corrections in areas where there were not enough samples.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/WDKUDGN_CORRECTIONS.png "WDKUGDN Corrections")
-
-# KFWDKMSN (Alpha-N Fueling)
-
-For cases where you need to calculate a new inverse from KFMSNWDK.
+While this model can used to achieve a baseline WDKUGDN, it appears that it has been tuned empirically. Unless you have dramatically changed the throttle body or engine displacement WDKUDGN should not have to be modified.
 
 ### Useage
 

@@ -64,7 +64,7 @@ public class KfzwopView implements OnTabSelectedListener {
 
         constraints.gridx = 1;
         constraints.gridy = 0;
-        constraints.insets.top = 40;
+        constraints.insets.top = 75;
         constraints.insets.left = 16;
 
         panel.add(getKfzwopOutMapPanel(), constraints);
@@ -123,41 +123,27 @@ public class KfzwopView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.insets.top = 16;
 
         panel.add(new JLabel("KFMIOP/KFZWOP X-Axis (Input)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.insets.top = 0;
+        constraints.insets.top = 16;
 
         panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 2;
-        constraints.insets.left = 52;
 
         panel.add(getHeader("KFZWOP (Input)"),constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
-        constraints.ipadx = -50;
-        constraints.insets.left = 0;
 
         panel.add(kfzwopInput.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 4;
-        constraints.ipadx = 0;
-        constraints.insets.left = 0;
-        constraints.insets.top = 16;
-
-        panel.add(getKfmirlDefinitionButton(),constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 5;
-        constraints.ipadx = 0;
-        constraints.insets.top = 0;
 
         fileLabel = new JLabel("No Map Selected");
         panel.add(fileLabel, constraints);
@@ -175,21 +161,17 @@ public class KfzwopView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.insets.left = 58;
 
         mapPanel.add(getHeader("KFZWOP (Output)"),constraints);
 
         constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.ipadx = -50;
-        constraints.insets.left = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         mapPanel.add(kfzwopOutput.getScrollPane(), constraints);
 
         constraints.gridx = 0;
-        constraints.gridy = 4;
-        constraints.ipadx = 0;
-        constraints.insets.top = 16;
+        constraints.gridy = 2;
 
         mapPanel.add(getFileButton(),constraints);
 
@@ -246,24 +228,6 @@ public class KfzwopView implements OnTabSelectedListener {
             @Override
             public void onComplete() {}
         });
-    }
-
-    private JButton getKfmirlDefinitionButton() {
-        JButton button = new JButton("Set KFZWOP Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-            isKfzwopInitialized = false;
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFZWOP", "Map Selection", tableDefinition.fst, KfzwopPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFZWOP", "Map Selection", null, KfzwopPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
     }
 
     private JButton getFileButton() {

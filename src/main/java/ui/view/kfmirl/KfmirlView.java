@@ -1,18 +1,14 @@
 package ui.view.kfmirl;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
-import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfmirl.KfmirlPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfmirl.KfmirlViewModel;
 import writer.BinWriter;
 
@@ -45,7 +41,7 @@ public class KfmirlView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.insets.top = -95;
+        constraints.insets.top = -110;
 
         panel.add(getKfmiopMapPanel(), constraints);
 
@@ -71,13 +67,12 @@ public class KfmirlView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.insets.top = 16;
 
         panel.add(new JLabel("KFMIOP X-Axis (Output)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.insets.top = 0;
+        constraints.insets.top = 16;
 
         panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
@@ -95,13 +90,7 @@ public class KfmirlView implements OnTabSelectedListener {
         constraints.gridy = 4;
         constraints.insets.top = 16;
 
-        panel.add(getKfmiopDefinitionButton(),constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 5;
-        constraints.insets.top = 0;
-
-        kfmiopFileLabel = new JLabel("No Map Selected");
+        kfmiopFileLabel = new JLabel("No Definition Selected");
         panel.add(kfmiopFileLabel, constraints);
 
         return panel;
@@ -121,6 +110,7 @@ public class KfmirlView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         panel.add(kfmirl.getScrollPane(),constraints);
 
@@ -128,20 +118,14 @@ public class KfmirlView implements OnTabSelectedListener {
         constraints.gridy = 2;
         constraints.insets.top = 16;
 
-        panel.add(getKfmirlDefinitionButton(),constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.insets.top = 0;
-
-        kfmirlFileLabel = new JLabel("No Map Selected");
+        kfmirlFileLabel = new JLabel("No Definition Selected");
         panel.add(kfmirlFileLabel, constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 4;
         constraints.insets.top = 16;
 
-        panel.add(getFileButton(), constraints);
+        panel.add(getWriteFileButton(), constraints);
 
         return panel;
     }
@@ -245,39 +229,7 @@ public class KfmirlView implements OnTabSelectedListener {
         });
     }
 
-    private JButton getKfmiopDefinitionButton() {
-        JButton button = new JButton("Set KFMIOP Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIOP", "Map Selection", tableDefinition.fst, KfmiopPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIOP", "Map Selection", null, KfmiopPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton getKfmirlDefinitionButton() {
-        JButton button = new JButton("Set KFMIRL Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIRL", "Map Selection", tableDefinition.fst, KfmirlPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMIRL", "Map Selection", null, KfmirlPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton getFileButton() {
+    private JButton getWriteFileButton() {
         JButton button = new JButton("Write KFMIRL");
 
         button.addActionListener(e -> {

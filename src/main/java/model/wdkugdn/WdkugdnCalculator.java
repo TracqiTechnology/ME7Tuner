@@ -17,8 +17,6 @@ public class WdkugdnCalculator {
             // https://en.wikipedia.org/wiki/Choked_flow#Choking_in_change_of_cross_section_flow
             double chokedAirflow = EngineLoad.getAirflow(1, rpm, displacement)*3.6/0.528;
 
-            System.out.println("rpm: " + rpm + " airflow: " + chokedAirflow);
-
             int rpmIndex = Arrays.binarySearch(kfwdkmsn.xAxis, rpm);
 
             if (rpmIndex < 0) {
