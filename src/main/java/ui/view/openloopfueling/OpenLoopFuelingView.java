@@ -58,7 +58,7 @@ public class OpenLoopFuelingView implements OnTabSelectedListener {
     private void updateModel(OpenLoopFuelingViewModel.OpenLoopMlfhmModel openLoopMlfhmModel) {
         this.openLoopMlfhmModel = openLoopMlfhmModel;
 
-        if(openLoopMlfhmModel != null && selected) {
+        if(openLoopMlfhmModel != null) {
             enableLogsTab(openLoopMlfhmModel.isLogsTabEnabled());
             enableCorrectionTab(openLoopMlfhmModel.isCorrectionsTabEnabled());
             setSelectedTab(openLoopMlfhmModel.getSelectedTabIndex());

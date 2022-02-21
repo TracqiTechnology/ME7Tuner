@@ -1,15 +1,10 @@
 package ui.view.wdkugdn;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import parser.xdf.TableDefinition;
-import preferences.kfwdkmsn.KfwdkmsnPreferences;
-import preferences.wdkugdn.WdkugdnPreferences;
 import ui.map.map.MapTable;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.wdkugdn.WdkugdnViewModel;
 
 import javax.swing.*;
@@ -20,11 +15,9 @@ public class WdkugdnView {
     private final MapTable wdkudgn = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
     private JPanel panel;
     private JLabel wdkugdnFileLabel;
-    private JLabel kfwdkmsnFileLabel;
     private final EngineDisplacementPanel engineDisplacementPanel = new EngineDisplacementPanel(new EngineDisplacementPanel.OnValueChangedListener() {
         @Override
         public void onValueChanged(EngineDisplacementPanel.FieldTitle fieldTitle) {
-            System.out.println("calculate");
             viewModel.calculateWdkugdn();
         }
     });
@@ -72,6 +65,7 @@ public class WdkugdnView {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         panel.add(new JLabel("WDKUGDN (Output)"), constraints);
 
@@ -85,11 +79,6 @@ public class WdkugdnView {
         constraints.insets.top = 16;
         panel.add(getWdkugdnActionPanel(), constraints);
 
-        constraints.gridx = 0;
-        constraints.gridy = 4;
-        constraints.insets.top = 16;
-        panel.add( getKfwdkmsnActionPanel(), constraints);
-
         return panel;
     }
 
@@ -102,10 +91,6 @@ public class WdkugdnView {
             public void onNext(@NonNull WdkugdnViewModel.WdkugnModel wdkugnModel) {
                 if(wdkugnModel.getWdkugdn() != null) {
                     wdkudgn.setMap(wdkugnModel.getWdkugdn());
-                }
-
-                if(wdkugnModel.getKfwdkmsnDefinitionTitle() != null) {
-                    kfwdkmsnFileLabel.setText(wdkugnModel.getKfwdkmsnDefinitionTitle());
                 }
 
                 if(wdkugnModel.getWdkudgnDefinitionTitle() != null) {
@@ -130,71 +115,9 @@ public class WdkugdnView {
         constraints.gridx = 0;
         constraints.gridy = 0;
 
-        JButton button = getWdkugdnDefinitionButton();
-        panel.add(button, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-
-        wdkugdnFileLabel = new JLabel("No File Selected");
+        wdkugdnFileLabel = new JLabel("No Table Defined");
         panel.add(wdkugdnFileLabel, constraints);
 
         return panel;
     }
-
-
-    private JButton getWdkugdnDefinitionButton() {
-        JButton button = new JButton("Set WDKUGDN Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = WdkugdnPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select WDKUGDN", "Map Selection", tableDefinition.fst, WdkugdnPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select WDKUGDN", "Map Selection", null, WdkugdnPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
-    }
-
-    private JPanel getKfwdkmsnActionPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-
-        GridBagConstraints constraints = new GridBagConstraints();
-
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-
-        JButton button = getKfwdkmsnDefinitionButton();
-        panel.add(button, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-
-        kfwdkmsnFileLabel = new JLabel("No File Selected");
-        panel.add(kfwdkmsnFileLabel, constraints);
-
-        return panel;
-    }
-
-
-    private JButton getKfwdkmsnDefinitionButton() {
-        JButton button = new JButton("Set KFMSNWDK Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfwdkmsnPreferences.getSelectedMap();
-
-            if(tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMSNWDK", "Map Selection", tableDefinition.fst, KfwdkmsnPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFMSNWDK", "Map Selection", null,KfwdkmsnPreferences::setSelectedMap);
-            }
-        });
-
-        return button;
-    }
-
 }

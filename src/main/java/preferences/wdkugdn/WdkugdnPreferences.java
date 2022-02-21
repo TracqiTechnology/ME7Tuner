@@ -20,6 +20,10 @@ public class WdkugdnPreferences {
     private static final Preferences prefs = Preferences.userNodeForPackage(WdkugdnPreferences.class);
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
 
+    public static void registerOnMapChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
+        publishSubject.subscribe(observer);
+    }
+
     @Nullable
     public static Pair<TableDefinition, Map3d> getSelectedMap() {
         List<Pair<TableDefinition, Map3d>> mapList = BinParser.getInstance().getMapList();

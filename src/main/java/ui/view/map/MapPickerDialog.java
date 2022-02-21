@@ -4,11 +4,15 @@ import parser.xdf.XdfParser;
 import parser.xdf.TableDefinition;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Locale;
 
 /*
  * ListDialog.java is meant to be used by programs such as
@@ -36,6 +40,7 @@ public class MapPickerDialog extends JDialog
     private static TableDefinition value;
     private final JList<TableDefinition> list;
     private final OnSelectedChangedListener onSelectedChangedListener;
+    private final java.util.List<TableDefinition> tableDefinitionList = new ArrayList<>();
 
     /**
      * Set up and show the dialog.  The first Component argument
@@ -96,10 +101,11 @@ public class MapPickerDialog extends JDialog
 
         for (TableDefinition tableDefinition : XdfParser.getInstance().getTableDefinitions()) {
             listModel.addElement(tableDefinition);
+            tableDefinitionList.add(tableDefinition);
         }
 
         //main part of the dialog
-        list = new JList(listModel);
+        list = new JList<>(listModel);
 
         list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         list.setSelectedIndex(0);
@@ -137,8 +143,11 @@ public class MapPickerDialog extends JDialog
         buttonPane.add(Box.createRigidArea(new Dimension(10, 0)));
         buttonPane.add(setButton);
 
+        JTextField textField = new JTextField();
+
         //Put everything together, using the content pane's BorderLayout.
         Container contentPane = getContentPane();
+        contentPane.add(createTextField(), BorderLayout.PAGE_START);
         contentPane.add(listPane, BorderLayout.CENTER);
         contentPane.add(buttonPane, BorderLayout.PAGE_END);
 
@@ -148,6 +157,21 @@ public class MapPickerDialog extends JDialog
         setLocationRelativeTo(locationComp);
     }
 
+    public void filterModel(DefaultListModel<TableDefinition> model, String filter) {
+        System.out.println("Filter");
+        for (TableDefinition definition : tableDefinitionList) {
+            if (!definition.getTableName().toLowerCase(Locale.ROOT).startsWith(filter.toLowerCase(Locale.ROOT))) {
+                if (model.contains(definition)) {
+                    model.removeElement(definition);
+                }
+            } else {
+                if (!model.contains(definition)) {
+                    model.addElement(definition);
+                }
+            }
+        }
+    }
+
     //Handle clicks on the Set and Cancel buttons.
     public void actionPerformed(ActionEvent e) {
         if ("Set".equals(e.getActionCommand())) {
@@ -155,5 +179,19 @@ public class MapPickerDialog extends JDialog
             onSelectedChangedListener.onSelectionChanged(MapPickerDialog.value);
         }
         MapPickerDialog.dialog.setVisible(false);
+    }
+
+    private JTextField createTextField() {
+        final JTextField field = new JTextField(15);
+        field.getDocument().addDocumentListener(new DocumentListener(){
+            @Override public void insertUpdate(DocumentEvent e) { filter(); }
+            @Override public void removeUpdate(DocumentEvent e) { filter(); }
+            @Override public void changedUpdate(DocumentEvent e) {}
+            private void filter() {
+                String filter = field.getText();
+                filterModel((DefaultListModel<TableDefinition>)list.getModel(), filter);
+            }
+        });
+        return field;
     }
 }

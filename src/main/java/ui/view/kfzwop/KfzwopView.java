@@ -1,37 +1,20 @@
 package ui.view.kfzwop;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import org.jzy3d.chart.Chart;
-import org.jzy3d.chart.controllers.mouse.camera.NewtCameraMouseController;
-import org.jzy3d.chart.factories.AWTChartComponentFactory;
-import org.jzy3d.chart.factories.IChartComponentFactory;
-import org.jzy3d.colors.Color;
-import org.jzy3d.colors.ColorMapper;
-import org.jzy3d.maths.Coord3d;
-import org.jzy3d.plot3d.primitives.Polygon;
-import org.jzy3d.plot3d.rendering.canvas.Quality;
-import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
-import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfzwop.KfzwopPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
-import ui.view.color.ColorMapGreenYellowRed;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfzwop.KfzwopViewModel;
 import writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class KfzwopView implements OnTabSelectedListener {
 

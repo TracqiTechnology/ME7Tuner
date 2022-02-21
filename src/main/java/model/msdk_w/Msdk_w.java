@@ -21,7 +21,5 @@ public class Msdk_w {
         double calc1 = ((oneMinusPspvdkug * wdkbaMinusWdkugdn)/oneMinusWdkugdn) + 1;
         double kfmsnwdkPlusMsndko_w = kfmsnwdk + msndko_w;
         double calc2 = calc1*kfmsnwdkPlusMsndko_w*ftvdk*klaf*fpvdkds_w;
-
-        System.out.println(calc2);
     }
 }

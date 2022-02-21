@@ -61,6 +61,10 @@ public class MapAxis {
     }
 
     public void setTableData(Double[][] data) {
+        if(data == null || data[0] == null) {
+            return;
+        }
+
         this.data = data;
         setRange(data);
         tableModel.setDataVector(this.data, new Double[data[0].length]);
@@ -212,10 +216,12 @@ public class MapAxis {
             double max = Double.MIN_VALUE;
             double min = Double.MAX_VALUE;
             for (Double[] doubles : data) {
-                for (Double value : doubles) {
-                    if (value != null) {
-                        max = Math.max(max, value);
-                        min = Math.min(min, value);
+                if(doubles != null) {
+                    for (Double value : doubles) {
+                        if (value != null) {
+                            max = Math.max(max, value);
+                            min = Math.min(min, value);
+                        }
                     }
                 }
             }

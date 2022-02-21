@@ -1,5 +1,7 @@
 package parser.xdf;
 
+import java.util.Objects;
+
 public class TableDefinition {
     private final String tableName;
     private final String tableDescription;
@@ -42,5 +44,18 @@ public class TableDefinition {
         }
 
         return tableName + ": " + tableDescription;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TableDefinition that = (TableDefinition) o;
+        return tableName.equals(that.tableName) && tableDescription.equals(that.tableDescription);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableName, tableDescription);
     }
 }

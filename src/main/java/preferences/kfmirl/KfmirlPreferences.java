@@ -1,6 +1,7 @@
 package preferences.kfmirl;
 
 import com.sun.tools.javac.util.Pair;
+import io.reactivex.Observer;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
@@ -18,6 +19,10 @@ public class KfmirlPreferences {
 
     private static final Preferences prefs = Preferences.userNodeForPackage(KfmirlPreferences.class);
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
+
+    public static void registerOnMapChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
+        publishSubject.subscribe(observer);
+    }
 
     @Nullable
     public static Pair<TableDefinition, Map3d> getSelectedMap() {

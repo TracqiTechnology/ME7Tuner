@@ -1,14 +1,16 @@
 package ui.view.ldrpid;
 
+import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import model.kfldimx.Kfldimx;
-import model.ldrpid.Kfldrl;
 import model.ldrpid.LdrpidCalculator;
 import parser.me7log.Me7LogParser;
+import parser.xdf.TableDefinition;
 import preferences.filechooser.FileChooserPreferences;
+import preferences.kfldimx.KfldimxPreferences;
+import preferences.kfldrl.KfldrlPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 
@@ -20,12 +22,11 @@ import java.util.Map;
 public class LdrpidView {
     private LdrpidCalculator.LdrpidResult ldrpidResult;
 
-    private MapTable nonLinearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private MapTable linearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private MapTable kfldrlTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private MapTable kfldimxTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-
-    private MapAxis kfldimxXAxis;
+    private final MapTable nonLinearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable linearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable kfldrlTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable kfldimxTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapAxis kfldimxXAxis = MapAxis.getMapAxis(new Double[1][0]);
 
     private JLabel logFileLabel;
 
@@ -71,8 +72,6 @@ public class LdrpidView {
 
         panel.add(getLogsButton(panel), constraints);
 
-
-
         return panel;
     }
 
@@ -91,8 +90,12 @@ public class LdrpidView {
 
     private void initKfldimxAxis() {
         Double[][] kfldImxXAxisValues = new Double[1][];
-        kfldImxXAxisValues[0] = Kfldimx.getStockXAxis();
-        kfldimxXAxis = MapAxis.getMapAxis(kfldImxXAxisValues);
+
+        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getSelectedMap();
+        if(tableDefinition != null && tableDefinition.snd != null) {
+            kfldImxXAxisValues[0] = tableDefinition.snd.xAxis;
+        }
+        kfldimxXAxis.setTableData(kfldImxXAxisValues);
     }
 
     private JPanel getKfldimxMapPanel() {
@@ -181,7 +184,10 @@ public class LdrpidView {
                                     dpb.setVisible(value < max - 1);
                                 });
                             });
-                            ldrpidResult = LdrpidCalculator.caclulateLdrpid(values);
+                            Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getSelectedMap();
+                            Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getSelectedMap();
+
+                            ldrpidResult = LdrpidCalculator.caclulateLdrpid(values, kfldrlTableDefinition.snd, kfldimxTableDefinition.snd);
                             return null;
                         }
 
@@ -276,23 +282,38 @@ public class LdrpidView {
     }
 
     private void initKflimxMap() {
-        kfldimxTable = MapTable.getMapTable(Kfldimx.getStockYAxis(), Kfldimx.getStockXAxis(), Kfldimx.getEmptyMap());
+        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getSelectedMap();
         kfldimxTable.setEditable(false);
+        if(tableDefinition != null && tableDefinition.snd != null) {
+            kfldimxTable.setMap(tableDefinition.snd);
+        }
     }
 
     private void initKfldrlMap() {
-        kfldrlTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
         kfldrlTable.setEditable(false);
+        if(tableDefinition != null && tableDefinition.snd != null) {
+            kfldrlTable.setMap(tableDefinition.snd);
+        }
     }
 
     private void initNonLinearMap() {
-        nonLinearTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
+
+        if(tableDefinition != null && tableDefinition.snd != null) {
+            nonLinearTable.setMap(tableDefinition.snd);
+        }
+
         nonLinearTable.getPublishSubject().subscribe(new Observer<Map3d>() {
             @Override
             public void onNext(@NonNull Map3d map3d) {
-                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis);
-                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis);
-                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.zAxis, linearMap3d.zAxis);
+
+                Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getSelectedMap();
+                Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getSelectedMap();
+
+                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis, kfldrlTableDefinition.snd);
+                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.snd);
+                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.snd, kfldimxTableDefinition.snd);
 
                 linearTable.setMap(linearMap3d);
                 kfldrlTable.setMap(kfldrlMap3d);
@@ -318,7 +339,12 @@ public class LdrpidView {
     }
 
     private void initLinearMap() {
-        linearTable = MapTable.getMapTable(Kfldrl.getStockYAxis(), Kfldrl.getStockXAxis(), Kfldrl.getEmptyMap());
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
+
         linearTable.setEditable(false);
+
+        if(tableDefinition != null && tableDefinition.snd != null) {
+            linearTable.setMap(tableDefinition.snd);
+        }
     }
 }

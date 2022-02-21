@@ -1,4 +1,4 @@
-package preferences.kfzwop;
+package preferences.kfldrl;
 
 import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
@@ -7,17 +7,17 @@ import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
+import preferences.kfmiop.KfmiopPreferences;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
-public class KfzwopPreferences {
+public class KfldrlPreferences {
+    private static final String TABLE_TITLE_PREFERENCE = "kfldrl_title_preference";
+    private static final String TABLE_DESCRIPTION_PREFERENCE = "kfldrl_description_preference";
 
-    private static final String TABLE_TITLE_PREFERENCE = "kfzwop_title_preference";
-    private static final String TABLE_DESCRIPTION_PREFERENCE = "kfzwop_description_preference";
-
-    private static final Preferences prefs = Preferences.userNodeForPackage(KfzwopPreferences.class);
+    private static final Preferences prefs = Preferences.userNodeForPackage(KfmiopPreferences.class);
     private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
 
     public static void registerOnMapChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
@@ -36,6 +36,7 @@ public class KfzwopPreferences {
         } else {
             for (Pair<TableDefinition, Map3d> map : mapList) {
                 if (mapTitle.equals(map.fst.getTableName()) && mapDescription.equals(map.fst.getTableDescription())) {
+
                     return map;
                 }
             }

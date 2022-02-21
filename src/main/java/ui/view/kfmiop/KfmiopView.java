@@ -37,19 +37,20 @@ public class KfmiopView implements OnTabSelectedListener {
     public JPanel getPanel() {
         panel = new JPanel();
         panel.setLayout(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.right = 20;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.insets.right = 16;
+        constraints.insets.top = 50;
 
-        panel.add(getInputPanel(), c);
+        panel.add(getInputPanel(), constraints);
 
-        c.gridx = 1;
-        c.gridy = 0;
-        c.insets.top = -55;
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        constraints.insets.top = 0;
 
-        panel.add(getOutputPanel(), c);
+        panel.add(getOutputPanel(), constraints);
 
         initViewModel();
 
@@ -108,7 +109,6 @@ public class KfmiopView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 2;
-        constraints.insets.top = 0;
 
         panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
@@ -124,7 +124,6 @@ public class KfmiopView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 4;
-        constraints.insets.top = 16;
         panel.add(getFileButton(), constraints);
 
         return panel;
@@ -198,22 +197,18 @@ public class KfmiopView implements OnTabSelectedListener {
 
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 52;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getHeader("KFMIOP (Input)"),c);
+        panel.add(getHeader("KFMIOP (Input)"),constraints);
 
-        c.weightx = 0;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.left = 0;
-        c.insets.top = 8;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
-        panel.add(inputKfmiop.getScrollPane() ,c);
+        panel.add(inputKfmiop.getScrollPane() ,constraints);
 
         return panel;
     }
@@ -224,22 +219,18 @@ public class KfmiopView implements OnTabSelectedListener {
 
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 52;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getHeader("Boost (Input)"),c);
+        panel.add(getHeader("Boost (Input)"),constraints);
 
-        c.weightx = 0;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.left = 0;
-        c.insets.top = 8;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
-        panel.add(inputBoost.getScrollPane(),c);
+        panel.add(inputBoost.getScrollPane(),constraints);
 
         return panel;
     }
@@ -250,22 +241,18 @@ public class KfmiopView implements OnTabSelectedListener {
 
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 52;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getHeader("KFMIOP (Output)"),c);
+        panel.add(getHeader("KFMIOP (Output)"),constraints);
 
-        c.weightx = 0;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.left = 0;
-        c.insets.top = 8;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
-        panel.add(outputKfmiop.getScrollPane() ,c);
+        panel.add(outputKfmiop.getScrollPane() ,constraints);
 
         return panel;
     }
@@ -276,22 +263,18 @@ public class KfmiopView implements OnTabSelectedListener {
 
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.insets.left = 52;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getHeader("Boost (Output)"),c);
+        panel.add(getHeader("Boost (Output)"),constraints);
 
-        c.weightx = 0;
-        c.gridx = 0;
-        c.gridy = 1;
-        c.insets.left = 0;
-        c.insets.top = 8;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
-        panel.add(outputBoost.getScrollPane() ,c);
+        panel.add(outputBoost.getScrollPane() ,constraints);
 
         return panel;
     }
