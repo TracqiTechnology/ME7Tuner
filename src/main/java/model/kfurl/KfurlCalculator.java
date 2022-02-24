@@ -13,7 +13,7 @@ import java.util.Map;
 public class KfurlCalculator {
 
 
-    public static KfurlCorrection calculateKfurl(Map3d kfurl, Map<String, List<Double>> me7LogMap, Map<String, List<Double>> zeitLogMap) {
+    public static KfurlCorrection calculateKfurl(Map3d kfurl, Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map<String, List<Double>> zeitLogMap) {
         if(me7LogMap == null || zeitLogMap == null) {
             return null;
         }
@@ -21,9 +21,9 @@ public class KfurlCalculator {
         List<Double> zeitTimestamps = zeitLogMap.get(AfrLogFileContract.TIMESTAMP);
         List<Double> zeitRelativeBoosts = zeitLogMap.get(AfrLogFileContract.BOOST_HEADER);
 
-        List<Double> me7ModeledBoosts = me7LogMap.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER);
-        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
-        List<Double> me7Rpms = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+        List<Double> me7ModeledBoosts = me7LogMap.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER);
+        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
+        List<Double> me7Rpms = me7LogMap.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
 
         List<List<Double>> corrections = new ArrayList<>();
 

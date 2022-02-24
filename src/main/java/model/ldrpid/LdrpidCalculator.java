@@ -1,14 +1,11 @@
 package model.ldrpid;
 
 import contract.Me7LogFileContract;
-import math.CurveFitter;
 import math.Index;
 import math.LinearInterpolation;
 import math.map.Map3d;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LdrpidCalculator {
 
@@ -26,23 +23,25 @@ public class LdrpidCalculator {
         }
     }
 
-    public static Map3d calculateNonLinearTable(Map<String, List<Double>> values, Map3d kfldrlMap) {
-        List<Double> throttlePlateAngles = values.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
-        List<Double> rpms = values.get(Me7LogFileContract.RPM_COLUMN_HEADER);
-        List<Double> dutyCycles = values.get(Me7LogFileContract.WASTEGATE_DUTY_CYCLE_HEADER);
-        List<Double> barometricPressures = values.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER);
-        List<Double> absoluteBoostPressures = values.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER);
-        List<Double> selectedGears = values.get(Me7LogFileContract.SELECTED_GEAR_HEADER);
-
-        double[][] sums = new double[kfldrlMap.yAxis.length][kfldrlMap.xAxis.length];
-        double[][] counts = new double[kfldrlMap.yAxis.length][kfldrlMap.xAxis.length];
+    public static Map3d calculateNonLinearTable(Map<Me7LogFileContract.Header, List<Double>> values, Map3d kfldrlMap) {
+        List<Double> throttlePlateAngles = values.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER);
+        List<Double> rpms = values.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
+        List<Double> dutyCycles = values.get(Me7LogFileContract.Header.WASTEGATE_DUTY_CYCLE_HEADER);
+        List<Double> barometricPressures = values.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER);
+        List<Double> absoluteBoostPressures = values.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER);
 
         Double[][] nonLinearTable = new Double[kfldrlMap.yAxis.length][kfldrlMap.xAxis.length];
 
+        for(Double[] array:nonLinearTable) {
+            Arrays.fill(array, 0.0);
+        }
+
+        double[][] pressure = new double[kfldrlMap.yAxis.length][kfldrlMap.xAxis.length];
+        double[][] count = new double[kfldrlMap.yAxis.length][kfldrlMap.xAxis.length];
+
         for(int i = 0; i < throttlePlateAngles.size(); i++) {
             double throttlePlateAngle = throttlePlateAngles.get(i);
-            double selectedGear = selectedGears.get(i);
-            if(throttlePlateAngle >= 80 && selectedGear == 3) {
+            if(throttlePlateAngle >= 80) {
                 double rpm = rpms.get(i);
                 double dutyCycle = dutyCycles.get(i);
                 double barometricPressure = barometricPressures.get(i);
@@ -52,21 +51,25 @@ public class LdrpidCalculator {
                 int rpmIndex = Index.getInsertIndex(Arrays.asList(kfldrlMap.yAxis), rpm);
                 int dutyCycleIndex = Index.getInsertIndex(Arrays.asList(kfldrlMap.xAxis), dutyCycle);
 
-                sums[rpmIndex][dutyCycleIndex] += relativeBoostPressure;
-                counts[rpmIndex][dutyCycleIndex] += 1;
+                if(relativeBoostPressure > 0) {
+                    pressure[rpmIndex][dutyCycleIndex] += relativeBoostPressure;
+                    count[rpmIndex][dutyCycleIndex] += 1;
+                }
 
                 for(int j = 0; j < nonLinearTable.length; j++) {
                     for(int k = 0; k < nonLinearTable[j].length; k++) {
-                        double sum = sums[j][k];
-                        double count = Math.max(counts[j][k], 1);
-
-                        nonLinearTable[j][k] = (sum/count)*0.0145038;
+                        if(count[j][k] != 0) {
+                            nonLinearTable[j][k] = (pressure[j][k] / count[j][k]) * 0.0145038;
+                        } else {
+                            nonLinearTable[j][k] = pressure[j][k] * 0.0145038;
+                        }
                     }
                 }
             }
         }
 
         for(Double[] array: nonLinearTable) {
+            Arrays.sort(array);
             for(int i = 0; i < array.length - 1; i++) {
                 if(array[i] == 0) {
                     array[i] = 0.1;
@@ -91,27 +94,16 @@ public class LdrpidCalculator {
     }
 
     public static Map3d calculateLinearTable(Double[][] nonLinearTable, Map3d kfldrlMap) {
+
         Double[][] linearTable = new Double[nonLinearTable.length][nonLinearTable[0].length];
 
-        for(int i = 0; i < linearTable.length; i++) {
-            List<Double> x = Arrays.asList(kfldrlMap.xAxis);
-            List<Double> y = Arrays.asList(nonLinearTable[i]);
+        for(int i = 0; i < nonLinearTable[0].length; i++) {
+            double min = nonLinearTable[0][i];
+            double max = nonLinearTable[nonLinearTable.length - 1][i];
+            double step = (max - min)/ (nonLinearTable.length - 1);
 
-            double[] coeff = CurveFitter.fitCurve(x, y, 1);
-            linearTable[i] = CurveFitter.buildCurve(coeff, x).toArray(new Double[0]);
-        }
-
-        // The polynomial is monotonically decreasing... reverse it
-        for(Double[] array: linearTable) {
-            if(array[0] > array[array.length -1]) {
-                reverse(array);
-            }
-        }
-
-        // No negative numbers
-        for(Double[] array: linearTable) {
-            for(int i = 0; i < array.length; i++) {
-                array[i]=Math.max(array[i],0);
+            for(int j = 0; j < linearTable.length; j++) {
+                linearTable[j][i] = step * j;
             }
         }
 
@@ -139,23 +131,22 @@ public class LdrpidCalculator {
     }
 
     public static Map3d calculateKfldimx(Double[][] nonLinearTable, Double[][] linearTable, Map3d kfldrlMap, Map3d kfldimxMap) {
-        Double[] linearBoostAverage = new Double[linearTable[0].length];
+        Double[] linearBoostMax = new Double[linearTable[0].length];
 
-        for(int i = 0; i < linearBoostAverage.length; i++) {
-            double sum = 0;
-            double count = 0;
-            for(int j = 11; j < linearTable.length; j++) {
-                sum += linearTable[j][i]*68.9476;
-                count++;
+        for(int i = 0; i < linearBoostMax.length; i++) {
+
+            List<Double> linearBoost = new ArrayList<>();
+            for(int j = 0; j < linearTable.length; j++) {
+                linearBoost.add(linearTable[j][i]*68.9476);
             }
 
-            linearBoostAverage[i] = (double) Math.round(sum / count);
+            linearBoostMax[i] = Collections.max(linearBoost);
         }
 
         Double[] kfldimxXAxis = new Double[kfldimxMap.xAxis.length];
 
-        double min = (Math.ceil(linearBoostAverage[0]/100.0))*100;
-        double max = (Math.ceil(linearBoostAverage[linearBoostAverage.length - 1]/100.0))*100;
+        double min = (Math.ceil(linearBoostMax[0]/100.0))*100;
+        double max = (Math.ceil(linearBoostMax[linearBoostMax.length - 1]/100.0))*100;
         double interval = (max - min)/kfldimxXAxis.length;
 
         for(int i = 0; i < kfldimxXAxis.length; i++) {
@@ -166,7 +157,7 @@ public class LdrpidCalculator {
 
         for(int i = 0; i < kfldimx.length; i++) {
             for (int j = 0; j < kfldimx[i].length; j++) {
-                Double[] x = linearBoostAverage;
+                Double[] x = linearBoostMax;
                 Double[] y = kfldrlMap.xAxis;
                 Double[] xi = new Double[]{kfldimxXAxis[j]};
 
@@ -177,7 +168,7 @@ public class LdrpidCalculator {
         return new Map3d(kfldimxXAxis, kfldimxMap.yAxis, kfldimx);
     }
 
-    public static LdrpidResult caclulateLdrpid(Map<String, List<Double>> values, Map3d kfldrlMap, Map3d kfldimxMap) {
+    public static LdrpidResult caclulateLdrpid(Map<Me7LogFileContract.Header, List<Double>> values, Map3d kfldrlMap, Map3d kfldimxMap) {
 
         Map3d nonLinearTable = calculateNonLinearTable(values, kfldrlMap);
         Map3d linearTable = calculateLinearTable(nonLinearTable.zAxis, kfldrlMap);
@@ -210,6 +201,8 @@ public class LdrpidCalculator {
             array[array.length - i - 1] = temp;
         }
     }
+
+
 
 
 }

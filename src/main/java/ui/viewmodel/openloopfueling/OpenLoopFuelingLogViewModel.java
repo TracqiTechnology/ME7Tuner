@@ -1,6 +1,7 @@
 package ui.viewmodel.openloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -26,13 +27,13 @@ public class OpenLoopFuelingLogViewModel {
     private final BehaviorSubject<OpenLoopFuelingLogModel> behaviorSubject = BehaviorSubject.create();
 
     public OpenLoopFuelingLogViewModel() {
-        OpenLoopLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+        OpenLoopLogParser.getInstance().register(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> logs) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> logs) {
                 OpenLoopFuelingLogModel model = behaviorSubject.getValue();
                 OpenLoopFuelingLogModel.Builder builder;
                 if (model == null) {
@@ -161,7 +162,7 @@ public class OpenLoopFuelingLogViewModel {
     }
 
     public static class OpenLoopFuelingLogModel {
-        private final Map<String, List<Double>> me7Logs;
+        private final Map<Me7LogFileContract.Header, List<Double>> me7Logs;
         private final Map<String, List<Double>> afrLogs;
         private final Map3d mlhfm;
         private final AirflowEstimation airflowEstimation;
@@ -174,7 +175,7 @@ public class OpenLoopFuelingLogViewModel {
         }
 
         @Nullable
-        public Map<String, List<Double>> getMe7Logs() {
+        public Map<Me7LogFileContract.Header, List<Double>> getMe7Logs() {
             return me7Logs;
         }
 
@@ -192,7 +193,7 @@ public class OpenLoopFuelingLogViewModel {
         }
 
         public static class Builder {
-            private Map<String, List<Double>> me7Logs;
+            private Map<Me7LogFileContract.Header, List<Double>> me7Logs;
             private Map<String, List<Double>> afrLogs;
             private Map3d mlhfm;
             private AirflowEstimation airflowEstimation;
@@ -207,7 +208,7 @@ public class OpenLoopFuelingLogViewModel {
                 this.airflowEstimation = model.airflowEstimation;
             }
 
-            public Builder me7Logs(Map<String, List<Double>> me7Logs) {
+            public Builder me7Logs(Map<Me7LogFileContract.Header, List<Double>> me7Logs) {
                 this.me7Logs = me7Logs;
 
                 return this;

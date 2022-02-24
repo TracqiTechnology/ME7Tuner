@@ -1,6 +1,7 @@
 package ui.view.ldrpid;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -8,14 +9,17 @@ import math.map.Map3d;
 import model.ldrpid.LdrpidCalculator;
 import parser.me7log.Me7LogParser;
 import parser.xdf.TableDefinition;
-import preferences.filechooser.FileChooserPreferences;
+import preferences.bin.BinFilePreferences;
 import preferences.kfldimx.KfldimxPreferences;
 import preferences.kfldrl.KfldrlPreferences;
+import preferences.ldrpid.LdrpidPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
+import writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -31,9 +35,10 @@ public class LdrpidView {
     private JLabel logFileLabel;
 
     private final JProgressBar dpb = new JProgressBar();
+    private JPanel panel;
 
     public JPanel getPanel() {
-        JPanel panel = new JPanel();
+        panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
         GridBagConstraints constraints = new GridBagConstraints();
@@ -55,7 +60,7 @@ public class LdrpidView {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.insets.top = 46;
+        constraints.insets.top = 84;
 
         panel.add(getKflDrlMapPanel(), constraints);
 
@@ -102,54 +107,109 @@ public class LdrpidView {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(new JLabel("KFLDIMX X-Axis"), c);
+        panel.add(new JLabel("KFLDIMX X-Axis"), constraints);
 
-        c.gridx = 0;
-        c.gridy = 1;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         initKfldimxAxis();
 
-        panel.add(kfldimxXAxis.getScrollPane(), c);
+        panel.add(kfldimxXAxis.getScrollPane(), constraints);
 
-        c.gridx = 0;
-        c.gridy = 2;
+        constraints.gridx = 0;
+        constraints.gridy = 2;
 
-        panel.add(getHeader("KFLDIMX"), c);
+        panel.add(getHeader("KFLDIMX"), constraints);
 
-        c.gridx = 0;
-        c.gridy = 3;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
 
         initKflimxMap();
 
-        panel.add(kfldimxTable.getScrollPane(), c);
+        panel.add(kfldimxTable.getScrollPane(), constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+
+        panel.add(getWriteKfldimxFileButton(), constraints);
 
         return panel;
+    }
+
+    private JButton getWriteKfldimxFileButton() {
+        JButton button = new JButton("Write KFLDIMX");
+
+        button.addActionListener(e -> {
+            int returnValue = JOptionPane.showConfirmDialog(
+                    panel,
+                    "Are you sure you want to write KFLDIMX to the binary?",
+                    "Write KFLDIMX",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldimxPreferences.getSelectedMap().fst, kfldimxTable.getMap3d());
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+
+        return button;
     }
 
     private JPanel getKflDrlMapPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
-        panel.add(getHeader("KFLDRL"), c);
+        panel.add(getHeader("KFLDRL"), constraints);
 
-        c.gridx = 0;
-        c.gridy = 1;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         initKfldrlMap();
 
-        panel.add(kfldrlTable.getScrollPane(), c);
+        panel.add(kfldrlTable.getScrollPane(), constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        panel.add(getWriteKfldrlFileButton(), constraints);
 
         return panel;
+    }
+
+    private JButton getWriteKfldrlFileButton() {
+        JButton button = new JButton("Write KFLDRL");
+
+        button.addActionListener(e -> {
+            int returnValue = JOptionPane.showConfirmDialog(
+                    panel,
+                    "Are you sure you want to write KFLDRL to the binary?",
+                    "Write KFLDRL",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldrlPreferences.getSelectedMap().fst, kfldrlTable.getMap3d());
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+
+        return button;
     }
 
     private JPanel getLogsButton(JPanel parent) {
@@ -162,14 +222,14 @@ public class LdrpidView {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            fc.setCurrentDirectory(FileChooserPreferences.getDirectory());
+            fc.setCurrentDirectory(LdrpidPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(parent);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
 
                 SwingUtilities.invokeLater(() -> {
-                    FileChooserPreferences.setDirectory(fc.getSelectedFile().getParentFile());
+                    LdrpidPreferences.setDirectory(fc.getSelectedFile().getParentFile());
 
                     logFileLabel.setText(fc.getSelectedFile().getPath());
 
@@ -177,7 +237,7 @@ public class LdrpidView {
                         @Override
                         public Void doInBackground() {
                             Me7LogParser parser = new Me7LogParser();
-                            Map<String, List<Double>> values = parser.parseLogDirectory(Me7LogParser.LogType.LDRPID, fc.getSelectedFile(), (value, max) -> {
+                            Map<Me7LogFileContract.Header, List<Double>> values = parser.parseLogDirectory(Me7LogParser.LogType.LDRPID, fc.getSelectedFile(), (value, max) -> {
                                 SwingUtilities.invokeLater(() -> {
                                     dpb.setMaximum(max);
                                     dpb.setValue(value);
@@ -211,14 +271,12 @@ public class LdrpidView {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.insets.top = 16;
         constraints.anchor = GridBagConstraints.CENTER;
 
         panel.add(button, constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
-        constraints.insets.top = 0;
 
         dpb.setIndeterminate(false);
         dpb.setVisible(false);
@@ -248,6 +306,7 @@ public class LdrpidView {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         initNonLinearMap();
 
@@ -271,6 +330,7 @@ public class LdrpidView {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
+        constraints.insets.top = 16;
 
         initLinearMap();
 

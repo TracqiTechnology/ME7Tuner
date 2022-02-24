@@ -42,14 +42,14 @@ public class KfurlLogUiManager {
         me7BoostDataset = new XYSeriesCollection();
         afrBoostDataset = new XYSeriesCollection();
 
-        KfurlViewModel.getInstance().getMe7LogsSubject().subscribe(new Observer<Map<String, List<Double>>>() {
+        KfurlViewModel.getInstance().getMe7LogsSubject().subscribe(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
 
             }
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> logs) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> logs) {
                 drawMe7BoostLogChart(logs);
                 loadZeitLogsButton.setEnabled(true);
             }
@@ -253,13 +253,13 @@ public class KfurlLogUiManager {
         plot.setRenderer(ZEIT_BOOST_DATA_SERIES_INDEX, rendererAfr);
     }
 
-    private void drawMe7BoostLogChart(Map<String, List<Double>> me7LogMap) {
+    private void drawMe7BoostLogChart(Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
         me7BoostDataset.removeAllSeries();
 
         XYSeries series = new XYSeries("Modeled Boost (ps_w)");
 
-        List<Double> modeledBoost = me7LogMap.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER);
-        List<Double> timestamp = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
+        List<Double> modeledBoost = me7LogMap.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER);
+        List<Double> timestamp = me7LogMap.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
 
         for (int i = 0; i < timestamp.size(); i++) {
             series.add(timestamp.get(i).doubleValue(), modeledBoost.get(i).doubleValue());

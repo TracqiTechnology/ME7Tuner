@@ -9,15 +9,15 @@ import java.util.*;
 
 public class Derivative {
 
-    public static Map<Double, List<Double>> getMlfhm(Map<String, List<Double>> me7Logs, Map3d mlhfm) {
+    public static Map<Double, List<Double>> getMlfhm(Map<Me7LogFileContract.Header, List<Double>> me7Logs, Map3d mlhfm) {
         Map<Double, List<Double>> rawVoltageDt = new HashMap<>();
 
         for (Double voltage : mlhfm.yAxis) {
             rawVoltageDt.put(voltage, new ArrayList<>());
         }
 
-        List<Double> me7Voltages = me7Logs.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> me7Timestamps = me7Logs.get(Me7LogFileContract.TIME_COLUMN_HEADER);
+        List<Double> me7Voltages = me7Logs.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);
+        List<Double> me7Timestamps = me7Logs.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
         List<Double> me7voltageDt = getDt(me7Voltages, me7Timestamps);
 
         for (int i = 0; i < me7voltageDt.size(); i++) {

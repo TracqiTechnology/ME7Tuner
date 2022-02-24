@@ -1,5 +1,6 @@
 package parser.me7log;
 
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 public class OpenLoopLogParser {
 
-    private final PublishSubject<Map<String, List<Double>>> publishSubject;
+    private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
     private static OpenLoopLogParser instance;
 
@@ -35,19 +36,19 @@ public class OpenLoopLogParser {
         publishSubject = PublishSubject.create();
     }
 
-    public void register(Observer<Map<String, List<Double>>> observer) {
+    public void register(Observer<Map<Me7LogFileContract.Header, List<Double>>> observer) {
         SwingUtilities.invokeLater(() -> publishSubject.subscribe(observer));
     }
 
     public void loadFile(File file) {
         Me7LogParser me7LogParser = new Me7LogParser();
-        Single.fromCallable(() -> me7LogParser.parseLogFile(Me7LogParser.LogType.OPEN_LOOP, file)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+        Single.fromCallable(() -> me7LogParser.parseLogFile(Me7LogParser.LogType.OPEN_LOOP, file)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
+            public void onSuccess(@NonNull Map<Me7LogFileContract.Header, List<Double>> logMap) {
                 SwingUtilities.invokeLater(() -> publishSubject.onNext(logMap));
             }
 

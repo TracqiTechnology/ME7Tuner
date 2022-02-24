@@ -1,5 +1,6 @@
 package parser.me7log;
 
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
@@ -16,7 +17,7 @@ import java.util.concurrent.Callable;
 
 public class ClosedLoopLogParser {
 
-    private final PublishSubject<Map<String, List<Double>>> publishSubject;
+    private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
     private static ClosedLoopLogParser instance;
 
@@ -36,7 +37,7 @@ public class ClosedLoopLogParser {
         publishSubject = PublishSubject.create();
     }
 
-    public void registerClosedLoopLogOnChangeObserver(Observer<Map<String, List<Double>>> observer){
+    public void registerClosedLoopLogOnChangeObserver(Observer<Map<Me7LogFileContract.Header, List<Double>>> observer){
         SwingUtilities.invokeLater(() -> publishSubject.subscribe(observer));
     }
 
@@ -44,12 +45,12 @@ public class ClosedLoopLogParser {
         if (directory.isDirectory()) {
             Me7LogParser me7LogParser = new Me7LogParser();
             Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.CLOSED_LOOP, directory, (value, max) -> {
-            })).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+            })).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<Me7LogFileContract.Header, List<Double>>>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable disposable) {}
 
                 @Override
-                public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
+                public void onSuccess(@NonNull Map<Me7LogFileContract.Header, List<Double>> logMap) {
                     SwingUtilities.invokeLater(() -> publishSubject.onNext(logMap));
                 }
 

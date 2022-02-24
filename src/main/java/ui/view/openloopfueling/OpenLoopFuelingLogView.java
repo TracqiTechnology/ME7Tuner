@@ -412,21 +412,21 @@ public class OpenLoopFuelingLogView {
         plot.setDataset(ESTIMATED_AIRFLOW_DATA_SERIES_INDEX, estimatedAirflowDataset);
     }
 
-    private void drawMe7FuelingLogChart(Map<String, List<Double>> me7LogMap) {
+    private void drawMe7FuelingLogChart(Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
         me7FuelingDataset.removeAllSeries();
 
         if(me7LogMap == null) {
             return;
         }
 
-        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
+        List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
 
         int logCount = 1;
-        for (Map<String, List<Double>> map : me7LogList) {
+        for (Map<Me7LogFileContract.Header, List<Double>> map : me7LogList) {
             XYSeries series = new XYSeries("Desired AFR " + logCount++);
 
-            List<Double> requestedAfr = map.get(Me7LogFileContract.REQUESTED_LAMBDA_HEADER);
-            List<Double> rpm = map.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+            List<Double> requestedAfr = map.get(Me7LogFileContract.Header.REQUESTED_LAMBDA_HEADER);
+            List<Double> rpm = map.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
 
             for (int i = 0; i < rpm.size(); i++) {
                 series.add(rpm.get(i).doubleValue(), requestedAfr.get(i)*14.7);

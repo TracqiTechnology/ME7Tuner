@@ -9,6 +9,7 @@ import preferences.filechooser.BinFileChooserPreferences;
 import preferences.filechooser.XdfFileChooserPreferences;
 import preferences.xdf.XdfFilePreferences;
 import ui.view.closedloopfueling.ClosedLoopFuelingView;
+import ui.view.configuration.ConfigurationView;
 import ui.view.configuration.TableDefinitionView;
 import ui.view.kfmirl.KfmirlView;
 import ui.view.kfmiop.KfmiopView;
@@ -81,7 +82,7 @@ public class MainManager {
         updateTitle();
 
         frame.setJMenuBar(getMenuBar());
-        frame.setSize(1480, 800);
+        frame.setSize(1480, 920);
         frame.add(getTabbedPane());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
@@ -90,8 +91,8 @@ public class MainManager {
     private JTabbedPane getTabbedPane() {
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        TableDefinitionView tableDefinitionView = new TableDefinitionView();
-        tabbedPane.addTab("Configuration", null, new JScrollPane(tableDefinitionView.getPanel()), "Table Definition Configuration");
+        ConfigurationView configurationView = new ConfigurationView();
+        tabbedPane.addTab("Configuration", null, new JScrollPane(configurationView.getPanel()), "Table Definition Configuration");
 
         KrkteView krkteView = new KrkteView();
         tabSelectedListeners.add(krkteView);

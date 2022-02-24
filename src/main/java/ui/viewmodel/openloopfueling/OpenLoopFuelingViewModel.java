@@ -1,6 +1,7 @@
 package ui.viewmodel.openloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -81,12 +82,12 @@ public class OpenLoopFuelingViewModel {
             public void onComplete() {}
         });
 
-        OpenLoopLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+        OpenLoopLogParser.getInstance().register(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> logs) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> logs) {
                 OpenLoopMlfhmModel model = behaviorSubject.getValue();
                 OpenLoopMlfhmModel.Builder builder;
                 if(model == null) {

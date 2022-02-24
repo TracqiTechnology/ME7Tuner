@@ -1,5 +1,6 @@
 package ui.view.closedloopfueling;
 
+import contract.Me7LogFileContract;
 import derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -212,7 +213,7 @@ public class ClosedLoopFuelingLogView {
         plot.getRenderer().setSeriesPaint(1, Color.GREEN);
     }
 
-    private void drawChart(@Nullable Map<String, List<Double>> me7LogMap, @Nullable Map3d mlhfm) {
+    private void drawChart(@Nullable Map<Me7LogFileContract.Header, List<Double>> me7LogMap, @Nullable Map3d mlhfm) {
 
         XYPlot plot = (XYPlot) chart.getPlot();
         ((XYSeriesCollection) plot.getDataset()).removeAllSeries();

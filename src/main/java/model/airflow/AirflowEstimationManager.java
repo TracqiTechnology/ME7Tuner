@@ -46,16 +46,16 @@ public class AirflowEstimationManager {
         return airflowEstimation;
     }
 
-    public void estimate(Map<String, List<Double>> me7LogMap, Map<String, List<Double>> afrLogMap) {
-        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, minThrottleAngle, LAMBDA_CONTROL_ENABLED, minRpm, minPointsMe7);
+    public void estimate(Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map<String, List<Double>> afrLogMap) {
+        List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, minThrottleAngle, LAMBDA_CONTROL_ENABLED, minRpm, minPointsMe7);
         List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLogMap, minThrottleAngle, minRpm, maxAfr, minPointsAfr);
 
         List<List<Double>> dutyCycleLogs = new ArrayList<>();
 
-        for(Map<String, List<Double>> me7log:me7LogList) {
-            List<Double> rpm = me7log.get(Me7LogFileContract.RPM_COLUMN_HEADER);
-            List<Double> fuelInjectorOnTime = me7log.get(Me7LogFileContract.FUEL_INJECTOR_ON_TIME_HEADER);
-            List<Double> gramsPerSecond = me7log.get(Me7LogFileContract.MAF_GRAMS_PER_SECOND_HEADER);
+        for(Map<Me7LogFileContract.Header, List<Double>> me7log:me7LogList) {
+            List<Double> rpm = me7log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
+            List<Double> fuelInjectorOnTime = me7log.get(Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER);
+            List<Double> gramsPerSecond = me7log.get(Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER);
 
             dutyCycleLogs.add(getInjectorDutyCycle(rpm, fuelInjectorOnTime));
 
@@ -67,7 +67,7 @@ public class AirflowEstimationManager {
             estimatedAirflowGramsPerSecondLogs.add(new ArrayList<>());
 
             List<Double> dutyCycleLog = dutyCycleLogs.get(i);
-            List<Double> me7RpmLog = me7LogList.get(i).get(Me7LogFileContract.RPM_COLUMN_HEADER);
+            List<Double> me7RpmLog = me7LogList.get(i).get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
             List<Double> afrRpmLog = afrLogList.get(i).get(AfrLogFileContract.RPM_HEADER);
             List<Double> afrLog = afrLogList.get(i).get(AfrLogFileContract.AFR_HEADER);
             for(int j = 0; j < dutyCycleLogs.get(i).size(); j++) {

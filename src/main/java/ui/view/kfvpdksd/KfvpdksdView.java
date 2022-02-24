@@ -162,6 +162,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
+        constraints.insets.top = 16;
 
         panel.add(new JLabel("Maximum Boost (Input)"), constraints);
 
@@ -174,8 +175,6 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 2;
-        constraints.insets.left = 0;
-        constraints.insets.top = 8;
 
         ChartPanel chartPanel = new ChartPanel(boostChart);
         chartPanel.setPreferredSize(new Dimension(710, 275));
@@ -213,6 +212,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 0;
+        constraints.insets.top = 16;
 
         panel.add(getHeader("KFVPDKSD (Output)"), constraints);
 
@@ -223,19 +223,13 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
         constraints.gridx = 0;
         constraints.gridy = 2;
-        constraints.insets.top = 8;
-
-        panel.add(getWriteFileButton(), constraints);
-
-        constraints.gridy = 3;
-
-        panel.add(getDefinitionButton(), constraints);
-
-        constraints.gridy = 4;
-        constraints.insets.top = 0;
 
         definitionFileLabel = new JLabel("No Map Selected");
         panel.add(definitionFileLabel, constraints);
+
+        constraints.gridy = 3;
+
+        panel.add(getWriteFileButton(), constraints);
 
         return panel;
     }
@@ -287,22 +281,6 @@ public class KfvpdksdView implements OnTabSelectedListener {
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
-            }
-        });
-
-        return button;
-    }
-
-    private JButton getDefinitionButton() {
-        JButton button = new JButton("Set KFVPDKSD Definition");
-
-        button.addActionListener(e -> {
-            Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-            if (tableDefinition != null) {
-                MapPickerDialog.showDialog(panel, panel, "Select KFVPDKSD", "Map Selection", tableDefinition.fst, KfvpdksdPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select KFVPDKSD", "Map Selection", null, KfvpdksdPreferences::setSelectedMap);
             }
         });
 

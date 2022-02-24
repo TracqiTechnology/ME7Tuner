@@ -38,7 +38,7 @@ public class ClosedLoopFuelingCorrectionManager {
         return closedLoopFuelingCorrection;
     }
 
-    public void correct(Map<String, List<Double>> me7LogMap, Map3d mlhfm) {
+    public void correct(Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map3d mlhfm) {
         Map<Double, List<Double>> correctionErrorMap = new HashMap<>();
 
         for (Double voltage : mlhfm.yAxis) {
@@ -65,15 +65,15 @@ public class ClosedLoopFuelingCorrectionManager {
         closedLoopFuelingCorrection = new ClosedLoopFuelingCorrection(mlhfm, correctedMlhfm, correctedMlhfm, filteredVoltageDt, correctionsAfrMap, meanAfrMap, modeAfrMap, correctedAfrMap);
     }
 
-    private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<String, List<Double>> me7LogMap, Map3d mlhfm) {
-        List<Double> me7Voltages = me7LogMap.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
-        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.TIME_COLUMN_HEADER);
+    private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map3d mlhfm) {
+        List<Double> me7Voltages = me7LogMap.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);
+        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
         List<Double> me7voltageDt = Derivative.getDt(me7Voltages, me7Timestamps);
-        List<Double> stft = me7LogMap.get(Me7LogFileContract.STFT_COLUMN_HEADER);
-        List<Double> ltft = me7LogMap.get(Me7LogFileContract.LTFT_COLUMN_HEADER);
-        List<Double> lambdaControl = me7LogMap.get(Me7LogFileContract.LAMBDA_CONTROL_ACTIVE_HEADER);
-        List<Double> throttleAngle = me7LogMap.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
-        List<Double> rpm = me7LogMap.get(Me7LogFileContract.RPM_COLUMN_HEADER);
+        List<Double> stft = me7LogMap.get(Me7LogFileContract.Header.STFT_COLUMN_HEADER);
+        List<Double> ltft = me7LogMap.get(Me7LogFileContract.Header.LTFT_COLUMN_HEADER);
+        List<Double> lambdaControl = me7LogMap.get(Me7LogFileContract.Header.LAMBDA_CONTROL_ACTIVE_HEADER);
+        List<Double> throttleAngle = me7LogMap.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER);
+        List<Double> rpm = me7LogMap.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
 
         for (int i = 0; i < me7voltageDt.size(); i++) {
             // Closed loop only and not idle

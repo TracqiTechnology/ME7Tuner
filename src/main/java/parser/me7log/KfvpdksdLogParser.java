@@ -1,5 +1,6 @@
 package parser.me7log;
 
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
@@ -14,7 +15,7 @@ import java.util.Map;
 
 public class KfvpdksdLogParser {
 
-    private final PublishSubject<Map<String, List<Double>>> publishSubject;
+    private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
     private static KfvpdksdLogParser instance;
 
@@ -34,19 +35,19 @@ public class KfvpdksdLogParser {
         publishSubject = PublishSubject.create();
     }
 
-    public void registerLogOnChangeObserver(Observer<Map<String, List<Double>>> observer){
+    public void registerLogOnChangeObserver(Observer<Map<Me7LogFileContract.Header, List<Double>>> observer){
         publishSubject.subscribe(observer);
     }
 
     public void loadDirectory(File directory, Me7LogParser.ProgressCallback progressCallback) {
         if (directory.isDirectory()) {
             Me7LogParser me7LogParser = new Me7LogParser();
-            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory, progressCallback)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory, progressCallback)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<Me7LogFileContract.Header, List<Double>>>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable disposable) {}
 
                 @Override
-                public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
+                public void onSuccess(@NonNull Map<Me7LogFileContract.Header, List<Double>> logMap) {
                     publishSubject.onNext(logMap);
                 }
 

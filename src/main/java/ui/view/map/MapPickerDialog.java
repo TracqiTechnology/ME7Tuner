@@ -158,7 +158,6 @@ public class MapPickerDialog extends JDialog
     }
 
     public void filterModel(DefaultListModel<TableDefinition> model, String filter) {
-        System.out.println("Filter");
         for (TableDefinition definition : tableDefinitionList) {
             if (!definition.getTableName().toLowerCase(Locale.ROOT).startsWith(filter.toLowerCase(Locale.ROOT))) {
                 if (model.contains(definition)) {

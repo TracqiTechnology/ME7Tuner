@@ -45,16 +45,29 @@ public class BinWriter {
         RandomAccessFile raf = new RandomAccessFile(file, "rws");
 
         if(tableDefinition.getZAxis().getRowCount() > 0 || tableDefinition.getZAxis().getIndexCount() > 0) {
-            double[] values = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getIndexCount(), 1)];
+            double[] xAxis = new double[Math.max(tableDefinition.getXAxis().getRowCount(), 1) * Math.max(tableDefinition.getXAxis().getIndexCount(), 1)];
+            double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
+            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getIndexCount(), 1)];
+
+            for(int i = 0; i < map.xAxis.length; i++) {
+                xAxis[i] = map.xAxis[i];
+            }
+
+            for(int i = 0; i < map.yAxis.length; i++) {
+                yAxis[i] = map.yAxis[i];
+            }
 
             int index = 0;
+
             for(int i = 0; i < map.zAxis.length; i++) {
                 for(int j = 0; j < map.zAxis[i].length; j++) {
-                    values[index++] = map.zAxis[i][j];
+                    zAxis[index++] = map.zAxis[i][j];
                 }
             }
 
-            write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), values);
+            write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
+            write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
+            write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
 
             publishSubject.onNext(tableDefinition);
         }

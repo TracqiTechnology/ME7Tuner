@@ -19,12 +19,12 @@ import java.util.Map;
 public class KfurlViewModel {
     private final BehaviorSubject<Map3d> inputSubject;
     private final BehaviorSubject<KfurlCorrection> outputSubject;
-    private final BehaviorSubject<Map<String, List<Double>>> me7LogsSubject;
+    private final BehaviorSubject<Map<Me7LogFileContract.Header, List<Double>>> me7LogsSubject;
     private final BehaviorSubject<Map<String, List<Double>>> zeitLogsSubject;
 
     private static KfurlViewModel instance;
 
-    private Map<String, List<Double>> me7logs;
+    private Map<Me7LogFileContract.Header, List<Double>> me7logs;
 
     public static KfurlViewModel getInstance() {
         if (instance == null) {
@@ -70,7 +70,7 @@ public class KfurlViewModel {
         return outputSubject;
     }
 
-    public BehaviorSubject<Map<String, List<Double>>> getMe7LogsSubject() {
+    public BehaviorSubject<Map<Me7LogFileContract.Header, List<Double>>> getMe7LogsSubject() {
         return me7LogsSubject;
     }
 
@@ -100,7 +100,7 @@ public class KfurlViewModel {
             return;
         }
 
-        double me7StartTime = me7logs.get(Me7LogFileContract.START_TIME).get(0);
+        double me7StartTime = me7logs.get(Me7LogFileContract.Header.START_TIME_HEADER.getHeader()).get(0);
         double zeitStartTime = zeitLogs.get(AfrLogFileContract.START_TIME).get(0);
         double timeOffset = (zeitStartTime - me7StartTime) - zeitStartTime;
 
@@ -109,7 +109,7 @@ public class KfurlViewModel {
             timestamps.set(i, timestamps.get(i) + timeOffset);
         }
 
-        double barometricPressureMbar = me7logs.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER).get(0);
+        double barometricPressureMbar = me7logs.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER.getHeader()).get(0);
         List<Double> boostPressures = zeitLogs.get(AfrLogFileContract.BOOST_HEADER);
         for(int i = 0; i < boostPressures .size(); i++) {
             boostPressures .set(i, boostPressures .get(i) + barometricPressureMbar);

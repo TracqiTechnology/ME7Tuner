@@ -1,6 +1,7 @@
 package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -21,9 +22,9 @@ public class ClosedLoopFuelingCorrectionViewModel {
     private final PublishSubject<ClosedLoopFuelingCorrection> publishSubject = PublishSubject.create();
 
     public ClosedLoopFuelingCorrectionViewModel() {
-        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
                 Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMap();
                 if (mlhfmDefinition != null) {
                     Map3d mlhfm = mlhfmDefinition.snd;
@@ -51,7 +52,7 @@ public class ClosedLoopFuelingCorrectionViewModel {
         publishSubject.subscribe(observer);
     }
 
-    private void generateCorrection(Map<String, List<Double>> me7LogMap, Map3d mlhfmMap) {
+    private void generateCorrection(Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map3d mlhfmMap) {
 
         ClosedLoopFuelingCorrectionManager closedLoopFuelingCorrectionManager = new ClosedLoopFuelingCorrectionManager(ClosedLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), ClosedLoopFuelingLogFilterPreferences.getMinRpmPreference(), ClosedLoopFuelingLogFilterPreferences.getMaxVoltageDtPreference());
         closedLoopFuelingCorrectionManager.correct(me7LogMap, mlhfmMap);

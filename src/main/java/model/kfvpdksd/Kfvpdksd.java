@@ -16,18 +16,18 @@ public class Kfvpdksd {
         return kfvpdksd;
     }
 
-    public static Double[] parsePressure(Map<String, List<Double>> log, Double[] rpmAxis) {
+    public static Double[] parsePressure(Map<Me7LogFileContract.Header, List<Double>> log, Double[] rpmAxis) {
         List<List<Double>> boostValues = new ArrayList<>();
 
         for (int i = 0; i < rpmAxis.length; i++) {
             boostValues.add(new ArrayList<>());
         }
 
-        List<Double> timestamps = log.get(Me7LogFileContract.TIME_COLUMN_HEADER);
-        List<Double> throttleAngle = log.get(Me7LogFileContract.THROTTLE_PLATE_ANGLE_HEADER);
-        List<Double> rpm = log.get(Me7LogFileContract.RPM_COLUMN_HEADER);
-        List<Double> barometricPressure = log.get(Me7LogFileContract.BAROMETRIC_PRESSURE_HEADER);
-        List<Double> absolutePressure = log.get(Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER);
+        List<Double> timestamps = log.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
+        List<Double> throttleAngle = log.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER);
+        List<Double> rpm = log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
+        List<Double> barometricPressure = log.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER);
+        List<Double> absolutePressure = log.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER);
 
         for (int i = 0; i < timestamps.size(); i++) {
             if (throttleAngle.get(i) > 80) {

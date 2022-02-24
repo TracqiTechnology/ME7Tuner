@@ -1,6 +1,7 @@
 package ui.viewmodel.kfvpdksd;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -49,12 +50,12 @@ public class KfvpdksdViewModel {
             }
         });
 
-        KfvpdksdLogParser.getInstance().registerLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
+        KfvpdksdLogParser.getInstance().registerLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> log) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> log) {
                 Pair<TableDefinition, Map3d> kfvpdksdTable =  KfvpdksdPreferences.getSelectedMap();
                 if (kfvpdksdTable != null) {
                     cacluateKfvpdksd(Kfvpdksd.parsePressure(log, kfvpdksdTable.snd.yAxis));

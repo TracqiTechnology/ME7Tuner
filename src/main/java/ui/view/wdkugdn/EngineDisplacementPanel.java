@@ -1,6 +1,5 @@
 package ui.view.wdkugdn;
 
-import preferences.kfmiop.KfmiopPreferences;
 import preferences.wdkugdn.WdkugdnPreferences;
 
 import javax.swing.*;

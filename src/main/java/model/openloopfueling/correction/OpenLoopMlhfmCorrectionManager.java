@@ -37,9 +37,9 @@ public class OpenLoopMlhfmCorrectionManager {
         this.maxAfr = maxAfr;
     }
 
-    public void correct(Map<String, List<Double>> me7Log, Map<String, List<Double>> afrLog, Map3d mlhfm) {
+    public void correct(Map<Me7LogFileContract.Header, List<Double>> me7Log, Map<String, List<Double>> afrLog, Map3d mlhfm) {
 
-        List<Map<String, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7Log, minThrottleAngle, LAMBDA_CONTROL_ENABLED, minRpm, minPointsMe7);
+        List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7Log, minThrottleAngle, LAMBDA_CONTROL_ENABLED, minRpm, minPointsMe7);
         List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLog, minThrottleAngle, minRpm, maxAfr, minPointsAfr);
 
         generateMlhfm(mlhfm, me7LogList, afrLogList);
@@ -51,7 +51,7 @@ public class OpenLoopMlhfmCorrectionManager {
         return openLoopMlhfmCorrection;
     }
 
-    private void generateMlhfm(Map3d mlhfm, List<Map<String, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList) {
+    private void generateMlhfm(Map3d mlhfm, List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList) {
         if (me7LogList.size() != afrLogList.size()) {
             throw new IllegalArgumentException("ME7 Log size does not match AFR Log size! " + me7LogList.size() + " AFR: " + afrLogList.size());
         } else if (me7LogList.size() == 0) {
@@ -159,10 +159,10 @@ public class OpenLoopMlhfmCorrectionManager {
         return correctedAfrList;
     }
 
-    private void calculateCorrections(List<Map<String, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList, List<Double> mlhfmVoltageList) {
+    private void calculateCorrections(List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList, List<Double> mlhfmVoltageList) {
         // Loop over each log
         for (int i = 0; i < me7LogList.size(); i++) {
-            Map<String, List<Double>> me7Log = me7LogList.get(i);
+            Map<Me7LogFileContract.Header, List<Double>> me7Log = me7LogList.get(i);
             Map<String, List<Double>> afrLog = afrLogList.get(i);
 
             // For each log, loop over the voltages in MLHFM and attempt to calculate a correction
@@ -173,7 +173,7 @@ public class OpenLoopMlhfmCorrectionManager {
                 correctionsAfrMap.put(mlhfmVoltage, new ArrayList<>());
 
                 // Get the measured MAF voltages in the log
-                List<Double> me7VoltageList = me7Log.get(Me7LogFileContract.MAF_VOLTAGE_HEADER);
+                List<Double> me7VoltageList = me7Log.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);
 
                 // Attempt to find the mlhfm voltages in the log.
                 List<Integer> me7VoltageIndices = getVoltageToMatchIndices(j, mlhfmVoltageList, me7VoltageList);
@@ -181,10 +181,10 @@ public class OpenLoopMlhfmCorrectionManager {
                 // Calculate a corrected AFR for each index that is found
                 for (int me7Index : me7VoltageIndices) {
                     if (me7Index != 1 && me7Index != me7VoltageList.size() - 1) {
-                        double stft = me7Log.get(Me7LogFileContract.STFT_COLUMN_HEADER).get(me7Index) - 1;
-                        double ltft = me7Log.get(Me7LogFileContract.LTFT_COLUMN_HEADER).get(me7Index) - 1;
-                        double rpm = me7Log.get(Me7LogFileContract.RPM_COLUMN_HEADER).get(me7Index);
-                        double targetAfr = me7Log.get(Me7LogFileContract.REQUESTED_LAMBDA_HEADER).get(me7Index);
+                        double stft = me7Log.get(Me7LogFileContract.Header.STFT_COLUMN_HEADER).get(me7Index) - 1;
+                        double ltft = me7Log.get(Me7LogFileContract.Header.LTFT_COLUMN_HEADER).get(me7Index) - 1;
+                        double rpm = me7Log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER).get(me7Index);
+                        double targetAfr = me7Log.get(Me7LogFileContract.Header.REQUESTED_LAMBDA_HEADER).get(me7Index);
 
                         // Find the RPM from the ME7 log in the AFR log
                         int afrIndex = Index.getInsertIndex(afrLog.get(AfrLogFileContract.RPM_HEADER), rpm);

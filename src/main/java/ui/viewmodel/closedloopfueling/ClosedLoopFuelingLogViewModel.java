@@ -1,6 +1,7 @@
 package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -20,9 +21,9 @@ public class ClosedLoopFuelingLogViewModel {
     private final PublishSubject<ClosedLoopMlhfmLogModel> publishSubject = PublishSubject.create();
 
     public ClosedLoopFuelingLogViewModel() {
-        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> me7LogMap) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
                 Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getSelectedMap();
 
                 if(mlhfmDefinition != null) {
@@ -67,16 +68,16 @@ public class ClosedLoopFuelingLogViewModel {
     }
 
     public static class ClosedLoopMlhfmLogModel {
-        private final Map<String, List<Double>> me7LogMap;
+        private final Map<Me7LogFileContract.Header, List<Double>> me7LogMap;
         private final Map3d mlhfm;
 
-        public ClosedLoopMlhfmLogModel(@Nullable Map<String, List<Double>> me7LogMap, @Nullable Map3d mlhfm) {
+        public ClosedLoopMlhfmLogModel(@Nullable Map<Me7LogFileContract.Header, List<Double>> me7LogMap, @Nullable Map3d mlhfm) {
             this.me7LogMap = me7LogMap;
             this.mlhfm = mlhfm;
         }
 
         @Nullable
-        public Map<String, List<Double>> getMe7LogMap() {
+        public Map<Me7LogFileContract.Header, List<Double>> getMe7LogMap() {
             return me7LogMap;
         }
 

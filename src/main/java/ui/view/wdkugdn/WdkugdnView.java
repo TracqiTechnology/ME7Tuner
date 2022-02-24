@@ -4,15 +4,19 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
+import preferences.bin.BinFilePreferences;
+import preferences.wdkugdn.WdkugdnPreferences;
 import ui.map.map.MapTable;
 import ui.viewmodel.wdkugdn.WdkugdnViewModel;
+import writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class WdkugdnView {
 
-    private final MapTable wdkudgn = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable wdkudgnTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
     private JPanel panel;
     private JLabel wdkugdnFileLabel;
     private final EngineDisplacementPanel engineDisplacementPanel = new EngineDisplacementPanel(new EngineDisplacementPanel.OnValueChangedListener() {
@@ -33,7 +37,7 @@ public class WdkugdnView {
     }
 
     public void setMap(Map3d map) {
-        wdkudgn.setMap(map);
+        wdkudgnTable.setMap(map);
     }
 
     private void initPanel() {
@@ -72,7 +76,7 @@ public class WdkugdnView {
         constraints.gridx = 0;
         constraints.gridy = 2;
 
-        panel.add(wdkudgn.getScrollPane(), constraints);
+        panel.add(wdkudgnTable.getScrollPane(), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
@@ -90,7 +94,7 @@ public class WdkugdnView {
             @Override
             public void onNext(@NonNull WdkugdnViewModel.WdkugnModel wdkugnModel) {
                 if(wdkugnModel.getWdkugdn() != null) {
-                    wdkudgn.setMap(wdkugnModel.getWdkugdn());
+                    wdkudgnTable.setMap(wdkugnModel.getWdkugdn());
                 }
 
                 if(wdkugnModel.getWdkudgnDefinitionTitle() != null) {
@@ -118,6 +122,34 @@ public class WdkugdnView {
         wdkugdnFileLabel = new JLabel("No Table Defined");
         panel.add(wdkugdnFileLabel, constraints);
 
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.insets.top = 16;
+
+        panel.add(getWriteFileButton(), constraints);
+
         return panel;
+    }
+
+    private JButton getWriteFileButton() {
+        JButton button = new JButton("Write WDKUGDN");
+
+        button.addActionListener(e -> {
+            int returnValue = JOptionPane.showConfirmDialog(
+                    panel,
+                    "Are you sure you want to write WDKUGDN to the binary?",
+                    "Write WDKUGDN",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getSelectedMap().fst, wdkudgnTable.getMap3d());
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+
+        return button;
     }
 }

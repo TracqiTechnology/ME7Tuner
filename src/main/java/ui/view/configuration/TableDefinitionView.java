@@ -5,7 +5,6 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import model.kfmiop.Kfmiop;
 import parser.xdf.TableDefinition;
 import preferences.kfldimx.KfldimxPreferences;
 import preferences.kfldrl.KfldrlPreferences;
@@ -21,7 +20,6 @@ import ui.view.map.MapPickerDialog;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Optional;
-
 
 public class TableDefinitionView {
     private static final Insets WEST_INSETS = new Insets(5, 0, 5, 5);

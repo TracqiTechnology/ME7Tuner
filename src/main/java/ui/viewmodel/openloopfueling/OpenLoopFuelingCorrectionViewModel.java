@@ -1,6 +1,7 @@
 package ui.viewmodel.openloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -21,18 +22,18 @@ import java.util.Map;
 public class OpenLoopFuelingCorrectionViewModel {
 
     private Map3d mlhfmMap;
-    private Map<String, List<Double>> me7LogMap;
+    private Map<Me7LogFileContract.Header, List<Double>> me7LogMap;
     private Map<String, List<Double>> afrLogMap;
 
     private final BehaviorSubject<OpenLoopMlhfmCorrection> publishSubject = BehaviorSubject.create();
 
     public OpenLoopFuelingCorrectionViewModel() {
-        OpenLoopLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+        OpenLoopLogParser.getInstance().register(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> logs) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> logs) {
                 OpenLoopFuelingCorrectionViewModel.this.me7LogMap = logs;
                 generateCorrection();
             }

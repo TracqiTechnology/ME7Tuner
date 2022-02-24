@@ -1,6 +1,7 @@
 package ui.viewmodel.closedloopfueling;
 
 import com.sun.tools.javac.util.Pair;
+import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -80,12 +81,12 @@ public class ClosedLoopFuelingViewModel {
             public void onComplete() {}
         });
 
-        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<String, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
             @Override
-            public void onNext(@NonNull Map<String, List<Double>> stringListMap) {
+            public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> stringListMap) {
                 ClosedLoopMlfhmModel model = behaviorSubject.getValue();
                 ClosedLoopMlfhmModel.Builder builder;
                 if(model == null) {
