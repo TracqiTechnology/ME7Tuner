@@ -225,7 +225,7 @@ public class KfzwopView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfzwopPreferences.getSelectedMap().fst, kfzwopOutput.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfzwopPreferences.getInstance().getSelectedMap().fst, kfzwopOutput.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

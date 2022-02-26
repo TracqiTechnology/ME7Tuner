@@ -36,7 +36,7 @@ public class KfvpdksdViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> kfvpdksdTable =  KfvpdksdPreferences.getSelectedMap();
+                Pair<TableDefinition, Map3d> kfvpdksdTable =  KfvpdksdPreferences.getInstance().getSelectedMap();
                 if (kfvpdksdTable != null) {
                     subject.onNext(new  KfvpdksdModel(kfvpdksdTable, null,null));
                 }
@@ -56,7 +56,7 @@ public class KfvpdksdViewModel {
 
             @Override
             public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> log) {
-                Pair<TableDefinition, Map3d> kfvpdksdTable =  KfvpdksdPreferences.getSelectedMap();
+                Pair<TableDefinition, Map3d> kfvpdksdTable =  KfvpdksdPreferences.getInstance().getSelectedMap();
                 if (kfvpdksdTable != null) {
                     cacluateKfvpdksd(Kfvpdksd.parsePressure(log, kfvpdksdTable.snd.yAxis));
                 }
@@ -81,11 +81,11 @@ public class KfvpdksdViewModel {
     }
 
     public void cacluateKfvpdksd(Double[] maxPressure) {
-        Pair<TableDefinition, Map3d> kfvpdksdTable = KfvpdksdPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> kfvpdksdTable = KfvpdksdPreferences.getInstance().getSelectedMap();
         if(kfvpdksdTable != null) {
             Double[] rescaledPressureRatio = RescaleAxis.rescaleAxis(kfvpdksdTable.snd.xAxis, (1000+getMax(maxPressure))/1000d);
             kfvpdksdTable.snd.xAxis = rescaledPressureRatio;
-            Kfvpdksd kfvpdksd = Kfvpdksd.generate(maxPressure, KfvpdksdPreferences.getSelectedMap().snd.yAxis, rescaledPressureRatio);
+            Kfvpdksd kfvpdksd = Kfvpdksd.generate(maxPressure, KfvpdksdPreferences.getInstance().getSelectedMap().snd.yAxis, rescaledPressureRatio);
             SwingUtilities.invokeLater(() -> subject.onNext(new KfvpdksdModel(kfvpdksdTable, kfvpdksd, maxPressure)));
         }
     }

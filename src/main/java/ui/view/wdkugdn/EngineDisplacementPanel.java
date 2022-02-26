@@ -100,21 +100,21 @@ class EngineDisplacementPanel extends JPanel {
 
     private void addMaxDesiredMap(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(WdkugdnPreferences.getEngineDisplacementPreference());
+        textField.setValue(WdkugdnPreferences.getInstance().getEngineDisplacementPreference());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {}
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    WdkugdnPreferences.setEngineDisplacementPreference(Double.parseDouble(textField.getText()));
+                    WdkugdnPreferences.getInstance().setEngineDisplacementPreference(Double.parseDouble(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    WdkugdnPreferences.setEngineDisplacementPreference(Double.parseDouble(textField.getText()));
+                    WdkugdnPreferences.getInstance().setEngineDisplacementPreference(Double.parseDouble(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }

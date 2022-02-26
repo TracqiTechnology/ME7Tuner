@@ -3,16 +3,16 @@ package ui.view;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import parser.xdf.TableDefinition;
+import preferences.MapPreferenceManager;
 import preferences.bin.BinFilePreferences;
 import preferences.filechooser.BinFileChooserPreferences;
 import preferences.filechooser.XdfFileChooserPreferences;
+import preferences.logheaderdefinition.LogHeaderPreference;
 import preferences.xdf.XdfFilePreferences;
 import ui.view.closedloopfueling.ClosedLoopFuelingView;
 import ui.view.configuration.ConfigurationView;
-import ui.view.configuration.TableDefinitionView;
-import ui.view.kfmirl.KfmirlView;
 import ui.view.kfmiop.KfmiopView;
+import ui.view.kfmirl.KfmirlView;
 import ui.view.kfvpdksd.KfvpdksdView;
 import ui.view.kfzw.KfzwView;
 import ui.view.kfzwop.KfzwopView;
@@ -183,12 +183,32 @@ public class MainManager {
             int returnValue = fc.showOpenDialog(frame);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
+                MapPreferenceManager.clear();
                 File xdfFile = fc.getSelectedFile();
                 XdfFilePreferences.getInstance().setFile(xdfFile);
                 XdfFileChooserPreferences.setDirectory(xdfFile);
             }
         });
         xdfMenu.add(selectXdfMenuItem);
+
+        JMenu preferencesMenu = new JMenu("Preferences");
+        menuBar.add(preferencesMenu);
+
+        JMenuItem clearPreferencesMenuItem = new JMenuItem("Reset Preferences");
+        clearPreferencesMenuItem.addActionListener(e -> {
+            MapPreferenceManager.clear();
+            LogHeaderPreference.clear();
+            XdfFilePreferences.clear();
+            BinFilePreferences.clear();
+            XdfFileChooserPreferences.clear();
+            BinFileChooserPreferences.clear();
+
+            binFile = new File("");
+            xdfFile = new File("");
+
+            updateTitle();
+        });
+        preferencesMenu.add(clearPreferencesMenuItem);
 
         return menuBar;
     }

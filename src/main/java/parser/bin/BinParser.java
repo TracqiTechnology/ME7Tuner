@@ -134,7 +134,7 @@ public class BinParser {
 
             Double[] xAxis = parseAxis(bytes, xAxisDefinition);
             Double[] yAxis = parseAxis(bytes, yAxisDefinition);
-            Double[][] zAxis = parseAxis2D(bytes, zAxisDefinition);
+            Double[][] zAxis = parseData(bytes, zAxisDefinition);
 
             mapList.add(new Pair<>(tableDefinition, new Map3d(xAxis, yAxis, zAxis)));
         }
@@ -192,7 +192,7 @@ public class BinParser {
         return new Double[0];
     }
 
-    private Double[][] parseAxis2D(byte[] bytes, AxisDefinition axisDefinition) {
+    private Double[][] parseData(byte[] bytes, AxisDefinition axisDefinition) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         int address = axisDefinition.getAddress();
 

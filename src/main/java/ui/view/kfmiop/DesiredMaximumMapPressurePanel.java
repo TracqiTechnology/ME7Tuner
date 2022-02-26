@@ -48,8 +48,8 @@ class DesiredMaximumMapPressurePanel extends JPanel {
         }
     }
 
-    private Map<FieldTitle, JFormattedTextField> fieldMap = new HashMap<>();
-    private OnValueChangedListener listener;
+    private final Map<FieldTitle, JFormattedTextField> fieldMap = new HashMap<>();
+    private final OnValueChangedListener listener;
 
     public interface OnValueChangedListener {
         void onValueChanged(FieldTitle fieldTitle);
@@ -103,21 +103,21 @@ class DesiredMaximumMapPressurePanel extends JPanel {
 
     private void addMaxDesiredMap(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(KfmiopPreferences.getMaxMapPressurePreference());
+        textField.setValue(KfmiopPreferences.getInstance().getMaxMapPressurePreference());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {}
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    KfmiopPreferences.setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
+                    KfmiopPreferences.getInstance().setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    KfmiopPreferences.setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
+                    KfmiopPreferences.getInstance().setMaxMapPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
@@ -132,21 +132,21 @@ class DesiredMaximumMapPressurePanel extends JPanel {
 
     private void addMaxDesiredBoost(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(KfmiopPreferences.getMaxBoostPressurePreference());
+        textField.setValue(KfmiopPreferences.getInstance().getMaxBoostPressurePreference());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {}
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    KfmiopPreferences.setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
+                    KfmiopPreferences.getInstance().setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    KfmiopPreferences.setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
+                    KfmiopPreferences.getInstance().setMaxBoostPressurePreference(Integer.parseInt(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {}
             }

@@ -277,7 +277,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfvpdksdPreferences.getSelectedMap().fst, kfvpdksdTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfvpdksdPreferences.getInstance().getSelectedMap().fst, kfvpdksdTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

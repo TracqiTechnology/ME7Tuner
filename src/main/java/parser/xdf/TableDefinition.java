@@ -43,7 +43,7 @@ public class TableDefinition {
             return tableName;
         }
 
-        return tableName + ": " + tableDescription;
+        return tableName + ": " + tableDescription + " - " + zAxis.getUnit();
     }
 
     @Override

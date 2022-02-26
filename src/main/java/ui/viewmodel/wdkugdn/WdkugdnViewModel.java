@@ -22,7 +22,7 @@ public class WdkugdnViewModel {
 
     public WdkugdnViewModel() {
 
-        WdkugdnPreferences.register(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        WdkugdnPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -42,7 +42,7 @@ public class WdkugdnViewModel {
             }
         });
 
-        KfwdkmsnPreferences.register(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfwdkmsnPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -68,10 +68,10 @@ public class WdkugdnViewModel {
 
     public void calculateWdkugdn() {
         SwingUtilities.invokeLater(() -> {
-            Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getSelectedMap();
-            Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getSelectedMap();
+            Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getInstance().getSelectedMap();
+            Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getInstance().getSelectedMap();
             if (wdkugdn != null && kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.snd, kfwdkmsn.snd, WdkugdnPreferences.getEngineDisplacementPreference()), wdkugdn.fst.getTableName(), kfwdkmsn.fst.getTableName()));
+                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.snd, kfwdkmsn.snd, WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.fst.getTableName(), kfwdkmsn.fst.getTableName()));
             } else if(wdkugdn != null) {
                 subject.onNext(new WdkugnModel(null, wdkugdn.fst.getTableName(), null));
             }else if(kfwdkmsn != null) {

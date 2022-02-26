@@ -18,8 +18,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BinWriter {
-    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
+    private static final int INVALID_ADDRESS = 0;
+
     private static BinWriter instance;
+    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
+
+
 
     private final PublishSubject<TableDefinition> publishSubject = PublishSubject.create();
 
@@ -65,9 +69,17 @@ public class BinWriter {
                 }
             }
 
-            write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
-            write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
-            write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
+            if(tableDefinition.getXAxis().getAddress() != INVALID_ADDRESS) {
+                write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
+            }
+
+            if(tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
+                write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
+            }
+
+            if(tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
+                write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
+            }
 
             publishSubject.onNext(tableDefinition);
         }

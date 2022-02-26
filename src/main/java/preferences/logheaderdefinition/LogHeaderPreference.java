@@ -4,6 +4,7 @@ package preferences.logheaderdefinition;
 import contract.Me7LogFileContract;
 import io.reactivex.annotations.NonNull;
 
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class LogHeaderPreference {
@@ -16,6 +17,14 @@ public class LogHeaderPreference {
         this.header = header;
         this.defaultValue = defaultValue;
         this.header.setHeader(getHeader());
+    }
+
+    public static void clear() {
+        try {
+            prefs.clear();
+        } catch (BackingStoreException e) {
+            e.printStackTrace();
+        }
     }
 
     @NonNull

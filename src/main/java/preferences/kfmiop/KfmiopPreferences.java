@@ -1,94 +1,46 @@
 package preferences.kfmiop;
 
-import com.sun.tools.javac.util.Pair;
-import io.reactivex.Observer;
-import io.reactivex.annotations.Nullable;
-import io.reactivex.subjects.PublishSubject;
-import math.map.Map3d;
-import parser.bin.BinParser;
-import parser.xdf.TableDefinition;
+import preferences.MapPreference;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.prefs.Preferences;
 
-public class KfmiopPreferences {
+public class KfmiopPreferences extends MapPreference {
+    private static final String TITLE_PREFERENCE = "kfmiop_title_preference";
+    private static final String DESCRIPTION_PREFERENCE = "kfmiop_description_preference";
+    private static final String UNIT_PREFERENCE = "kfmiop_unit_preference";
 
-    private static final String TABLE_TITLE_PREFERENCE = "kfmiop_title_preference";
-    private static final String TABLE_DESCRIPTION_PREFERENCE = "kfmiop_description_preference";
     private static final String MAX_MAP_PRESSURE_PREFERENCE = "max_map_pressure_preference";
     private static final String MAX_BOOST_PRESSURE_PREFERENCE = "max_boost_pressure_preference";
 
-    private static final Preferences prefs = Preferences.userNodeForPackage(KfmiopPreferences.class);
-    private static final PublishSubject<Optional<Pair<TableDefinition, Map3d>>> publishSubject = PublishSubject.create();
+    private static KfmiopPreferences instance;
 
-    public static void registerOnMapChanged(Observer<Optional<Pair<TableDefinition, Map3d>>> observer) {
-        publishSubject.subscribe(observer);
-    }
+    private final Preferences prefs = Preferences.userNodeForPackage(KfmiopPreferences.class);
 
-    @Nullable
-    public static Pair<TableDefinition, Map3d> getSelectedMap() {
-        List<Pair<TableDefinition, Map3d>> mapList = BinParser.getInstance().getMapList();
-
-        String mapTitle = getTableTitlePreference();
-        String mapDescription = getTableDescriptionPreference();
-
-        if (mapTitle.isEmpty() && mapDescription.isEmpty()) {
-            return null;
-        } else {
-            for (Pair<TableDefinition, Map3d> map : mapList) {
-                if (mapTitle.equals(map.fst.getTableName()) && mapDescription.equals(map.fst.getTableDescription())) {
-
-                    return map;
-                }
-            }
+    public static KfmiopPreferences getInstance() {
+        if(instance == null) {
+            instance = new KfmiopPreferences();
         }
 
-        return null;
+        return instance;
     }
 
-    public static void setSelectedMap(@Nullable TableDefinition tableDefinition) {
-        if (tableDefinition != null) {
-            setTableTitlePreference(tableDefinition.getTableName());
-            setTableDescriptionPreference(tableDefinition.getTableDescription());
-        } else {
-            setTableTitlePreference("");
-            setTableDescriptionPreference("");
-        }
-
-        publishSubject.onNext(Optional.ofNullable(getSelectedMap()));
+    private KfmiopPreferences() {
+        super(TITLE_PREFERENCE, DESCRIPTION_PREFERENCE, UNIT_PREFERENCE);
     }
 
-    private static String getTableTitlePreference() {
-        return prefs.get(TABLE_TITLE_PREFERENCE, "");
-    }
-
-    private static String getTableDescriptionPreference() {
-        return prefs.get(TABLE_DESCRIPTION_PREFERENCE, "");
-    }
-
-    private static void setTableTitlePreference(String title) {
-        prefs.put(TABLE_TITLE_PREFERENCE, title);
-    }
-
-    private static void setTableDescriptionPreference(String description) {
-        prefs.put(TABLE_DESCRIPTION_PREFERENCE, description);
-    }
-
-    public static double getMaxMapPressurePreference() {
+    public double getMaxMapPressurePreference() {
         return Double.parseDouble(prefs.get(MAX_MAP_PRESSURE_PREFERENCE, String.valueOf(2550)));
     }
 
-    public static void setMaxMapPressurePreference(double maxDesiredMap) {
+    public void setMaxMapPressurePreference(double maxDesiredMap) {
         prefs.put(MAX_MAP_PRESSURE_PREFERENCE, String.valueOf(maxDesiredMap));
     }
 
-    public static double getMaxBoostPressurePreference() {
+    public double getMaxBoostPressurePreference() {
         return Double.parseDouble(prefs.get(MAX_BOOST_PRESSURE_PREFERENCE, String.valueOf(2100)));
     }
 
-    public static void setMaxBoostPressurePreference(double maxDesiredBoost) {
+    public void setMaxBoostPressurePreference(double maxDesiredBoost) {
         prefs.put(MAX_BOOST_PRESSURE_PREFERENCE, String.valueOf(maxDesiredBoost));
     }
-
 }

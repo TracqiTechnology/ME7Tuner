@@ -143,7 +143,7 @@ public class WdkugdnView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getSelectedMap().fst, wdkudgnTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getInstance().getSelectedMap().fst, wdkudgnTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

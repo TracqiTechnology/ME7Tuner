@@ -12,8 +12,11 @@ import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfzw.KfzwPreferences;
+import preferences.kfzwop.KfzwopPreferences;
+import ui.viewmodel.kfzwop.KfzwopViewModel;
 
 import java.util.List;
+import java.util.Optional;
 
 public class KfzwViewModel {
 
@@ -26,10 +29,7 @@ public class KfzwViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> kfzwTable = KfzwPreferences.getSelectedMap();
-                if (kfzwTable != null) {
-                    subject.onNext(new KfzwModel(kfzwTable, KfmiopPreferences.getSelectedMap().snd.xAxis, kfzwTable.snd));
-                }
+                updateModel();
             }
 
             @Override
@@ -37,6 +37,24 @@ public class KfzwViewModel {
 
             @Override
             public void onComplete() {
+            }
+        });
+
+        KfzwPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                updateModel();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {
+
             }
         });
     }
@@ -50,7 +68,25 @@ public class KfzwViewModel {
         newKfzw.xAxis = newXAxis;
         newKfzw.yAxis = kfzw.yAxis;
         newKfzw.zAxis = Kfzw.generateKfzw(kfzw.xAxis, kfzw.zAxis, newXAxis);
-        subject.onNext(new KfzwModel(KfzwPreferences.getSelectedMap(), KfmiopPreferences.getSelectedMap().snd.xAxis, newKfzw));
+        subject.onNext(new KfzwModel(KfzwPreferences.getInstance().getSelectedMap(), KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, newKfzw));
+    }
+
+    private void updateModel() {
+        Pair<TableDefinition, Map3d> kfzwTable = KfzwPreferences.getInstance().getSelectedMap();
+        Pair<TableDefinition, math.map.Map3d> kfmiopTable = KfmiopPreferences.getInstance().getSelectedMap();
+        if (kfzwTable != null) {
+            if(kfmiopTable != null) {
+                subject.onNext(new KfzwModel(kfzwTable, KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, kfzwTable.snd));
+            } else {
+                subject.onNext(new KfzwModel(kfzwTable, null, kfzwTable.snd));
+            }
+        } else {
+            if(kfmiopTable != null) {
+                subject.onNext(new KfzwModel(null, KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, null));
+            } else {
+                subject.onNext(new KfzwModel(null, null, null));
+            }
+        }
     }
 
     public static class KfzwModel {

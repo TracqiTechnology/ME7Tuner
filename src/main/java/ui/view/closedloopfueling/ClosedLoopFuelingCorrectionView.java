@@ -288,7 +288,7 @@ public class ClosedLoopFuelingCorrectionView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getSelectedMap().fst, closedLoopFuelingCorrection.fitMlhfm);
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getInstance().getSelectedMap().fst, closedLoopFuelingCorrection.fitMlhfm);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

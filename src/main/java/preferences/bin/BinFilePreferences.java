@@ -5,6 +5,7 @@ import io.reactivex.subjects.BehaviorSubject;
 
 import java.io.File;
 
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class BinFilePreferences {
@@ -17,6 +18,14 @@ public class BinFilePreferences {
 
     private BinFilePreferences() {
         behaviorSubject.onNext(getFile());
+    }
+
+    public static void clear() {
+        try {
+            PREFERENCES.clear();
+        } catch (BackingStoreException e) {
+            e.printStackTrace();
+        }
     }
 
     public static BinFilePreferences getInstance() {

@@ -95,14 +95,14 @@ class WastegateCrackingPressurePanel extends JPanel {
 
     private void addWastegateCrackingPressure(FieldTitle fieldTitle, GridBagConstraints gbc, NumberFormatter decimalFormatter) {
         final JFormattedTextField textField = new JFormattedTextField(decimalFormatter);
-        textField.setValue(KfvpdksdPreferences.getMaxWasteGateCrackingPressurePreference());
+        textField.setValue(KfvpdksdPreferences.getInstance().getMaxWasteGateCrackingPressurePreference());
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { }
 
             public void removeUpdate(DocumentEvent e) {
                 try {
-                    KfvpdksdPreferences.setMaxWasteGateCrackingPressurePreference(Double.parseDouble(textField.getText()));
+                    KfvpdksdPreferences.getInstance().setMaxWasteGateCrackingPressurePreference(Double.parseDouble(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {
                 }
@@ -110,7 +110,7 @@ class WastegateCrackingPressurePanel extends JPanel {
 
             public void insertUpdate(DocumentEvent e) {
                 try {
-                    KfvpdksdPreferences.setMaxWasteGateCrackingPressurePreference(Double.parseDouble(textField.getText()));
+                    KfvpdksdPreferences.getInstance().setMaxWasteGateCrackingPressurePreference(Double.parseDouble(textField.getText()));
                     listener.onValueChanged(fieldTitle);
                 } catch (NumberFormatException exception) {
                 }

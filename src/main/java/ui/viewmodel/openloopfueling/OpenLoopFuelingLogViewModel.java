@@ -91,17 +91,19 @@ public class OpenLoopFuelingLogViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
-                OpenLoopFuelingLogModel model = behaviorSubject.getValue();
-                OpenLoopFuelingLogModel.Builder builder;
-                if (model == null) {
-                    builder = new OpenLoopFuelingLogModel.Builder();
-                } else {
-                    builder = new OpenLoopFuelingLogModel.Builder(model);
-                }
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
+                if(tableDefinition != null) {
+                    OpenLoopFuelingLogModel model = behaviorSubject.getValue();
+                    OpenLoopFuelingLogModel.Builder builder;
+                    if (model == null) {
+                        builder = new OpenLoopFuelingLogModel.Builder();
+                    } else {
+                        builder = new OpenLoopFuelingLogModel.Builder(model);
+                    }
 
-                builder.mlhfm(tableDefinition.snd);
-                behaviorSubject.onNext(generateAirflowEstimation(builder.build()));
+                    builder.mlhfm(tableDefinition.snd);
+                    behaviorSubject.onNext(generateAirflowEstimation(builder.build()));
+                }
             }
 
             @Override

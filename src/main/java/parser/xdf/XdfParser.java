@@ -16,6 +16,7 @@ import java.util.List;
 
 public class XdfParser {
 
+    private static final String XDF_CONSTANT_TAG = "XDFCONSTANT";
     private static final String XDF_TABLE_TAG = "XDFTABLE";
     private static final String XDF_AXIS_TAG = "XDFAXIS";
     private static final String XDF_LABEL_TAG = "LABEL";
@@ -65,7 +66,6 @@ public class XdfParser {
             @Override
             public void onComplete() {}
         });
-
     }
 
     public static XdfParser getInstance() {
@@ -285,6 +285,56 @@ public class XdfParser {
                 AxisDefinition xAxisDefinition = new AxisDefinition("x", xAddress, xIndexCount, xSizeBits, xRowCount, xColumnCount, xUnits, xEquation, xVarId, xAxisValues);
                 AxisDefinition yAxisDefinition = new AxisDefinition("y", yAddress, yIndexCount, ySizeBits, yRowCount, yColumnCount, yUnits, yEquation, yVarId, yAxisValues);
                 AxisDefinition zAxisDefinition = new AxisDefinition("z", zAddress, zIndexCount, zSizeBits, zRowCount, zColumnCount, zUnits, zEquation, zVarId, zAxisValues);
+
+                tableDefinitions.add(new TableDefinition(tableName, tableDescription, xAxisDefinition, yAxisDefinition, zAxisDefinition));
+            } else if(element.getName().equals(XDF_CONSTANT_TAG)) {
+                String tableName = "";
+                String tableDescription = "";
+                String xEquation = "";
+                String xVarId = "";
+                String xUnits = "-";
+
+                int xAddress = 0;
+                int xSizeBits = 0;
+
+
+                List<Element> tableChildren = element.getChildren();
+
+                for (Element tableChild : tableChildren) {
+                    if (tableChild.getName().equals(XDF_TABLE_TITLE_TAG)) {               // TITLE tag
+                        tableName = tableChild.getText();
+                    } else if (tableChild.getName().equals(XDF_TABLE_DESCRIPTION_TAG)) {  // DESCRIPTION tag
+                        tableDescription = tableChild.getText();
+                    } else if(tableChild.getName().equals(XDF_UNITS_TAG)) {
+                        xUnits = tableChild.getValue();
+                    } else if(tableChild.getName().equals(XDF_EMBEDDED_TAG)) {
+                        int sizeBits = tableChild.getAttribute(XDF_SIZE_BITS_TAG).getIntValue();
+
+                        Attribute addressAttribute = tableChild.getAttribute(XDF_ADDRESS_TAG);
+                        int address = 0;
+                        if(addressAttribute != null) {
+                            address = Integer.decode(addressAttribute.getValue());
+                        }
+
+                        xAddress = address;
+                        xSizeBits = sizeBits;
+
+                    } else if(tableChild.getName().equals(XDF_MATH_TAG)) {
+                        String equation = tableChild.getAttribute(XDF_EQUATION_TAG).getValue();
+                        String varId = "";
+                        for(Element equationChild:tableChild.getChildren()) {
+                            if(equationChild.getName().equals(XDF_VAR_TAG)) {
+                                varId = equationChild.getAttribute(XDF_ID_TAG).getValue();
+                            }
+                        }
+                        xEquation = equation;
+                        xVarId = varId;
+                    }
+                }
+
+                AxisDefinition xAxisDefinition = new AxisDefinition("x", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
+                AxisDefinition yAxisDefinition = new AxisDefinition("y", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
+                AxisDefinition zAxisDefinition = new AxisDefinition("z", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
 
                 tableDefinitions.add(new TableDefinition(tableName, tableDescription, xAxisDefinition, yAxisDefinition, zAxisDefinition));
             }

@@ -241,7 +241,7 @@ public class KfmirlView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmirlPreferences.getSelectedMap().fst, kfmirl.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmirlPreferences.getInstance().getSelectedMap().fst, kfmirl.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

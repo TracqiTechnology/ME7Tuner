@@ -312,7 +312,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmiopPreferences.getSelectedMap().fst, outputKfmiop.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmiopPreferences.getInstance().getSelectedMap().fst, outputKfmiop.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

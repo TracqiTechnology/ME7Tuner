@@ -6,13 +6,17 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import parser.xdf.TableDefinition;
+import preferences.MapPreference;
+import preferences.MapPreferenceManager;
 import preferences.kfldimx.KfldimxPreferences;
 import preferences.kfldrl.KfldrlPreferences;
 import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfmirl.KfmirlPreferences;
 import preferences.kfvpdksd.KfvpdksdPreferences;
+import preferences.kfwdkmsn.KfwdkmsnPreferences;
 import preferences.kfzw.KfzwPreferences;
 import preferences.kfzwop.KfzwopPreferences;
+import preferences.krkte.KrktePreferences;
 import preferences.mlhfm.MlhfmPreferences;
 import preferences.wdkugdn.WdkugdnPreferences;
 import ui.view.map.MapPickerDialog;
@@ -30,30 +34,44 @@ public class TableDefinitionView {
     private final JPanel panel = new JPanel();
 
     enum FieldTitle {
-        MLHFM("MLHFM",  UNDEFINED),
-        KFMIOP("KFMIOP",  UNDEFINED),
-        KFMIRL("KFMIRL",  UNDEFINED),
-        KFZWOP("KFZWOP",  UNDEFINED),
-        KFZW("KFZW",  UNDEFINED),
-        KFVPDKSD("KFVPDKSD",  UNDEFINED),
-        WDKUGDN("WDKUGDN",  UNDEFINED),
-        KFLDRL("KFLDR",  UNDEFINED),
-        KFLDIMX("KFLDIMX",  UNDEFINED);
+        KRKTE("KRKTE", "-", UNDEFINED, KrktePreferences.getInstance()),
+        MLHFM("MLHFM", "-", UNDEFINED, MlhfmPreferences.getInstance()),
+        KFMIOP("KFMIOP", "-", UNDEFINED, KfmiopPreferences.getInstance()),
+        KFMIRL("KFMIRL", "-", UNDEFINED, KfmirlPreferences.getInstance()),
+        KFZWOP("KFZWOP", "-", UNDEFINED, KfzwopPreferences.getInstance()),
+        KFZW("KFZW", "-", UNDEFINED, KfzwPreferences.getInstance()),
+        KFVPDKSD("KFVPDKSD", "-", UNDEFINED, KfvpdksdPreferences.getInstance()),
+        WDKUGDN("WDKUGDN", "-", UNDEFINED, WdkugdnPreferences.getInstance()),
+        KFWDKMSN("KFWDKMSN", "-", UNDEFINED, KfwdkmsnPreferences.getInstance()),
+        KFLDRL("KFLDRL", "-", UNDEFINED, KfldrlPreferences.getInstance()),
+        KFLDIMX("KFLDIMX", "-", UNDEFINED, KfldimxPreferences.getInstance());
 
         private final String title;
+        private final String units;
         private final String definition;
+        private final MapPreference mapPreference;
 
-        FieldTitle(String title, String definition) {
+        FieldTitle(String title, String units, String definition, MapPreference mapPreference) {
             this.title = title;
+            this.units = units;
             this.definition = definition;
+            this.mapPreference = mapPreference;
         }
 
         public String getTitle() {
             return title;
         }
 
+        public String getUnits() {
+            return units;
+        }
+
         public String getDefinition() {
             return definition;
+        }
+
+        public MapPreference getMapPreference() {
+            return mapPreference;
         }
     }
 
@@ -72,6 +90,30 @@ public class TableDefinitionView {
     }
 
     public TableDefinitionView() {
+        initialize();
+
+        MapPreferenceManager.registerOnClear(new Observer<Boolean>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                initialize();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+    }
+
+    private void initialize() {
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
+
         panel.setLayout(new GridBagLayout());
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("MAP Definitions"),
@@ -79,370 +121,64 @@ public class TableDefinitionView {
         GridBagConstraints gbc;
 
         for (int i = 0; i < FieldTitle.values().length; i++) {
-           FieldTitle fieldTitle = FieldTitle.values()[i];
+            FieldTitle fieldTitle = FieldTitle.values()[i];
             gbc = createGbc(0, i);
             panel.add(new JLabel(fieldTitle.getTitle() + ":", JLabel.LEFT), gbc);
+
             gbc = createGbc(1, i);
             JLabel definitionLabel = new JLabel(fieldTitle.getDefinition(), JLabel.LEFT);
             panel.add(definitionLabel, gbc);
+
             gbc = createGbc(2, i);
+            JLabel unitLabel = new JLabel(fieldTitle.getUnits(), JLabel.LEFT);
+            panel.add(unitLabel, gbc);
 
-            switch (fieldTitle) {
-                case MLHFM:
-                    addMlhfm(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFMIOP:
-                    addKfmiop(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFMIRL:
-                    addKfmirl(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFZWOP:
-                    addKfzwop(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFZW:
-                    addKfzw(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFVPDKSD:
-                    addKfvpdksd(fieldTitle, gbc, definitionLabel);
-                    break;
-                case WDKUGDN:
-                    addWdkugdn(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFLDRL:
-                    addKfldrl(fieldTitle, gbc, definitionLabel);
-                    break;
-                case KFLDIMX:
-                    addKfldimx(fieldTitle, gbc, definitionLabel);
-                    break;
-            }
+            gbc = createGbc(3, i);
+
+            addField(fieldTitle, fieldTitle.mapPreference, gbc, definitionLabel, unitLabel);
         }
     }
 
-    private void addMlhfm(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
+    private void addField(FieldTitle fieldTitle, MapPreference preference, GridBagConstraints gbc, JLabel definitionLabel, JLabel unitLabel) {
         final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = preference.getSelectedMap();
 
-        MlhfmPreferences.registerOnSelectedMlhfmChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+       preference.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) { }
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
                 tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
+                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> unitLabel.setText(definitionMap3dPair.fst.getZAxis().getUnit()));
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
-        if(tableDefinition != null) {
+        if (tableDefinition != null) {
             definitionLabel.setText(tableDefinition.fst.getTableName());
+            unitLabel.setText(tableDefinition.fst.getZAxis().getUnit());
         }
 
         button.addActionListener(e -> {
-            if(tableDefinition != null) {
+            if (tableDefinition != null) {
                 definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, MlhfmPreferences::setSelectedMap);
+                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, preference::setSelectedMap);
             } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, MlhfmPreferences::setSelectedMap);
+                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, preference::setSelectedMap);
             }
         });
 
         panel.add(button, gbc);
     }
-
-    private void addKfmiop(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfmiopPreferences.getSelectedMap();
-
-        KfmiopPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfmiopPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfmiopPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfmirl(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfmirlPreferences.getSelectedMap();
-
-        KfmirlPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfmirlPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfmirlPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfzwop(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfzwopPreferences.getSelectedMap();
-
-        KfzwopPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfzwopPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfzwopPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfzw(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfzwPreferences.getSelectedMap();
-
-        KfzwopPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfzwPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfzwPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfvpdksd(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfvpdksdPreferences.getSelectedMap();
-
-        KfvpdksdPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfvpdksdPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfvpdksdPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addWdkugdn(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = WdkugdnPreferences.getSelectedMap();
-
-        WdkugdnPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, WdkugdnPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, WdkugdnPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfldimx(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getSelectedMap();
-
-        KfldimxPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfldimxPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfldimxPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
-    private void addKfldrl(FieldTitle fieldTitle, GridBagConstraints gbc, JLabel definitionLabel) {
-        final JButton button = new JButton("Select Definition");
-        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
-
-        KfldrlPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable throwable) {}
-
-            @Override
-            public void onComplete() {}
-        });
-
-        if(tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-        }
-
-        button.addActionListener(e -> {
-            if(tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, KfldrlPreferences::setSelectedMap);
-            } else {
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, KfldrlPreferences::setSelectedMap);
-            }
-        });
-
-        panel.add(button, gbc);
-    }
-
 
     private GridBagConstraints createGbc(int x, int y) {
         GridBagConstraints gbc = new GridBagConstraints();
@@ -451,10 +187,10 @@ public class TableDefinitionView {
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
 
-        gbc.anchor = (x == 0) ? GridBagConstraints.WEST : GridBagConstraints.EAST;
+        gbc.anchor = (x < 3) ? GridBagConstraints.WEST : GridBagConstraints.EAST;
 
-        gbc.insets = (x == 0) ? WEST_INSETS : EAST_INSETS;
-        gbc.weightx = (x == 0) ? 0.1 : 1.0;
+        gbc.insets = (x < 3) ? WEST_INSETS : EAST_INSETS;
+        gbc.weightx = (x < 3) ? 0.1 : 1.0;
         gbc.weighty = 1.0;
         return gbc;
     }

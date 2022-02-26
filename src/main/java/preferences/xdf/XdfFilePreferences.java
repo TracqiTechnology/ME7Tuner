@@ -4,6 +4,7 @@ import io.reactivex.Observer;
 import io.reactivex.subjects.BehaviorSubject;
 
 import java.io.File;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class XdfFilePreferences {
@@ -16,6 +17,14 @@ public class XdfFilePreferences {
 
     private XdfFilePreferences() {
         behaviorSubject.onNext(getFile());
+    }
+
+    public static void clear() {
+        try {
+            PREFERENCES.clear();
+        } catch (BackingStoreException e) {
+            e.printStackTrace();
+        }
     }
 
     public static XdfFilePreferences getInstance() {

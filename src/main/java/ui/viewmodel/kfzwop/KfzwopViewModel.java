@@ -14,6 +14,7 @@ import preferences.kfzwop.KfzwopPreferences;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class KfzwopViewModel {
 
@@ -26,10 +27,7 @@ public class KfzwopViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> kfzwopTable = KfzwopPreferences.getSelectedMap();
-                if (kfzwopTable != null) {
-                    subject.onNext(new KfzwopModel(kfzwopTable, kfzwopTable.snd));
-                }
+                updateModel();
             }
 
             @Override
@@ -39,6 +37,33 @@ public class KfzwopViewModel {
             public void onComplete() {
             }
         });
+
+        KfzwopPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                updateModel();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+    private void updateModel() {
+        Pair<TableDefinition, Map3d> kfzwopTable = KfzwopPreferences.getInstance().getSelectedMap();
+        if (kfzwopTable != null) {
+            subject.onNext(new KfzwopModel(kfzwopTable, kfzwopTable.snd));
+        } else {
+            subject.onNext(new KfzwopModel(null, null));
+        }
     }
 
     public void register(Observer<KfzwopModel> observer) {
@@ -50,7 +75,7 @@ public class KfzwopViewModel {
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
         newKfzwop.zAxis = Kfzwop.generateKfzwop(kfzwop.xAxis, kfzwop.zAxis, newXAxis);
-        subject.onNext(new KfzwopModel(KfzwopPreferences.getSelectedMap(), newKfzwop));
+        subject.onNext(new KfzwopModel(KfzwopPreferences.getInstance().getSelectedMap(), newKfzwop));
     }
 
     public static class KfzwopModel {

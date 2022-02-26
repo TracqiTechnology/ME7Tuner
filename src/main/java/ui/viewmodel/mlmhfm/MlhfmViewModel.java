@@ -24,7 +24,7 @@ public class MlhfmViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
                 if(tableDefinition != null) {
                     mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.fst, tableDefinition.snd)); // Found the map
                 } else {
@@ -39,7 +39,7 @@ public class MlhfmViewModel {
             public void onComplete() {}
         });
 
-        MlhfmPreferences.registerOnSelectedMlhfmChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        MlhfmPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 

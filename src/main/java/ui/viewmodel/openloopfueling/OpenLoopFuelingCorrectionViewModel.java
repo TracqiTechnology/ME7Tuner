@@ -68,9 +68,11 @@ public class OpenLoopFuelingCorrectionViewModel {
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
-                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getSelectedMap();
-                OpenLoopFuelingCorrectionViewModel.this.mlhfmMap  = tableDefinition.snd;
-                generateCorrection();
+                Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
+                if(tableDefinition != null) {
+                    OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = tableDefinition.snd;
+                    generateCorrection();
+                }
             }
 
             @Override

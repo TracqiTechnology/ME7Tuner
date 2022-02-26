@@ -96,7 +96,7 @@ public class LdrpidView {
     private void initKfldimxAxis() {
         Double[][] kfldImxXAxisValues = new Double[1][];
 
-        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
         if(tableDefinition != null && tableDefinition.snd != null) {
             kfldImxXAxisValues[0] = tableDefinition.snd.xAxis;
         }
@@ -154,7 +154,7 @@ public class LdrpidView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldimxPreferences.getSelectedMap().fst, kfldimxTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldimxPreferences.getInstance().getSelectedMap().fst, kfldimxTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -202,7 +202,7 @@ public class LdrpidView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldrlPreferences.getSelectedMap().fst, kfldrlTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldrlPreferences.getInstance().getSelectedMap().fst, kfldrlTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -244,8 +244,8 @@ public class LdrpidView {
                                     dpb.setVisible(value < max - 1);
                                 });
                             });
-                            Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getSelectedMap();
-                            Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getSelectedMap();
+                            Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
+                            Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
                             ldrpidResult = LdrpidCalculator.caclulateLdrpid(values, kfldrlTableDefinition.snd, kfldimxTableDefinition.snd);
                             return null;
@@ -342,7 +342,7 @@ public class LdrpidView {
     }
 
     private void initKflimxMap() {
-        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
         kfldimxTable.setEditable(false);
         if(tableDefinition != null && tableDefinition.snd != null) {
             kfldimxTable.setMap(tableDefinition.snd);
@@ -350,7 +350,7 @@ public class LdrpidView {
     }
 
     private void initKfldrlMap() {
-        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
         kfldrlTable.setEditable(false);
         if(tableDefinition != null && tableDefinition.snd != null) {
             kfldrlTable.setMap(tableDefinition.snd);
@@ -358,7 +358,7 @@ public class LdrpidView {
     }
 
     private void initNonLinearMap() {
-        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
         if(tableDefinition != null && tableDefinition.snd != null) {
             nonLinearTable.setMap(tableDefinition.snd);
@@ -368,8 +368,8 @@ public class LdrpidView {
             @Override
             public void onNext(@NonNull Map3d map3d) {
 
-                Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getSelectedMap();
-                Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getSelectedMap();
+                Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
+                Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
                 Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis, kfldrlTableDefinition.snd);
                 Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.snd);
@@ -399,7 +399,7 @@ public class LdrpidView {
     }
 
     private void initLinearMap() {
-        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getSelectedMap();
+        Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
         linearTable.setEditable(false);
 

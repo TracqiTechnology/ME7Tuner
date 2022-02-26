@@ -23,7 +23,7 @@ public class KfmiopViewModel {
 
         onTableSelected(getSelectedKfmiopTableDefinition());
 
-        KfmiopPreferences.registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfmiopPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
 
@@ -45,10 +45,14 @@ public class KfmiopViewModel {
     }
 
     public void calculateKfmiop() {
-        double maxMapSensorLoad = Rlsol.rlsol(1030, KfmiopPreferences.getMaxMapPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getMaxMapPressurePreference());
-        double maxBoostPressureLoad = Rlsol.rlsol(1030, KfmiopPreferences.getMaxBoostPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getMaxBoostPressurePreference());
+        double maxMapSensorLoad = Rlsol.rlsol(1030, KfmiopPreferences.getInstance().getMaxMapPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getInstance().getMaxMapPressurePreference());
+        double maxBoostPressureLoad = Rlsol.rlsol(1030, KfmiopPreferences.getInstance().getMaxBoostPressurePreference(), 0, 96, 0.106, KfmiopPreferences.getInstance().getMaxBoostPressurePreference());
 
-        cacluateKfmiop(getSelectedKfmiopTableDefinition().snd, maxMapSensorLoad, maxBoostPressureLoad);
+        Pair<TableDefinition, Map3d> tableDefinition = getSelectedKfmiopTableDefinition();
+
+        if(tableDefinition != null) {
+            cacluateKfmiop(getSelectedKfmiopTableDefinition().snd, maxMapSensorLoad, maxBoostPressureLoad);
+        }
     }
 
     private void onTableSelected(@Nullable  Pair<TableDefinition, Map3d> selectedTable) {
@@ -65,7 +69,7 @@ public class KfmiopViewModel {
     }
 
     private Pair<TableDefinition, Map3d> getSelectedKfmiopTableDefinition() {
-         return KfmiopPreferences.getSelectedMap();
+         return KfmiopPreferences.getInstance().getSelectedMap();
     }
 
     private void cacluateKfmiop(Map3d baseKfmiop, double maxMapSensorLoad, double maxBoostPressureLoad) {

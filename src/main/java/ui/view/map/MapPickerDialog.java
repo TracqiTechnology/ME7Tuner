@@ -14,11 +14,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Locale;
 
-/*
- * ListDialog.java is meant to be used by programs such as
- * ListDialogRunner.  It requires no additional files.
- */
-
 /**
  * Use this modal dialog to let the user choose one string from a long
  * list.  See ListDialogRunner.java for an example of using ListDialog.
@@ -143,11 +138,13 @@ public class MapPickerDialog extends JDialog
         buttonPane.add(Box.createRigidArea(new Dimension(10, 0)));
         buttonPane.add(setButton);
 
-        JTextField textField = new JTextField();
+        JTextField textField = createTextField();
+
+        textField.setText(labelText.replaceFirst("Select ", ""));
 
         //Put everything together, using the content pane's BorderLayout.
         Container contentPane = getContentPane();
-        contentPane.add(createTextField(), BorderLayout.PAGE_START);
+        contentPane.add(textField, BorderLayout.PAGE_START);
         contentPane.add(listPane, BorderLayout.CENTER);
         contentPane.add(buttonPane, BorderLayout.PAGE_END);
 
