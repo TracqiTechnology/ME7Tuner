@@ -94,7 +94,7 @@ public class OpenLoopMlhfmCorrectionManager {
             double oldKgPerHourValue = oldKghr.get(i);
             double totalCorrectionErrorValue = totalCorrectionError.get(voltage.get(i));
 
-            newKghr[i][0] = (oldKgPerHourValue * ((totalCorrectionErrorValue) + 1));
+            newKghr[i][0] = Math.max(0, (oldKgPerHourValue * ((totalCorrectionErrorValue) + 1)));
         }
 
         correctedMlhfm.zAxis = newKghr;

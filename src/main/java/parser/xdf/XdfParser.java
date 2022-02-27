@@ -332,11 +332,9 @@ public class XdfParser {
                     }
                 }
 
-                AxisDefinition xAxisDefinition = new AxisDefinition("x", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
-                AxisDefinition yAxisDefinition = new AxisDefinition("y", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
                 AxisDefinition zAxisDefinition = new AxisDefinition("z", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
 
-                tableDefinitions.add(new TableDefinition(tableName, tableDescription, xAxisDefinition, yAxisDefinition, zAxisDefinition));
+                tableDefinitions.add(new TableDefinition(tableName, tableDescription, null, null, zAxisDefinition));
             }
         }
 

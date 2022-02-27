@@ -231,13 +231,17 @@ public class MapTable extends JList implements TableModelListener {
                 }
             } else {
                 if (value instanceof String) {
-                    double v = Double.parseDouble((String) value);
-                    double norm;
-                    if (maxValue - minValue != 0) {
-                        norm = 1 - (v - minValue) / (maxValue - minValue);
-                        setBackground(getColor(norm));
-                    } else {
-                        setBackground(Color.GREEN);
+                    try {
+                        double v = Double.parseDouble((String) value);
+                        double norm;
+                        if (maxValue - minValue != 0) {
+                            norm = 1 - (v - minValue) / (maxValue - minValue);
+                            setBackground(getColor(norm));
+                        } else {
+                            setBackground(Color.GREEN);
+                        }
+                    } catch (NumberFormatException e) {
+                        setBackground(null);
                     }
                 } else {
                     setBackground(null);

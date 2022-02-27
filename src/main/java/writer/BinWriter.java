@@ -1,6 +1,7 @@
 package writer;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import parser.bin.BinParser;
@@ -24,10 +25,10 @@ public class BinWriter {
     private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
 
 
-
     private final PublishSubject<TableDefinition> publishSubject = PublishSubject.create();
 
-    private BinWriter() {}
+    private BinWriter() {
+    }
 
     public static BinWriter getInstance() {
         if (instance == null) {
@@ -45,49 +46,47 @@ public class BinWriter {
         publishSubject.subscribe(observer);
     }
 
-    public void write(File file, TableDefinition tableDefinition, Map3d map) throws IOException {
+    public void write(@NonNull File file, @NonNull TableDefinition tableDefinition, @NonNull Map3d map) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(file, "rws");
 
-        if(tableDefinition.getZAxis().getRowCount() > 0 || tableDefinition.getZAxis().getIndexCount() > 0) {
+        if (tableDefinition.getXAxis() != null && tableDefinition.getXAxis().getAddress() != INVALID_ADDRESS) {
             double[] xAxis = new double[Math.max(tableDefinition.getXAxis().getRowCount(), 1) * Math.max(tableDefinition.getXAxis().getIndexCount(), 1)];
-            double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
-            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getIndexCount(), 1)];
-
-            for(int i = 0; i < map.xAxis.length; i++) {
+            for (int i = 0; i < map.xAxis.length; i++) {
                 xAxis[i] = map.xAxis[i];
             }
 
-            for(int i = 0; i < map.yAxis.length; i++) {
+            write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
+        }
+        if (tableDefinition.getYAxis() != null && tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
+            double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
+
+            for (int i = 0; i < map.yAxis.length; i++) {
                 yAxis[i] = map.yAxis[i];
             }
 
-            int index = 0;
+            write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
+        }
 
-            for(int i = 0; i < map.zAxis.length; i++) {
-                for(int j = 0; j < map.zAxis[i].length; j++) {
+        if (tableDefinition.getZAxis() != null && tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
+            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getIndexCount(), 1)];
+
+            int index = 0;
+            for (int i = 0; i < map.zAxis.length; i++) {
+                for (int j = 0; j < map.zAxis[i].length; j++) {
                     zAxis[index++] = map.zAxis[i][j];
                 }
             }
 
-            if(tableDefinition.getXAxis().getAddress() != INVALID_ADDRESS) {
-                write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
-            }
-
-            if(tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
-                write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
-            }
-
-            if(tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
-                write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
-            }
-
-            publishSubject.onNext(tableDefinition);
+            write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
         }
+
+        publishSubject.onNext(tableDefinition);
+
     }
 
     private void write(RandomAccessFile raf, int address, int size, String equation, double[] values) throws IOException {
         try {
-            CompiledScript compiledScript  = ((Compilable)engine)
+            CompiledScript compiledScript = ((Compilable) engine)
                     .compile("function func(X) { return " + BinWriter.inverse(equation) + "}");
             compiledScript.eval(compiledScript.getEngine()
                     .getBindings(ScriptContext.ENGINE_SCOPE));
@@ -99,9 +98,9 @@ public class BinWriter {
             ByteBuffer bb = ByteBuffer.allocate(values.length * size).order(ByteOrder.LITTLE_ENDIAN);
             for (double value : values) {
                 if (size == 8) {
-                    bb.put(((Number)funcEngine.invokeFunction("func", value)).byteValue());
-                } else if(size ==16) {
-                    bb.putShort(((Number)funcEngine.invokeFunction("func", value)).shortValue());
+                    bb.put(((Number) funcEngine.invokeFunction("func", value)).byteValue());
+                } else if (size == 16) {
+                    bb.putShort(((Number) funcEngine.invokeFunction("func", value)).shortValue());
                 }
             }
 
@@ -121,15 +120,15 @@ public class BinWriter {
 
         String inverse = "";
 
-        if(operators.size() > 1) {
+        if (operators.size() > 1) {
             if (operators.get(1).equals("+")) {
                 inverse += "(X - " + operands.get(1) + ")";
             }
         }
 
-        if(operators.size() > 0) {
+        if (operators.size() > 0) {
             if (operators.get(0).equals("*")) {
-                if(operators.size() > 1) {
+                if (operators.size() > 1) {
                     inverse += " / " + operands.get(0);
                 } else {
                     inverse += "X / " + operands.get(0);
@@ -138,7 +137,7 @@ public class BinWriter {
         }
 
         return inverse;
-}
+    }
 
     private static List<String> extractOperators(String equation) {
         Pattern regex = Pattern.compile("[*+]");

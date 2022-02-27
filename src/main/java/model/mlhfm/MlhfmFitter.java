@@ -24,7 +24,7 @@ public class MlhfmFitter {
         List<Double> fit = CurveFitter.buildCurve(coeff, y);
 
         for(int i = 0; i < fit.size(); i++) {
-            zOut[i][0] = fit.get(i);
+            zOut[i][0] = Math.max(0, fit.get(i));
         }
 
         return new Map3d(new Double[0], y.toArray(new Double[0]), zOut);

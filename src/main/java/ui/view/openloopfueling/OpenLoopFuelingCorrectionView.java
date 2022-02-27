@@ -1,5 +1,6 @@
 package ui.view.openloopfueling;
 
+import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -14,6 +15,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.mlhfm.MlhfmPreferences;
 import ui.map.map.MapTable;
@@ -27,6 +29,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -246,10 +249,19 @@ public class OpenLoopFuelingCorrectionView {
                     JOptionPane.YES_NO_OPTION);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), MlhfmPreferences.getInstance().getSelectedMap().fst, openLoopMlhfmCorrection.correctedMlhfm);
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                Pair<TableDefinition, Map3d> table = MlhfmPreferences.getInstance().getSelectedMap();
+                if(table != null) {
+                    TableDefinition tableDefinition = MlhfmPreferences.getInstance().getSelectedMap().fst;
+                    if(tableDefinition != null) {
+                        File file = BinFilePreferences.getInstance().getFile();
+                        if(file != null) {
+                            try {
+                                BinWriter.getInstance().write(file, tableDefinition, openLoopMlhfmCorrection.fitMlhfm);
+                            } catch (IOException ioException) {
+                                ioException.printStackTrace();
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -273,12 +285,7 @@ public class OpenLoopFuelingCorrectionView {
 
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(6, 1, 100, 1));
 
-        spinner.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                polynomialDegree = (int) spinner.getValue();
-            }
-        });
+        spinner.addChangeListener(e -> polynomialDegree = (int) spinner.getValue());
 
         panel.add(spinner, c);
 
@@ -293,14 +300,11 @@ public class OpenLoopFuelingCorrectionView {
     private JButton getFitMlhfmButton() {
         JButton button = new JButton("Fit MLHFM");
 
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
-                openLoopMlhfmCorrection = new OpenLoopMlhfmCorrection(openLoopMlhfmCorrection.inputMlhfm, openLoopMlhfmCorrection.correctedMlhfm, correctedFitMlhfm, openLoopMlhfmCorrection.correctionsAfrMap, openLoopMlhfmCorrection.meanAfrMap, openLoopMlhfmCorrection.modeAfrMap, openLoopMlhfmCorrection.correctedAfrMap);
-                drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
-                drawMapTable(correctedFitMlhfm);
-            }
+        button.addActionListener(e -> {
+            Map3d correctedFitMlhfm = MlhfmFitter.fitMlhfm(openLoopMlhfmCorrection.correctedMlhfm, polynomialDegree);
+            openLoopMlhfmCorrection = new OpenLoopMlhfmCorrection(openLoopMlhfmCorrection.inputMlhfm, openLoopMlhfmCorrection.correctedMlhfm, correctedFitMlhfm, openLoopMlhfmCorrection.correctionsAfrMap, openLoopMlhfmCorrection.meanAfrMap, openLoopMlhfmCorrection.modeAfrMap, openLoopMlhfmCorrection.correctedAfrMap);
+            drawMlhfmChart(openLoopMlhfmCorrection.inputMlhfm, correctedFitMlhfm);
+            drawMapTable(correctedFitMlhfm);
         });
 
         return button;

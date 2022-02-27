@@ -58,4 +58,24 @@ public class Map3d {
 
         return transposedMatrix;
     }
+
+    @Override
+    public String toString() {
+
+        StringBuilder zAxisString = new StringBuilder();
+
+        for(Double[] row: zAxis) {
+            zAxisString.append(Arrays.toString(row));
+            zAxisString.append("\n");
+        }
+
+
+        return "Map3d{" +
+                "xAxis=" + Arrays.toString(xAxis) +
+                "\n" +
+                ", yAxis=" + Arrays.toString(yAxis) +
+                "\n" +
+                ", zAxis=" + zAxisString.toString() +
+                '}';
+    }
 }

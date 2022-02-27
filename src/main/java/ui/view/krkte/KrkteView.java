@@ -1,16 +1,17 @@
 package ui.view.krkte;
 
+import com.sun.tools.javac.util.Pair;
 import math.map.Map3d;
 import model.krkte.KrkteCalculator;
+import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
+import preferences.krkte.KrktePreferences;
 import preferences.primaryfueling.PrimaryFuelingPreferences;
-import preferences.wdkugdn.WdkugdnPreferences;
 import ui.view.listener.OnTabSelectedListener;
 import writer.BinWriter;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.io.IOException;
@@ -34,12 +35,9 @@ public class KrkteView implements OnTabSelectedListener {
         c.gridx = 0;
         c.gridy = 0;
 
-        KrkteConstantsPanel krkteConstantsPanel = new KrkteConstantsPanel(new KrkteConstantsPanel.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(KrkteConstantsPanel.FieldTitle fieldTitle) {
-                double krkte = calculateKrkte();
-                outputTextField.setText(decimalFormat.format(krkte));
-            }
+        KrkteConstantsPanel krkteConstantsPanel = new KrkteConstantsPanel(fieldTitle -> {
+            double krkte = calculateKrkte();
+            outputTextField.setText(decimalFormat.format(krkte));
         });
 
         panel.add(krkteConstantsPanel, c);
@@ -106,16 +104,13 @@ public class KrkteView implements OnTabSelectedListener {
 
         jep.setEditable(false);//so its not editable
 
-        jep.addHyperlinkListener(new HyperlinkListener() {
-            @Override
-            public void hyperlinkUpdate(HyperlinkEvent hle) {
-                if (HyperlinkEvent.EventType.ACTIVATED.equals(hle.getEventType())) {
-                    Desktop desktop = Desktop.getDesktop();
-                    try {
-                        desktop.browse(hle.getURL().toURI());
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+        jep.addHyperlinkListener(hle -> {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(hle.getEventType())) {
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.browse(hle.getURL().toURI());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
         });
@@ -142,12 +137,21 @@ public class KrkteView implements OnTabSelectedListener {
                     JOptionPane.YES_NO_OPTION);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                try {
-                    Map3d krkte = new Map3d();
-                    krkte.xAxis = new Double[]{Double.parseDouble(outputTextField.getText())};
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getInstance().getSelectedMap().fst, krkte);
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                Pair<TableDefinition, Map3d> krkteTable = KrktePreferences.getInstance().getSelectedMap();
+
+                if(krkteTable != null) {
+                    TableDefinition krkteTableDefinition = krkteTable.fst;
+
+                    if (krkteTableDefinition != null) {
+                        try {
+                            Map3d krkte = new Map3d();
+                            krkte.zAxis = new Double[1][1];
+                            krkte.zAxis[0][0] = Double.parseDouble(outputTextField.getText());
+                            BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), krkteTableDefinition, krkte);
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
+                        }
+                    }
                 }
             }
         });

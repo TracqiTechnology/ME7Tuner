@@ -132,9 +132,19 @@ public class BinParser {
             AxisDefinition yAxisDefinition = tableDefinition.getYAxis();
             AxisDefinition zAxisDefinition = tableDefinition.getZAxis();
 
-            Double[] xAxis = parseAxis(bytes, xAxisDefinition);
-            Double[] yAxis = parseAxis(bytes, yAxisDefinition);
-            Double[][] zAxis = parseData(bytes, zAxisDefinition);
+            Double[] xAxis = new Double[0];
+            Double[] yAxis = new Double[0];
+            Double[][] zAxis = new Double[0][0];
+
+            if(xAxisDefinition != null) {
+                xAxis = parseAxis(bytes, xAxisDefinition);
+            }
+            if(yAxisDefinition != null) {
+                yAxis = parseAxis(bytes, yAxisDefinition);
+            }
+            if(zAxisDefinition != null) {
+                zAxis = parseData(bytes, zAxisDefinition);
+            }
 
             mapList.add(new Pair<>(tableDefinition, new Map3d(xAxis, yAxis, zAxis)));
         }
