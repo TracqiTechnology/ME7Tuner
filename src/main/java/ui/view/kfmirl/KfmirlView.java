@@ -144,7 +144,7 @@ public class KfmirlView implements OnTabSelectedListener {
     }
 
     private void initKfmiopMap() {
-        kfmiop.getPublishSubject().subscribe(new Observer<Map3d>() {
+        kfmiop.getPublishSubject().subscribe(new Observer<>() {
 
             @Override
             public void onNext(@NonNull Map3d map3d) {
@@ -153,18 +153,22 @@ public class KfmirlView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
-        kfmiopXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
+        kfmiopXAxis.getPublishSubject().subscribe(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Double[][] doubles) {
@@ -174,22 +178,25 @@ public class KfmirlView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
     private void initViewModel() {
-        viewModel.register(new Observer<KfmirlViewModel.KfmirlModel>() {
+        viewModel.register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull KfmirlViewModel.KfmirlModel kfmirlModel) {
-                if(kfmirlModel.getKfmiop() != null && !kfmiopInitialized) {
-                    Map3d kfmiopMap = kfmirlModel.getKfmiop().snd;
+                if (kfmirlModel.getKfmiop() != null && !kfmiopInitialized) {
+                    Map3d kfmiopMap = kfmirlModel.getKfmiop().getSecond();
                     kfmiop.setColumnHeaders(kfmiopMap.xAxis);
                     kfmiop.setRowHeaders(kfmiopMap.yAxis);
                     kfmiop.setTableData(kfmiopMap.zAxis);
@@ -200,21 +207,21 @@ public class KfmirlView implements OnTabSelectedListener {
                     kfmiopInitialized = true;
                 }
 
-                if(kfmirlModel.getKfmirl() != null && kfmirlModel.getKfmirl().fst != null) {
-                    kfmirlFileLabel.setText(kfmirlModel.getKfmirl().fst.getTableName());
+                if (kfmirlModel.getKfmirl() != null && kfmirlModel.getKfmirl().getFirst() != null) {
+                    kfmirlFileLabel.setText(kfmirlModel.getKfmirl().getFirst().getTableName());
                 }
 
-                if(kfmirlModel.getKfmiop() != null && kfmirlModel.getKfmiop().fst != null) {
-                    kfmiopFileLabel.setText(kfmirlModel.getKfmiop().fst.getTableName());
+                if (kfmirlModel.getKfmiop() != null && kfmirlModel.getKfmiop().getFirst() != null) {
+                    kfmiopFileLabel.setText(kfmirlModel.getKfmiop().getFirst().getTableName());
                 }
 
-                if(kfmirlModel.getOutputKfmirl() != null) {
+                if (kfmirlModel.getOutputKfmirl() != null) {
                     Map3d kfmirlMap = kfmirlModel.getOutputKfmirl();
                     kfmirl.setColumnHeaders(kfmirlMap.xAxis);
                     kfmirl.setRowHeaders(kfmirlMap.yAxis);
                     kfmirl.setTableData(kfmirlMap.zAxis);
                 } else if (kfmirlModel.getKfmirl() != null) {
-                    Map3d kfmirlMap = kfmirlModel.getKfmirl().snd;
+                    Map3d kfmirlMap = kfmirlModel.getKfmirl().getSecond();
                     kfmirl.setColumnHeaders(kfmirlMap.xAxis);
                     kfmirl.setRowHeaders(kfmirlMap.yAxis);
                     kfmirl.setTableData(kfmirlMap.zAxis);
@@ -222,10 +229,12 @@ public class KfmirlView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -241,7 +250,7 @@ public class KfmirlView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmirlPreferences.getInstance().getSelectedMap().fst, kfmirl.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmirlPreferences.getInstance().getSelectedMap().getFirst(), kfmirl.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

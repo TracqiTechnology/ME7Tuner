@@ -1,6 +1,5 @@
 package ui.viewmodel.wdkugdn;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -9,6 +8,7 @@ import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import math.map.Map3d;
 import model.wdkugdn.WdkugdnCalculator;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.TableDefinition;
 import preferences.kfwdkmsn.KfwdkmsnPreferences;
 import preferences.wdkugdn.WdkugdnPreferences;
@@ -71,11 +71,11 @@ public class WdkugdnViewModel {
             Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getInstance().getSelectedMap();
             Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getInstance().getSelectedMap();
             if (wdkugdn != null && kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.snd, kfwdkmsn.snd, WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.fst.getTableName(), kfwdkmsn.fst.getTableName()));
+                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName(), kfwdkmsn.getFirst().getTableName()));
             } else if(wdkugdn != null) {
-                subject.onNext(new WdkugnModel(null, wdkugdn.fst.getTableName(), null));
+                subject.onNext(new WdkugnModel(null, wdkugdn.getFirst().getTableName(), null));
             }else if(kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(null, null, kfwdkmsn.fst.getTableName()));
+                subject.onNext(new WdkugnModel(null, null, kfwdkmsn.getFirst().getTableName()));
             }
         });
     }

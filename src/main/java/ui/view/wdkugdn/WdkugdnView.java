@@ -87,26 +87,29 @@ public class WdkugdnView {
     }
 
     private void initViewModel() {
-        viewModel.registerOnChange(new Observer<WdkugdnViewModel.WdkugnModel>() {
+        viewModel.registerOnChange(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull WdkugdnViewModel.WdkugnModel wdkugnModel) {
-                if(wdkugnModel.getWdkugdn() != null) {
+                if (wdkugnModel.getWdkugdn() != null) {
                     wdkudgnTable.setMap(wdkugnModel.getWdkugdn());
                 }
 
-                if(wdkugnModel.getWdkudgnDefinitionTitle() != null) {
+                if (wdkugnModel.getWdkudgnDefinitionTitle() != null) {
                     wdkugdnFileLabel.setText(wdkugnModel.getWdkudgnDefinitionTitle());
                 }
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -143,7 +146,7 @@ public class WdkugdnView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getInstance().getSelectedMap().fst, wdkudgnTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), WdkugdnPreferences.getInstance().getSelectedMap().getFirst(), wdkudgnTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

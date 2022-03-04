@@ -1,6 +1,5 @@
 package ui.viewmodel.kfzw;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -8,12 +7,11 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.kfzw.Kfzw;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfzw.KfzwPreferences;
-import preferences.kfzwop.KfzwopPreferences;
-import ui.viewmodel.kfzwop.KfzwopViewModel;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +21,10 @@ public class KfzwViewModel {
     private final BehaviorSubject<KfzwModel> subject = BehaviorSubject.create();
 
     public KfzwViewModel() {
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
@@ -33,16 +32,18 @@ public class KfzwViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
             public void onComplete() {
             }
         });
 
-        KfzwPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfzwPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
@@ -50,7 +51,8 @@ public class KfzwViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
             public void onComplete() {
@@ -68,7 +70,7 @@ public class KfzwViewModel {
         newKfzw.xAxis = newXAxis;
         newKfzw.yAxis = kfzw.yAxis;
         newKfzw.zAxis = Kfzw.generateKfzw(kfzw.xAxis, kfzw.zAxis, newXAxis);
-        subject.onNext(new KfzwModel(KfzwPreferences.getInstance().getSelectedMap(), KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, newKfzw));
+        subject.onNext(new KfzwModel(KfzwPreferences.getInstance().getSelectedMap(), KfmiopPreferences.getInstance().getSelectedMap().getSecond().xAxis, newKfzw));
     }
 
     private void updateModel() {
@@ -76,24 +78,20 @@ public class KfzwViewModel {
         Pair<TableDefinition, math.map.Map3d> kfmiopTable = KfmiopPreferences.getInstance().getSelectedMap();
         if (kfzwTable != null) {
             if(kfmiopTable != null) {
-                subject.onNext(new KfzwModel(kfzwTable, KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, kfzwTable.snd));
+                subject.onNext(new KfzwModel(kfzwTable, KfmiopPreferences.getInstance().getSelectedMap().getSecond().xAxis, kfzwTable.getSecond()));
             } else {
-                subject.onNext(new KfzwModel(kfzwTable, null, kfzwTable.snd));
+                subject.onNext(new KfzwModel(kfzwTable, null, kfzwTable.getSecond()));
             }
         } else {
             if(kfmiopTable != null) {
-                subject.onNext(new KfzwModel(null, KfmiopPreferences.getInstance().getSelectedMap().snd.xAxis, null));
+                subject.onNext(new KfzwModel(null, KfmiopPreferences.getInstance().getSelectedMap().getSecond().xAxis, null));
             } else {
                 subject.onNext(new KfzwModel(null, null, null));
             }
         }
     }
 
-    public static class KfzwModel {
-        private final Pair<TableDefinition, Map3d> kfzw;
-        private final Map3d outputKfzw;
-        private final Double[] kfmiopXAxis;
-
+    public record KfzwModel(Pair<TableDefinition, Map3d> kfzw, Double[] kfmiopXAxis, Map3d outputKfzw) {
         public KfzwModel(@Nullable Pair<TableDefinition, Map3d> kfzw, @Nullable Double[] kfmiopXAxis, @Nullable Map3d outputKfzw) {
             this.kfzw = kfzw;
             this.kfmiopXAxis = kfmiopXAxis;
@@ -101,7 +99,9 @@ public class KfzwViewModel {
         }
 
         @Nullable
-        public Pair<TableDefinition, Map3d> getKfzw() { return kfzw; }
+        public Pair<TableDefinition, Map3d> getKfzw() {
+            return kfzw;
+        }
 
         @Nullable
         public Double[] getKfmiopXAxis() {

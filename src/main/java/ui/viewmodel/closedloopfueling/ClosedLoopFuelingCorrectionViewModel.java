@@ -1,6 +1,5 @@
 package ui.viewmodel.closedloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -9,6 +8,7 @@ import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
 import model.closedloopfueling.ClosedLoopFuelingCorrection;
 import model.closedloopfueling.ClosedLoopFuelingCorrectionManager;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.TableDefinition;
 import preferences.closedloopfueling.ClosedLoopFuelingLogFilterPreferences;
 import parser.me7log.ClosedLoopLogParser;
@@ -27,7 +27,7 @@ public class ClosedLoopFuelingCorrectionViewModel {
             public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
                 Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getInstance().getSelectedMap();
                 if (mlhfmDefinition != null) {
-                    Map3d mlhfm = mlhfmDefinition.snd;
+                    Map3d mlhfm = mlhfmDefinition.getSecond();
                     if (mlhfm != null) {
                         generateCorrection(me7LogMap, mlhfm);
                     }

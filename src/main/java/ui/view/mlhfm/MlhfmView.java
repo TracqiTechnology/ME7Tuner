@@ -1,7 +1,5 @@
 package ui.view.mlhfm;
 
-
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -13,10 +11,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmPreferences;
 import ui.map.map.MapTable;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.mlmhfm.MlhfmViewModel;
 
 import javax.swing.*;

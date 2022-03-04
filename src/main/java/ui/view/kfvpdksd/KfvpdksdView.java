@@ -1,6 +1,5 @@
 package ui.view.kfvpdksd;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -12,14 +11,11 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.filechooser.FileChooserPreferences;
-import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfvpdksd.KfvpdksdPreferences;
 import ui.map.map.MapTable;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfvpdksd.KfvpdksdViewModel;
 import writer.BinWriter;
 
@@ -84,17 +80,17 @@ public class KfvpdksdView implements OnTabSelectedListener {
             public void onNext(@NonNull KfvpdksdViewModel.KfvpdksdModel kfvpdksdModel) {
                 if (!kfvpdksdInitialized) {
                     if (kfvpdksdModel.getKfvpdksdTable() != null) {
-                        definitionFileLabel.setText(kfvpdksdModel.getKfvpdksdTable().fst.getTableName());
+                        definitionFileLabel.setText(kfvpdksdModel.getKfvpdksdTable().getFirst().getTableName());
 
                         boostTable.setRowHeaders(new Double[]{0.0});
-                        boostTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().snd.yAxis);
-                        boostTable.setTableData(new Double[1][kfvpdksdModel.getKfvpdksdTable().snd.yAxis.length]);
+                        boostTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis);
+                        boostTable.setTableData(new Double[1][kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis.length]);
 
-                        kfvpdksdTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().snd.xAxis);
-                        kfvpdksdTable.setRowHeaders(kfvpdksdModel.getKfvpdksdTable().snd.yAxis);
-                        kfvpdksdTable.setTableData(kfvpdksdModel.getKfvpdksdTable().snd.zAxis);
+                        kfvpdksdTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().xAxis);
+                        kfvpdksdTable.setRowHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis);
+                        kfvpdksdTable.setTableData(kfvpdksdModel.getKfvpdksdTable().getSecond().zAxis);
 
-                        drawPressure(kfvpdksdModel.getKfvpdksdTable().snd);
+                        drawPressure(kfvpdksdModel.getKfvpdksdTable().getSecond());
 
                         kfvpdksdInitialized = true;
                     }
@@ -103,7 +99,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
                 if (!pressureInitialized) {
                     if (kfvpdksdModel.getKfvpdksd() != null && kfvpdksdModel.getPressure() != null) {
 
-                        Map3d kfvpdks = kfvpdksdModel.getKfvpdksdTable().snd;
+                        Map3d kfvpdks = kfvpdksdModel.getKfvpdksdTable().getSecond();
 
                         Double[][] data = new Double[1][];
                         data[0] = kfvpdksdModel.getPressure();
@@ -124,7 +120,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
                 if (kfvpdksdModel.getKfvpdksd() != null) {
                     kfvpdksdTable.setTableData(kfvpdksdModel.getKfvpdksd().getKfvpdksd());
-                    kfvpdksdTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().snd.xAxis);
+                    kfvpdksdTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().xAxis);
                 }
             }
 
@@ -277,7 +273,7 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfvpdksdPreferences.getInstance().getSelectedMap().fst, kfvpdksdTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfvpdksdPreferences.getInstance().getSelectedMap().getFirst(), kfvpdksdTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

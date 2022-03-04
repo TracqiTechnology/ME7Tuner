@@ -18,8 +18,8 @@ import java.io.IOException;
 
 public class KfzwopView implements OnTabSelectedListener {
 
-    private final MapTable kfzwopInput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);;
-    private final MapTable kfzwopOutput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);;
+    private final MapTable kfzwopInput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
+    private final MapTable kfzwopOutput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
 
     private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
 
@@ -58,25 +58,25 @@ public class KfzwopView implements OnTabSelectedListener {
     }
 
     private void initViewModel() {
-        viewModel.register(new Observer<KfzwopViewModel.KfzwopModel>() {
+        viewModel.register(new Observer<>() {
             @Override
             public void onNext(@NonNull KfzwopViewModel.KfzwopModel model) {
                 SwingUtilities.invokeLater(() -> {
-                    if(model.getKfzwop() != null && !isKfzwopInitialized) {
-                        kfzwopInput.setColumnHeaders(model.getKfzwop().snd.xAxis);
-                        kfzwopInput.setRowHeaders(model.getKfzwop().snd.yAxis);
-                        kfzwopInput.setTableData(model.getKfzwop().snd.zAxis);
+                    if (model.getKfzwop() != null && !isKfzwopInitialized) {
+                        kfzwopInput.setColumnHeaders(model.getKfzwop().getSecond().xAxis);
+                        kfzwopInput.setRowHeaders(model.getKfzwop().getSecond().yAxis);
+                        kfzwopInput.setTableData(model.getKfzwop().getSecond().zAxis);
 
                         Double[][] kfmiopXAxisValues = new Double[1][];
-                        kfmiopXAxisValues[0] = model.getKfzwop().snd.xAxis;
+                        kfmiopXAxisValues[0] = model.getKfzwop().getSecond().xAxis;
                         kfmiopXAxis.setTableData(kfmiopXAxisValues);
 
-                        fileLabel.setText(model.getKfzwop().fst.getTableName());
+                        fileLabel.setText(model.getKfzwop().getFirst().getTableName());
 
                         isKfzwopInitialized = true;
                     }
 
-                    if(model.getOutputKfzwop() != null) {
+                    if (model.getOutputKfzwop() != null) {
                         kfzwopOutput.setColumnHeaders(model.getOutputKfzwop().xAxis);
                         kfzwopOutput.setRowHeaders(model.getOutputKfzwop().yAxis);
                         kfzwopOutput.setTableData(model.getOutputKfzwop().zAxis);
@@ -85,13 +85,16 @@ public class KfzwopView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -176,7 +179,7 @@ public class KfzwopView implements OnTabSelectedListener {
     }
 
     private void initKfmirlXAxis() {
-        kfmiopXAxis.getPublishSubject().subscribe(new Observer<Double[][]>() {
+        kfmiopXAxis.getPublishSubject().subscribe(new Observer<>() {
 
             @Override
             public void onNext(@NonNull Double[][] data) {
@@ -184,18 +187,21 @@ public class KfzwopView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
     private void initKfmirlMap() {
-        kfzwopInput.getPublishSubject().subscribe(new Observer<Map3d>() {
+        kfzwopInput.getPublishSubject().subscribe(new Observer<>() {
 
             @Override
             public void onNext(@NonNull Map3d map3d) {
@@ -203,13 +209,16 @@ public class KfzwopView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -225,7 +234,7 @@ public class KfzwopView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfzwopPreferences.getInstance().getSelectedMap().fst, kfzwopOutput.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfzwopPreferences.getInstance().getSelectedMap().getFirst(), kfzwopOutput.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

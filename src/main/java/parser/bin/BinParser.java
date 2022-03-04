@@ -1,11 +1,11 @@
 package parser.bin;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.AxisDefinition;
 import parser.xdf.TableDefinition;
 import parser.xdf.XdfParser;
@@ -21,9 +21,9 @@ import java.util.List;
 
 public class BinParser {
 
-    private static BinParser instance;
+    private static volatile BinParser instance;
 
-    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
+    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("graal.js");
 
     private final List<Pair<TableDefinition, Map3d>> mapList = new ArrayList<>();
 
@@ -32,15 +32,16 @@ public class BinParser {
     private File binaryFile = new File("");
 
     private BinParser() {
-        BinFilePreferences.getInstance().registerObserver(new Observer<File>() {
+        BinFilePreferences.getInstance().registerObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull File file) {
                 binaryFile = file;
 
-                if(binaryFile.exists() && binaryFile.isFile()) {
+                if (binaryFile.exists() && binaryFile.isFile()) {
                     try {
                         parse(new BufferedInputStream(new FileInputStream(binaryFile)), XdfParser.getInstance().getTableDefinitions());
                     } catch (IOException e) {
@@ -50,19 +51,22 @@ public class BinParser {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
-        XdfParser.getInstance().register(new Observer<List<TableDefinition>>() {
+        XdfParser.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull List<TableDefinition> tableDefinitions) {
-                if(binaryFile.exists() && binaryFile.isFile()) {
+                if (binaryFile.exists() && binaryFile.isFile()) {
                     try {
                         parse(new BufferedInputStream(new FileInputStream(binaryFile)), tableDefinitions);
                     } catch (IOException e) {
@@ -72,19 +76,22 @@ public class BinParser {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
-        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+        BinWriter.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull TableDefinition tableDefinition) {
-                if(binaryFile.exists() && binaryFile.isFile()) {
+                if (binaryFile.exists() && binaryFile.isFile()) {
                     try {
                         parse(new BufferedInputStream(new FileInputStream(binaryFile)), XdfParser.getInstance().getTableDefinitions());
                     } catch (IOException e) {
@@ -94,10 +101,12 @@ public class BinParser {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() { }
+            public void onComplete() {
+            }
         });
     }
 
@@ -193,7 +202,7 @@ public class BinParser {
         } else if(axisDefinition.getIndexCount() != 0) { // Parse from xdf
             Double[] axis = new Double[axisDefinition.getIndexCount()];
             for(int i = 0; i < axis.length; i++) {
-                axis[i] = axisDefinition.getAxisValues().get(i).snd.doubleValue();
+                axis[i] = axisDefinition.getAxisValues().get(i).getSecond().doubleValue();
             }
 
             return axis;

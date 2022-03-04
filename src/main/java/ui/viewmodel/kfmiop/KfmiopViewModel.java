@@ -1,6 +1,5 @@
 package ui.viewmodel.kfmiop;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -9,6 +8,7 @@ import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.kfmiop.Kfmiop;
 import model.rlsol.Rlsol;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.TableDefinition;
 import preferences.kfmiop.KfmiopPreferences;
 
@@ -54,7 +54,7 @@ public class KfmiopViewModel {
         Pair<TableDefinition, Map3d> tableDefinition = getSelectedKfmiopTableDefinition();
 
         if (tableDefinition != null) {
-            cacluateKfmiop(getSelectedKfmiopTableDefinition().snd, maxMapSensorLoad, maxBoostPressureLoad);
+            cacluateKfmiop(getSelectedKfmiopTableDefinition().getSecond(), maxMapSensorLoad, maxBoostPressureLoad);
         }
     }
 
@@ -62,7 +62,7 @@ public class KfmiopViewModel {
         // Found the map
         KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
         if (selectedTable != null) {
-            builder.tableDefinition(selectedTable.fst).inputKfmiop(selectedTable.snd);
+            builder.tableDefinition(selectedTable.getFirst()).inputKfmiop(selectedTable.getSecond());
             behaviorSubject.onNext(builder.build());
             calculateKfmiop();
         } else {

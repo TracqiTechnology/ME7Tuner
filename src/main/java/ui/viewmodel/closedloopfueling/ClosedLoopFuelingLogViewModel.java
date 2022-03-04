@@ -1,6 +1,5 @@
 package ui.viewmodel.closedloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -8,6 +7,7 @@ import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.me7log.ClosedLoopLogParser;
 import parser.xdf.TableDefinition;
 import preferences.mlhfm.MlhfmPreferences;
@@ -21,13 +21,13 @@ public class ClosedLoopFuelingLogViewModel {
     private final PublishSubject<ClosedLoopMlhfmLogModel> publishSubject = PublishSubject.create();
 
     public ClosedLoopFuelingLogViewModel() {
-        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<>() {
             @Override
             public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> me7LogMap) {
                 Pair<TableDefinition, Map3d> mlhfmDefinition = MlhfmPreferences.getInstance().getSelectedMap();
 
-                if(mlhfmDefinition != null) {
-                    Map3d mlhfm = mlhfmDefinition.snd;
+                if (mlhfmDefinition != null) {
+                    Map3d mlhfm = mlhfmDefinition.getValue();
                     if (mlhfm != null) {
                         publishSubject.onNext(new ClosedLoopMlhfmLogModel(me7LogMap, mlhfm));
                     }
@@ -35,13 +35,16 @@ public class ClosedLoopFuelingLogViewModel {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         BinWriter.getInstance().register(new Observer<TableDefinition>() {

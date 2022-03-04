@@ -1,12 +1,12 @@
 package ui.viewmodel.closedloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.me7log.ClosedLoopLogParser;
 import parser.xdf.TableDefinition;
@@ -22,17 +22,18 @@ public class ClosedLoopFuelingViewModel {
 
     public ClosedLoopFuelingViewModel() {
 
-        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+        BinWriter.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull TableDefinition tableDefinition) {
-                if(tableDefinition.getTableName().contains("MLHFM")) {
+                if (tableDefinition.getTableName().contains("MLHFM")) {
 
                     ClosedLoopMlfhmModel model = behaviorSubject.getValue();
                     ClosedLoopMlfhmModel.Builder builder;
-                    if(model == null) {
+                    if (model == null) {
                         builder = new ClosedLoopMlfhmModel.Builder();
                     } else {
                         builder = new ClosedLoopMlfhmModel.Builder(model);
@@ -47,10 +48,12 @@ public class ClosedLoopFuelingViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
@@ -81,15 +84,16 @@ public class ClosedLoopFuelingViewModel {
             public void onComplete() {}
         });
 
-        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
+        ClosedLoopLogParser.getInstance().registerClosedLoopLogOnChangeObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> stringListMap) {
                 ClosedLoopMlfhmModel model = behaviorSubject.getValue();
                 ClosedLoopMlfhmModel.Builder builder;
-                if(model == null) {
+                if (model == null) {
                     builder = new ClosedLoopMlfhmModel.Builder();
                 } else {
                     builder = new ClosedLoopMlfhmModel.Builder(model);
@@ -102,10 +106,12 @@ public class ClosedLoopFuelingViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 

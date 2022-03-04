@@ -1,6 +1,5 @@
 package ui.viewmodel.kfzwop;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -8,6 +7,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.kfzwop.Kfzwop;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.kfzwop.KfzwopPreferences;
@@ -60,7 +60,7 @@ public class KfzwopViewModel {
     private void updateModel() {
         Pair<TableDefinition, Map3d> kfzwopTable = KfzwopPreferences.getInstance().getSelectedMap();
         if (kfzwopTable != null) {
-            subject.onNext(new KfzwopModel(kfzwopTable, kfzwopTable.snd));
+            subject.onNext(new KfzwopModel(kfzwopTable, kfzwopTable.getSecond()));
         } else {
             subject.onNext(new KfzwopModel(null, null));
         }

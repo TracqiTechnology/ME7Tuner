@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="ME7Tuner" target="1.8" />
+      <module name="ME7Tuner" target="1.17" />
     </bytecodeTargetLevel>
   </component>
 </project>

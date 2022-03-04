@@ -1,6 +1,5 @@
 package ui.view.closedloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -8,6 +7,7 @@ import math.map.Map3d;
 import model.closedloopfueling.ClosedLoopFuelingCorrection;
 import model.mlhfm.MlhfmFitter;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.util.Pair;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -288,7 +288,7 @@ public class ClosedLoopFuelingCorrectionView {
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 Pair<TableDefinition, Map3d> table = MlhfmPreferences.getInstance().getSelectedMap();
                 if (table != null) {
-                    TableDefinition tableDefinition = MlhfmPreferences.getInstance().getSelectedMap().fst;
+                    TableDefinition tableDefinition = MlhfmPreferences.getInstance().getSelectedMap().getFirst();
                     if (tableDefinition != null) {
                         File file = BinFilePreferences.getInstance().getFile();
                         if (file != null) {

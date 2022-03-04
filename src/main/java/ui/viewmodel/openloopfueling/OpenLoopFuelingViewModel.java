@@ -1,12 +1,12 @@
 package ui.viewmodel.openloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.afrLog.AfrLogParser;
 import parser.bin.BinParser;
 import parser.me7log.OpenLoopLogParser;
@@ -22,17 +22,18 @@ public class OpenLoopFuelingViewModel {
 
     public OpenLoopFuelingViewModel () {
 
-        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+        BinWriter.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull TableDefinition tableDefinition) {
-                if(tableDefinition.getTableName().contains("MLHFM")) {
+                if (tableDefinition.getTableName().contains("MLHFM")) {
 
                     OpenLoopMlfhmModel model = behaviorSubject.getValue();
                     OpenLoopMlfhmModel.Builder builder;
-                    if(model == null) {
+                    if (model == null) {
                         builder = new OpenLoopMlfhmModel.Builder();
                     } else {
                         builder = new OpenLoopMlfhmModel.Builder(model);
@@ -48,10 +49,12 @@ public class OpenLoopFuelingViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
         BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
@@ -109,15 +112,16 @@ public class OpenLoopFuelingViewModel {
             public void onComplete() {}
         });
 
-        AfrLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+        AfrLogParser.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Map<String, List<Double>> logs) {
                 OpenLoopMlfhmModel model = behaviorSubject.getValue();
                 OpenLoopMlfhmModel.Builder builder;
-                if(model == null) {
+                if (model == null) {
                     builder = new OpenLoopMlfhmModel.Builder();
                 } else {
                     builder = new OpenLoopMlfhmModel.Builder(model);

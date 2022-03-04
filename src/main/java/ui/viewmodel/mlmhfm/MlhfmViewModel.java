@@ -1,18 +1,19 @@
 package ui.viewmodel.mlmhfm;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.mlhfm.MlhfmPreferences;
 
 import java.util.List;
 import java.util.Optional;
+
 
 public class MlhfmViewModel {
     private final BehaviorSubject<MlfhmModel> mlhfmPublishSubject = BehaviorSubject.create();
@@ -26,7 +27,7 @@ public class MlhfmViewModel {
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
                 Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
                 if(tableDefinition != null) {
-                    mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.fst, tableDefinition.snd)); // Found the map
+                    mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.getFirst(), tableDefinition.getSecond())); // Found the map
                 } else {
                     mlhfmPublishSubject.onNext(new MlfhmModel(null, null)); // No map found
                 }
@@ -46,7 +47,7 @@ public class MlhfmViewModel {
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
                 // Found the map
-                selectedTableDefinitionPair.ifPresent(tableDefinitionPair -> mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinitionPair.fst, tableDefinitionPair.snd)));
+                selectedTableDefinitionPair.ifPresent(tableDefinitionPair -> mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinitionPair.getFirst(), tableDefinitionPair.getSecond())));
             }
 
             @Override

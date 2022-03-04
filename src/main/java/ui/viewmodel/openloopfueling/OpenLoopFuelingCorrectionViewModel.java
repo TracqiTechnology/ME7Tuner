@@ -1,6 +1,5 @@
 package ui.viewmodel.openloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -9,6 +8,7 @@ import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.openloopfueling.correction.OpenLoopMlhfmCorrection;
 import model.openloopfueling.correction.OpenLoopMlhfmCorrectionManager;
+import org.apache.commons.math3.util.Pair;
 import parser.afrLog.AfrLogParser;
 import parser.bin.BinParser;
 import parser.me7log.OpenLoopLogParser;
@@ -70,7 +70,7 @@ public class OpenLoopFuelingCorrectionViewModel {
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
                 Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
                 if(tableDefinition != null) {
-                    OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = tableDefinition.snd;
+                    OpenLoopFuelingCorrectionViewModel.this.mlhfmMap = tableDefinition.getSecond();
                     generateCorrection();
                 }
             }

@@ -1,8 +1,8 @@
 package ui.view.krkte;
 
-import com.sun.tools.javac.util.Pair;
 import math.map.Map3d;
 import model.krkte.KrkteCalculator;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.krkte.KrktePreferences;
@@ -140,7 +140,7 @@ public class KrkteView implements OnTabSelectedListener {
                 Pair<TableDefinition, Map3d> krkteTable = KrktePreferences.getInstance().getSelectedMap();
 
                 if(krkteTable != null) {
-                    TableDefinition krkteTableDefinition = krkteTable.fst;
+                    TableDefinition krkteTableDefinition = krkteTable.getFirst();
 
                     if (krkteTableDefinition != null) {
                         try {

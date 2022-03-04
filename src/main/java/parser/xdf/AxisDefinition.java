@@ -1,6 +1,7 @@
 package parser.xdf;
 
-import com.sun.tools.javac.util.Pair;
+
+import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;

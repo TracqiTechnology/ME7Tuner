@@ -1,6 +1,5 @@
 package ui.viewmodel.openloopfueling;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -10,6 +9,7 @@ import io.reactivex.subjects.BehaviorSubject;
 import math.map.Map3d;
 import model.airflow.AirflowEstimation;
 import model.airflow.AirflowEstimationManager;
+import org.apache.commons.math3.util.Pair;
 import parser.afrLog.AfrLogParser;
 import parser.bin.BinParser;
 import parser.me7log.OpenLoopLogParser;
@@ -27,7 +27,7 @@ public class OpenLoopFuelingLogViewModel {
     private final BehaviorSubject<OpenLoopFuelingLogModel> behaviorSubject = BehaviorSubject.create();
 
     public OpenLoopFuelingLogViewModel() {
-        OpenLoopLogParser.getInstance().register(new Observer<Map<Me7LogFileContract.Header, List<Double>>>() {
+        OpenLoopLogParser.getInstance().register(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -101,7 +101,7 @@ public class OpenLoopFuelingLogViewModel {
                         builder = new OpenLoopFuelingLogModel.Builder(model);
                     }
 
-                    builder.mlhfm(tableDefinition.snd);
+                    builder.mlhfm(tableDefinition.getSecond());
                     behaviorSubject.onNext(generateAirflowEstimation(builder.build()));
                 }
             }

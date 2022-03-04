@@ -1,10 +1,10 @@
 package preferences;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.subjects.PublishSubject;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 
@@ -52,7 +52,7 @@ public class MapPreference {
             return null;
         } else {
             for (Pair<TableDefinition, Map3d> map : mapList) {
-                if (mapTitle.equals(map.fst.getTableName()) && mapDescription.equals(map.fst.getTableDescription()) && mapUnit.equals(map.fst.getZAxis().getUnit())) {
+                if (mapTitle.equals(map.getFirst().getTableName()) && mapDescription.equals(map.getFirst().getTableDescription()) && mapUnit.equals(map.getFirst().getZAxis().getUnit())) {
                     return map;
                 }
             }

@@ -1,12 +1,12 @@
 package ui.view.ldrpid;
 
-import com.sun.tools.javac.util.Pair;
 import contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
 import model.ldrpid.LdrpidCalculator;
+import org.apache.commons.math3.util.Pair;
 import parser.me7log.Me7LogParser;
 import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
@@ -97,8 +97,8 @@ public class LdrpidView {
         Double[][] kfldImxXAxisValues = new Double[1][];
 
         Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
-        if(tableDefinition != null && tableDefinition.snd != null) {
-            kfldImxXAxisValues[0] = tableDefinition.snd.xAxis;
+        if(tableDefinition != null && tableDefinition.getSecond() != null) {
+            kfldImxXAxisValues[0] = tableDefinition.getSecond().xAxis;
         }
         kfldimxXAxis.setTableData(kfldImxXAxisValues);
     }
@@ -154,7 +154,7 @@ public class LdrpidView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldimxPreferences.getInstance().getSelectedMap().fst, kfldimxTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldimxPreferences.getInstance().getSelectedMap().getFirst(), kfldimxTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -202,7 +202,7 @@ public class LdrpidView {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldrlPreferences.getInstance().getSelectedMap().fst, kfldrlTable.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfldrlPreferences.getInstance().getSelectedMap().getFirst(), kfldrlTable.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -247,7 +247,7 @@ public class LdrpidView {
                             Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
                             Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
-                            ldrpidResult = LdrpidCalculator.caclulateLdrpid(values, kfldrlTableDefinition.snd, kfldimxTableDefinition.snd);
+                            ldrpidResult = LdrpidCalculator.caclulateLdrpid(values, kfldrlTableDefinition.getSecond(), kfldimxTableDefinition.getSecond());
                             return null;
                         }
 
@@ -344,36 +344,36 @@ public class LdrpidView {
     private void initKflimxMap() {
         Pair<TableDefinition, Map3d> tableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
         kfldimxTable.setEditable(false);
-        if(tableDefinition != null && tableDefinition.snd != null) {
-            kfldimxTable.setMap(tableDefinition.snd);
+        if(tableDefinition != null && tableDefinition.getSecond() != null) {
+            kfldimxTable.setMap(tableDefinition.getSecond());
         }
     }
 
     private void initKfldrlMap() {
         Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
         kfldrlTable.setEditable(false);
-        if(tableDefinition != null && tableDefinition.snd != null) {
-            kfldrlTable.setMap(tableDefinition.snd);
+        if(tableDefinition != null && tableDefinition.getSecond() != null) {
+            kfldrlTable.setMap(tableDefinition.getSecond());
         }
     }
 
     private void initNonLinearMap() {
         Pair<TableDefinition, Map3d> tableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
-        if(tableDefinition != null && tableDefinition.snd != null) {
-            nonLinearTable.setMap(tableDefinition.snd);
+        if(tableDefinition != null && tableDefinition.getSecond() != null) {
+            nonLinearTable.setMap(tableDefinition.getSecond());
         }
 
-        nonLinearTable.getPublishSubject().subscribe(new Observer<Map3d>() {
+        nonLinearTable.getPublishSubject().subscribe(new Observer<>() {
             @Override
             public void onNext(@NonNull Map3d map3d) {
 
                 Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
                 Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
-                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis, kfldrlTableDefinition.snd);
-                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.snd);
-                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.snd, kfldimxTableDefinition.snd);
+                Map3d linearMap3d = LdrpidCalculator.calculateLinearTable(map3d.zAxis, kfldrlTableDefinition.getSecond());
+                Map3d kfldrlMap3d = LdrpidCalculator.calculateKfldrl(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.getSecond());
+                Map3d kfldimxMap3d = LdrpidCalculator.calculateKfldimx(map3d.zAxis, linearMap3d.zAxis, kfldrlTableDefinition.getSecond(), kfldimxTableDefinition.getSecond());
 
                 linearTable.setMap(linearMap3d);
                 kfldrlTable.setMap(kfldrlMap3d);
@@ -403,8 +403,8 @@ public class LdrpidView {
 
         linearTable.setEditable(false);
 
-        if(tableDefinition != null && tableDefinition.snd != null) {
-            linearTable.setMap(tableDefinition.snd);
+        if(tableDefinition != null && tableDefinition.getSecond() != null) {
+            linearTable.setMap(tableDefinition.getSecond());
         }
     }
 }

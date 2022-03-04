@@ -1,10 +1,10 @@
 package parser.xdf;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
+import org.apache.commons.math3.util.Pair;
 import org.jdom2.*;
 import org.jdom2.input.SAXBuilder;
 import preferences.xdf.XdfFilePreferences;

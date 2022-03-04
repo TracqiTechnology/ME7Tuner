@@ -128,14 +128,15 @@ public class KfmiopView implements OnTabSelectedListener {
 
     private void initViewModel() {
 
-        viewModel.register(new Observer<KfmiopViewModel.KfmiopModel>() {
+        viewModel.register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull KfmiopViewModel.KfmiopModel kfmiopModel) {
 
-                if(kfmiopModel.getTableDefinition() != null) {
+                if (kfmiopModel.getTableDefinition() != null) {
                     fileLabel.setText(kfmiopModel.getTableDefinition().getTableName());
                 }
 
@@ -144,7 +145,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
                 Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
 
-                if(inputKfmiop != null) {
+                if (inputKfmiop != null) {
                     KfmiopView.this.inputKfmiop.setColumnHeaders(inputKfmiop.xAxis);
                     KfmiopView.this.inputKfmiop.setRowHeaders(inputKfmiop.yAxis);
                     KfmiopView.this.inputKfmiop.setTableData(inputKfmiop.zAxis);
@@ -152,7 +153,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
                 Map3d outputKfmiop = kfmiopModel.getOutputKfmiop();
 
-                if(outputKfmiop != null) {
+                if (outputKfmiop != null) {
                     KfmiopView.this.outputKfmiop.setColumnHeaders(outputKfmiop.xAxis);
                     KfmiopView.this.outputKfmiop.setRowHeaders(outputKfmiop.yAxis);
                     KfmiopView.this.outputKfmiop.setTableData(outputKfmiop.zAxis);
@@ -164,7 +165,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
                 Map3d inputBoost = kfmiopModel.getInputBoost();
 
-                if(inputBoost != null) {
+                if (inputBoost != null) {
                     KfmiopView.this.inputBoost.setColumnHeaders(inputBoost.xAxis);
                     KfmiopView.this.inputBoost.setRowHeaders(inputBoost.yAxis);
                     KfmiopView.this.inputBoost.setTableData(inputBoost.zAxis);
@@ -172,7 +173,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
                 Map3d outputBoost = kfmiopModel.getOutputBoost();
 
-                if(outputBoost != null) {
+                if (outputBoost != null) {
                     KfmiopView.this.outputBoost.setColumnHeaders(outputBoost.xAxis);
                     KfmiopView.this.outputBoost.setRowHeaders(outputBoost.yAxis);
                     KfmiopView.this.outputBoost.setTableData(outputBoost.zAxis);
@@ -180,10 +181,12 @@ public class KfmiopView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -309,7 +312,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 try {
-                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmiopPreferences.getInstance().getSelectedMap().fst, outputKfmiop.getMap3d());
+                    BinWriter.getInstance().write(BinFilePreferences.getInstance().getFile(), KfmiopPreferences.getInstance().getSelectedMap().getFirst(), outputKfmiop.getMap3d());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

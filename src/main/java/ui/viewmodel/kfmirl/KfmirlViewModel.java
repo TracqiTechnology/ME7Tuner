@@ -1,6 +1,5 @@
 package ui.viewmodel.kfmirl;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -8,12 +7,12 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import math.Inverse;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.bin.BinParser;
 import parser.xdf.TableDefinition;
 import preferences.kfmiop.KfmiopPreferences;
 import preferences.kfmirl.KfmirlPreferences;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,11 +67,11 @@ public class KfmirlViewModel {
         Pair<TableDefinition, Map3d> kfmirlTableDefinition = KfmirlPreferences.getInstance().getSelectedMap();
         if (kfmiopTableDefinition != null && kfmirlTableDefinition != null && kfmiop != null) {
 
-            Map3d map3d = Inverse.calculateInverse(kfmiop, kfmirlTableDefinition.snd);
+            Map3d map3d = Inverse.calculateInverse(kfmiop, kfmirlTableDefinition.getSecond());
 
             // Don't change the first column
             for (int i = 0; i < map3d.zAxis.length; i++) {
-                map3d.zAxis[i][0] = kfmirlTableDefinition.snd.zAxis[i][0];
+                map3d.zAxis[i][0] = kfmirlTableDefinition.getSecond().zAxis[i][0];
             }
 
             behaviorSubject.onNext(new KfmirlModel(kfmiopTableDefinition, kfmirlTableDefinition, map3d)); // Found the map
@@ -89,7 +88,7 @@ public class KfmirlViewModel {
         Pair<TableDefinition, Map3d> kfmiopTableDefinition = KfmiopPreferences.getInstance().getSelectedMap();
         Pair<TableDefinition, Map3d> kfmirlTableDefinition = KfmirlPreferences.getInstance().getSelectedMap();
         if (kfmiopTableDefinition != null && kfmirlTableDefinition != null) {
-            calculateKfmirl(kfmiopTableDefinition.snd);
+            calculateKfmirl(kfmiopTableDefinition.getSecond());
         } else if (kfmiopTableDefinition == null) {
             behaviorSubject.onNext(new KfmirlModel(null, kfmirlTableDefinition, null));
         } else {

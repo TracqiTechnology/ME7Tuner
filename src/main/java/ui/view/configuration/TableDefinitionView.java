@@ -1,10 +1,10 @@
 package ui.view.configuration;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
+import org.apache.commons.math3.util.Pair;
 import parser.xdf.TableDefinition;
 import preferences.MapPreference;
 import preferences.MapPreferenceManager;
@@ -150,8 +150,8 @@ public class TableDefinitionView {
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.fst.getTableName()));
-                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> unitLabel.setText(definitionMap3dPair.fst.getZAxis().getUnit()));
+                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> definitionLabel.setText(definitionMap3dPair.getFirst().getTableName()));
+                tableDefinitionMap3dPair.ifPresent(definitionMap3dPair -> unitLabel.setText(definitionMap3dPair.getFirst().getZAxis().getUnit()));
             }
 
             @Override
@@ -164,14 +164,14 @@ public class TableDefinitionView {
         });
 
         if (tableDefinition != null) {
-            definitionLabel.setText(tableDefinition.fst.getTableName());
-            unitLabel.setText(tableDefinition.fst.getZAxis().getUnit());
+            definitionLabel.setText(tableDefinition.getFirst().getTableName());
+            unitLabel.setText(tableDefinition.getFirst().getZAxis().getUnit());
         }
 
         button.addActionListener(e -> {
             if (tableDefinition != null) {
-                definitionLabel.setText(tableDefinition.fst.getTableName());
-                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.fst, preference::setSelectedMap);
+                definitionLabel.setText(tableDefinition.getFirst().getTableName());
+                MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", tableDefinition.getFirst(), preference::setSelectedMap);
             } else {
                 MapPickerDialog.showDialog(panel, panel, "Select " + fieldTitle.getTitle(), "Map Selection", null, preference::setSelectedMap);
             }
