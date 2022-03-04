@@ -14,6 +14,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,7 +70,7 @@ public class BinWriter {
         }
 
         if (tableDefinition.getZAxis() != null && tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
-            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getIndexCount(), 1)];
+            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getColumnCount(), 1)];
 
             int index = 0;
             for (int i = 0; i < map.zAxis.length; i++) {
