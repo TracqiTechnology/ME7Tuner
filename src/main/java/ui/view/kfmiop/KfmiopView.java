@@ -1,17 +1,14 @@
 package ui.view.kfmiop;
 
-import com.sun.tools.javac.util.Pair;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import math.map.Map3d;
-import parser.xdf.TableDefinition;
 import preferences.bin.BinFilePreferences;
 import preferences.kfmiop.KfmiopPreferences;
 import ui.map.axis.MapAxis;
 import ui.map.map.MapTable;
 import ui.view.listener.OnTabSelectedListener;
-import ui.view.map.MapPickerDialog;
 import ui.viewmodel.kfmiop.KfmiopViewModel;
 import writer.BinWriter;
 

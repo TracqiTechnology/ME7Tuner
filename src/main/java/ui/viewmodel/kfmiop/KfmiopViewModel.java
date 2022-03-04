@@ -25,18 +25,21 @@ public class KfmiopViewModel {
 
         KfmiopPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
-
-            @Override
-            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
-               onTableSelected(selectedTableDefinitionPair.get());
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
+                onTableSelected(selectedTableDefinitionPair.get());
+            }
 
             @Override
-            public void onComplete() {}
+            public void onError(@NonNull Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
         });
     }
 
@@ -50,15 +53,15 @@ public class KfmiopViewModel {
 
         Pair<TableDefinition, Map3d> tableDefinition = getSelectedKfmiopTableDefinition();
 
-        if(tableDefinition != null) {
+        if (tableDefinition != null) {
             cacluateKfmiop(getSelectedKfmiopTableDefinition().snd, maxMapSensorLoad, maxBoostPressureLoad);
         }
     }
 
-    private void onTableSelected(@Nullable  Pair<TableDefinition, Map3d> selectedTable) {
+    private void onTableSelected(@Nullable Pair<TableDefinition, Map3d> selectedTable) {
         // Found the map
         KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
-        if(selectedTable != null) {
+        if (selectedTable != null) {
             builder.tableDefinition(selectedTable.fst).inputKfmiop(selectedTable.snd);
             behaviorSubject.onNext(builder.build());
             calculateKfmiop();
@@ -69,7 +72,7 @@ public class KfmiopViewModel {
     }
 
     private Pair<TableDefinition, Map3d> getSelectedKfmiopTableDefinition() {
-         return KfmiopPreferences.getInstance().getSelectedMap();
+        return KfmiopPreferences.getInstance().getSelectedMap();
     }
 
     private void cacluateKfmiop(Map3d baseKfmiop, double maxMapSensorLoad, double maxBoostPressureLoad) {
@@ -99,7 +102,9 @@ public class KfmiopViewModel {
         }
 
         @Nullable
-        public TableDefinition getTableDefinition() { return tableDefinition; }
+        public TableDefinition getTableDefinition() {
+            return tableDefinition;
+        }
 
         @Nullable
         public Map3d getInputKfmiop() {
@@ -138,7 +143,8 @@ public class KfmiopViewModel {
             private double maxMapSensorPressure;
             private double maxBoostPressure;
 
-            private Builder(){}
+            private Builder() {
+            }
 
             private Builder(KfmiopModel model) {
                 this.tableDefinition = model.tableDefinition;
@@ -151,7 +157,7 @@ public class KfmiopViewModel {
             }
 
             public Builder tableDefinition(TableDefinition tableDefinition) {
-                this.tableDefinition =tableDefinition;
+                this.tableDefinition = tableDefinition;
 
                 return this;
             }

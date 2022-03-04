@@ -72,12 +72,19 @@ public class AxisDefinition {
         return axisValues;
     }
 
-    public boolean is2D() {
-        if(rowCount != 0 && columnCount != 0) {
-            return true;
-        }
-
-        return false;
+    @Override
+    public String toString() {
+        return "AxisDefinition{" +
+                "id='" + id + '\'' +
+                ", address=" + address +
+                ", indexCount=" + indexCount +
+                ", sizeBits=" + sizeBits +
+                ", rowCount=" + rowCount +
+                ", columnCount=" + columnCount +
+                ", unit='" + unit + '\'' +
+                ", equation='" + equation + '\'' +
+                ", varId='" + varId + '\'' +
+                ", axisValues=" + axisValues +
+                '}';
     }
-
 }

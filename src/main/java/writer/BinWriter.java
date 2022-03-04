@@ -57,6 +57,7 @@ public class BinWriter {
 
             write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
         }
+
         if (tableDefinition.getYAxis() != null && tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
             double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
 
@@ -95,7 +96,7 @@ public class BinWriter {
 
             raf.seek(address);
 
-            ByteBuffer bb = ByteBuffer.allocate(values.length * size).order(ByteOrder.LITTLE_ENDIAN);
+            ByteBuffer bb = ByteBuffer.allocate(values.length * (size/8)).order(ByteOrder.LITTLE_ENDIAN);
             for (double value : values) {
                 if (size == 8) {
                     bb.put(((Number) funcEngine.invokeFunction("func", value)).byteValue());
