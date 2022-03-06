@@ -18,13 +18,13 @@ import java.awt.*;
 import java.io.IOException;
 
 public class KfmiopView implements OnTabSelectedListener {
-    private final MapTable inputKfmiop = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
-    private final MapTable outputKfmiop = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
+    private final MapTable inputKfmiop = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
+    private final MapTable outputKfmiop = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
 
-    private final MapTable inputBoost = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
-    private final MapTable outputBoost = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
+    private final MapTable inputBoost = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
+    private final MapTable outputBoost = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
 
-    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
+    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][11]);
 
     private JLabel fileLabel;
     private JPanel panel;

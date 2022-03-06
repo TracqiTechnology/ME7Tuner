@@ -153,7 +153,11 @@ public class MapTable extends JList implements TableModelListener {
                 setBackground(table.getTableHeader().getBackground());
             }
 
-            setText(decimalFormat.format(rowHeaders[index]));
+            if(rowHeaders[index] != null) {
+                setText(decimalFormat.format(rowHeaders[index]));
+            } else {
+                setText("0.0");
+            }
 
             return this;
         }
@@ -184,7 +188,7 @@ public class MapTable extends JList implements TableModelListener {
             try {
                 setText(formatter.format(Double.parseDouble(value.toString())));
             } catch (NumberFormatException e) {
-                setText(value.toString());
+                setText("0.0");
             }
 
             return this;

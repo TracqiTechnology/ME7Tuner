@@ -30,7 +30,7 @@ public class KfmiopViewModel {
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
-                onTableSelected(selectedTableDefinitionPair.get());
+                selectedTableDefinitionPair.ifPresent(tableDefinitionMap3dPair -> onTableSelected(tableDefinitionMap3dPair));
             }
 
             @Override
