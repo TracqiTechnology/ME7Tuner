@@ -50,17 +50,21 @@ Everything in ME7 revolves around requested load (or cylinder fill).
 
 The simplified description of how ME7 works is as follows:
 
-In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 then calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When you are tuning ME7, you are trying to modify the various maps to model your hardware and the weather accurately. If you don't model things correctly, ME7 is going to decide something is wrong and will try to protect the engine by reducing the capacity to produce power at various levels of intervention. It is important to get things right.
+In ME7, the driver uses the accelerator pedal position to make a torque request. Pedal positions are mapped to a torque request (which is effectively a normalized load request). That torque request is then mapped to a load request. ME7 calculates how much pressure (boost) is required to achieve the load request which is highly dependent on hardware (the engine, turbo, etc...) and also the weather (cold, dry air is denser than hot, moist air). When tuning ME7 the goal is to calibrate the various maps to model the hardware and the weather accurately. If modeled incorrectly, ME7 will determine something is wrong and will protect the engine by reducing the capacity to produce power at various levels of intervention.
 
-Note that no amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will use interventions to decrease actual load to get it to equal or below requested load. You must modify the tune to request more load to significantly increase power.
+Note that no amount of modifications (intake, exhaust, turbo, boost controllers, etc...) will increase the power of the engine if actual load is already equal to or greater than requested load. ME7 will use interventions to *decrease* actual load (power) to get it equal requested load. You must calibrate the tune to request more load to increase power.
 
-ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow and load measurements (a properly scaled MAF) which can simplify calibrations.
+ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow, pressure and load measurements which can simplify calibrations.
 
 ## Do I need to use ME7Tuner?
 
-If you have changed your MAF sensor and/or MAF housing diameter and want to produce more than 191% load, ME7Tuner is useful to you.
+Not unless you have significantly increased power requirements. Refer to the following tables.
+
+In general ME7Tuner is only useful if you need to request more than 191% load on an M-Box. This means that K03 and most K04 configurations do not need the level of calibrations provided by ME7Tuner.
 
 ##### Stock MAP Limit 
+
+The stock MAP limit is the primary limitation to calibration. A stock M-box has just enough overhead to support K04's within their optimal efficiency range. 
 
 * 2.5bar absolute (~22.45 psi relative)
 
@@ -114,11 +118,11 @@ Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 * 650R 37 lbs/min air -> ~354% load -> ~740hp
 * 770R 48 lbs/min air -> ~460% load -> ~960hp
 
-Note that a stock M-box has a maximum load request of 191%.
+Note that a stock M-box has a maximum load request of 191%, but can be increased with the stock MAP sensor to ~215%.
 
 ##### Summary
 
-This information should give you a good estimate of what hardware you need to achieve a given power goal, how much tuning you will need to do to support that power and if ME7Tuner is useful to you.
+This information should give you a good estimate of what hardware you need to achieve a given power goal, how much calibration you will need to do to support that power and if ME7Tuner is useful to you.
 
 # Configuration
 
@@ -145,9 +149,19 @@ You will need to tell ME7Tuner what definition you want to use for *all* fields.
 * KFLDRL - %
 * KFLDIMX - %
 
+ME7Tuner automatically filters map definitions base on what is in the editable text box.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-06-at-10.29.15-AM.png "ME7Tuner Configuration")
+
 ### Log Headers
 
 There are often many flavors of the same logged parameter. You can define the headers for the parameters that the log parser uses here.
+
+![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-06-at-10.32.26-AM.png "ME7Tuner Configuration")
+
+# Order of Calibrations
+
+In general, you should start with a stock binary and follow order provided by this document. It is extremely important that you calibrate primary fueling *first*. Fueling is one known constant to calibrate the MAF which should be performed after fueling. Once the fueling and MAF are calibrated load request, ignition advance and pressure (boost) requested can be calibrated. Ignition advance and pressure request calibrations will need to be iterated upon as you approach your power goals.
 
 # KRKTE (Primary Fueling)
 
@@ -157,15 +171,15 @@ The first step is to calculate a reasonable value for KRKTE (primary fueling). T
 
 Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser.
 
-Note that the decision to use a fuel density of 0.71 g/cc^3 (versus a more accurate ~0.75 g/cc^3) was clearly intentional and will have the effect of slightly under-scaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compensate). As a result, the measured engine load (rl_w) will be under-scaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
+Note that the decision to use a fuel density of 0.71 g/cc^3 (versus ~0.75 g/cc^3) will have the effect of under-scaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compensate). As a result, the measured engine load (rl_w) will be under-scaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
 
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.16.49-PM.png "Primary Fueling (KRKTE)")
 
-When you are satisfied with KRKTE, you will need to get your MAF scaled to the fuel injectors.
-
 # MLHFM (MAF Scaling)
+
+When you are satisfied with KRKTE, you will need to get your MAF scaled to the fuel injectors.
 
 Read [MAF](https://s4wiki.com/wiki/Mass_air_flow)
 
@@ -179,10 +193,10 @@ If the MAF diameter can not be increased enough to achieve the desired range a n
 
 Read [Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
+Significantly increasing the diameter of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed (and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is difficult and tedious work. It is more simple to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
+
 * **Solid Line** - 100mm housing scaled based on a constant derived from the change in housing diameter
 * **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
-
-Significantly increasing the diameter of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed (and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is difficult and tedious work. It is more simple to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Under-scaled 100mm housing")
 
@@ -226,16 +240,26 @@ The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * 
 The key is to get as much data as possible. Narrow band O2 sensors are noisy and slow, so the algorithm depends on lots of data and averaging to estimate corrections. The Closed Loop parser is designed to parse multiple log files at one time so you can compile logs over a period of time. The tune/hardware cannot change between logs. Also, it is advisable to log in consistent weather.
 
 * Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
-* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba), Lambda Control Active (B_lr) and Engine Load (rl_w).
+
+Log the following parameters:
+
+* RPM - 'nmot'
+* STFT - 'fr_w'
+* LTFT - 'fra_w'
+* MAF Voltage - 'uhfm_w'
+* Throttle Plate Angle - 'wdkba'
+* Lambda Control Active - 'B_lr'
+* Engine Load - rl_w'
+
+Logging Instructions:
+
 * Log long periods of consistent throttle plate angles and boost. We are trying to capture data where the MAF's rate of change (delta) is as small as possible. You don't have to stop/start logging between peroids of being consistent since ME7Tuner will filter the data for you, but you still want as much of this data as possible.
 * Stay out of open-loop fueling. We don't care about it (right now). Like inconsistent MAF deltas, ME7Tuner will filter out open-loop data.
 * Get at least 30 minutes of driving on a highway. Vary gears and throttle positions often to get measurements at as many throttle angles and RPM combinations as possible. Finding a highway with a long, consistent incline is ideal since you can 'load' the engine resulting in higher MAF voltages without going into open-loop fueling. Remember to slowly roll on and off the throttle. Sudden changes will result in less usuable data.
 * Get at least 30 minutes of typical 'city' driving. Stop lights, slower city speeds, lots of gears and throttle positions. Remember to be as consistent as possible rolling on and off of the throttle.
 * Get at least 15 minutes of parking lot data. Drive slowly around the parking lot in 1st and 2nd gear. Stop and start often. Vary the throttle plate and RPM as much as possible.
 * Save your log and put it into a directory (along with other closed-loop logs from the same tune if desired).
-* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com/wp-content/uploads/2019/02/mlhfm.csv) (Right Click -> Save Link As)
 * Open ME7Tuner and click on the "Close Loop Fueling" tab at the top
-* Click the MLHFM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.18.54-PM.png "MLHFM")
 
@@ -245,7 +269,7 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.21.29-PM.png "Closed Loop Derivative")
 
-* Click "Configure Filter" in the bottom left corner of the screen. This is where you can configure the filter for the incoming data. You can filter data by a minimum throttle angle, a minimum RPM, a maximum derivative (as discussed 1 is usually a good start).
+* Click "Configure Filter" in the bottom left corner of the screen. This is where you can configure the filter for the incoming data. You can filter data by a minimum throttle angle, a minimum RPM, a maximum derivative (1 is usually a good start).
 
 * Click the "Correction" tab on the left side of the screen. You will see the current MLHFM plotted in blue and the corrected MLHFM plotted in red. The corrected MLHFM is also displayed in a table on the right hand side of the screen and can be copied directly into TunerPro. Clicking "Save MLFHM" will allow you to save MLFHM to a .csv file which can be loaded for the next set of corrections.
 
@@ -267,9 +291,11 @@ The key is to get as much data as possible. Narrow band O2 sensors are noisy and
 
 # MLHFM - Open Loop
 
-Before attempting to tune open loop fueling, you really need to have KRKTE and closed loop fueling nailed down. You also need a wideband O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
+Before attempting to tune open loop fueling, you *need* to have KRKTE (fueling) and closed loop fueling nailed down. You also need a wideband O2 sensor that is pre-cat. A tail sniffer likely isn't sufficient here.
 
 Note that ME7Tuner is designed to be used with Zeitronix logs, but logs from any wideband can be modified to use the expected headers.
+
+Please open an issue with an example log file if you would like other formats to be supported.
 
 ### Algorithm
 
@@ -288,19 +314,32 @@ The corrected kg/hr transformation for MLHFM is calculated as current_kg/hr * ((
 Unlike closed loop corrections, open loop logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. ME7Tuner correlates the ME7Logger logs and Zeitronix logs based on throttle position so both sets of logs need to contain the same number of pulls.
 
 * Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
-* Log RPM (nmot), STFT (fr_w), LTFT (fra_w), MAF Voltage (uhfm_w), Throttle Plate Angle (wdkba), Lambda Control Active (B_lr), MAF g/sec (mshfm_w), Requested Lambda (lamsbg_w) and Fuel Injector On-Time (ti_bl).
+
+Log the following parameters:
+
+* RPM - 'nmot'
+* STFT - 'fr_w'
+* LTFT - 'fra_w'
+* MAF Voltage - 'uhfm_w'
+* MAF g/sec - 'mshfm_w'
+* Throttle Plate Angle - 'wdkba'
+* Lambda Control Active - 'B_lr'
+* Engine Load - rl_w'
+* Requested Lambda - 'lamsbg_w'
+* Fuel Injector On-Time - 'ti_bl'
+
+Logging Instructions:
+
 * Start both ME7Logger and the Zeitronix Logger and do as many WOT pulls as possible. Perform WOT pulls in 2nd and 3rd gear from 2000 RPM if possible. Stop both loggers when you are finished.
 * Save your logs and put them into a directory
-* If you haven't done so already, create a .csv file of your MLHFM with headers of "voltage" and "kg/hr" and the corresponding values under each header. [Example mlhfm.csv](http://kircherelectronics.com/wp-content/uploads/2019/02/mlhfm.csv)
 * Open ME7Tuner and click on the "Open Loop Fueling" tab at the top
-* Click the MLFHM tab on the left and click the "Load MLHFM" button and select your mlhfm.csv file. The file should load and plot.
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.01.06-AM.png "MLHFM")
 
 * Click the "ME7 Logs" tab on the left side of the screen.
 * Click "Load ME7 Logs" and select the ME7Logger .csv file
 * Click "Load AFR Logs" and select the Zeitronix .csv file
-* You should see the requested AFR from ME7 plotted in blue and the actual AFR from Zeitronix in red. If the requested AFR doesn't match the actual AFR the MAF scaling is incorrect.
+* You should see the requested AFR from ME7 plotted in orange and the actual AFR from Zeitronix in red. *If the requested AFR doesn't match the actual AFR the MAF scaling is incorrect.*
 
 ![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.04.58-AM.png "Open Loop Fueling")
 

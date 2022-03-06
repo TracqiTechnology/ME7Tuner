@@ -20,8 +20,7 @@ public class Me7LogParser {
         OPEN_LOOP,
         CLOSED_LOOP,
         LDRPID,
-        KFVPDKSD,
-        KFURL
+        KFVPDKSD
     }
 
     private int timeColumnIndex = -1;
@@ -38,7 +37,6 @@ public class Me7LogParser {
     private int wastegateDutyCycleIndex = -1;
     private int barometricPressureIndex = -1;
     private int absoluteBoostPressureActualIndex = -1;
-    private int absoluteBoostPressureModeledIndex = -1;
     private int selectedGearIndex = -1;
 
     public interface ProgressCallback {
@@ -115,8 +113,6 @@ public class Me7LogParser {
                         engineLoadIndex = i;
                     } else if (Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER.getHeader().equals(record.get(i).trim())) {
                         absoluteBoostPressureActualIndex = i;
-                    } else if (Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER.getHeader().equals(record.get(i).trim())) {
-                        absoluteBoostPressureModeledIndex = i;
                     } else if (Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER.getHeader().equals(record.get(i).trim())) {
                         barometricPressureIndex = i;
                     } else if (Me7LogFileContract.Header.WASTEGATE_DUTY_CYCLE_HEADER.getHeader().equals(record.get(i).trim())) {
@@ -125,7 +121,9 @@ public class Me7LogParser {
                         selectedGearIndex = i;
                     }
 
-                    if (headersFound = headersFound(logType)) {
+                    headersFound = headersFound(logType);
+
+                    if (headersFound) {
                         break;
                     }
                 }
@@ -194,16 +192,6 @@ public class Me7LogParser {
                             map.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER).add(throttlePlateAngle);
                             map.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER).add(barometricPressure);
                             map.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER).add(absoluteBoostPressure);
-                        } else if (logType == LogType.KFURL) {
-                            double time = Double.parseDouble(record.get(timeColumnIndex));
-                            double rpm = Double.parseDouble(record.get(rpmColumnIndex));
-                            double barometricPressure = Double.parseDouble(record.get(barometricPressureIndex));
-                            double absoluteModeledBoostPressure = Double.parseDouble(record.get(absoluteBoostPressureModeledIndex));
-
-                            map.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER).add(time);
-                            map.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER).add(rpm);
-                            map.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER).add(barometricPressure);
-                            map.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER).add(absoluteModeledBoostPressure);
                         }
                     } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
                         e.printStackTrace();
@@ -241,7 +229,6 @@ public class Me7LogParser {
         wastegateDutyCycleIndex = -1;
         barometricPressureIndex = -1;
         absoluteBoostPressureActualIndex = -1;
-        absoluteBoostPressureModeledIndex = -1;
         selectedGearIndex = -1;
     }
 
@@ -255,8 +242,6 @@ public class Me7LogParser {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && selectedGearIndex != -1;
         } else if (logType == LogType.KFVPDKSD) {
             return timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1;
-        } else if (logType == LogType.KFURL) {
-            return timeColumnIndex != -1 && rpmColumnIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureModeledIndex != -1;
         }
 
         return false;
@@ -296,11 +281,6 @@ public class Me7LogParser {
             map.put(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER, new ArrayList<>());
             map.put(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER, new ArrayList<>());
-        } else if (logType == LogType.KFURL) {
-            map.put(Me7LogFileContract.Header.TIME_COLUMN_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.Header.RPM_COLUMN_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER, new ArrayList<>());
-            map.put(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER, new ArrayList<>());
         }
 
         return map;

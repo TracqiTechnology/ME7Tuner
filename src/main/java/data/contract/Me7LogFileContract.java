@@ -17,7 +17,6 @@ public class Me7LogFileContract {
     public static final String BAROMETRIC_PRESSURE_LABEL = "pus_w";
     public static final String ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL = "pvdks_w";
     public static final String SELECTED_GEAR_LABEL = "gangi";
-    public static final String ABSOLUTE_BOOST_PRESSURE_MODELED_LABEL = "ps_w";
     
     public enum Header {
         START_TIME_HEADER(START_TIME_LABEL, "Start Time"),
@@ -35,8 +34,7 @@ public class Me7LogFileContract {
         WASTEGATE_DUTY_CYCLE_HEADER(WASTEGATE_DUTY_CYCLE_LABEL, "Wastegate Duty Cycle"),
         BAROMETRIC_PRESSURE_HEADER(BAROMETRIC_PRESSURE_LABEL, "Barometric Pressure"),
         ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER(ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL, "Absolute Pressure"),
-        SELECTED_GEAR_HEADER(SELECTED_GEAR_LABEL, "Selected Gear"),
-        ABSOLUTE_BOOST_PRESSURE_MODELED_HEADER(ABSOLUTE_BOOST_PRESSURE_MODELED_LABEL, "Modeled Pressure");
+        SELECTED_GEAR_HEADER(SELECTED_GEAR_LABEL, "Selected Gear");
 
         private String header;
         private final String title;
