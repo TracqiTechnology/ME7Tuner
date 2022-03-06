@@ -20,7 +20,7 @@ public class KfmirlViewModel {
     private final BehaviorSubject<KfmirlModel> behaviorSubject = BehaviorSubject.create();
 
     public KfmirlViewModel() {
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -39,7 +39,7 @@ public class KfmirlViewModel {
             }
         });
 
-        KfmirlPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfmirlPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
 

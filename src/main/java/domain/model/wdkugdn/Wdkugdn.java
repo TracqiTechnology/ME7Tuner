@@ -5,7 +5,7 @@ import domain.model.load.EngineLoad;
 
 import java.util.Arrays;
 
-public class WdkugdnCalculator {
+public class Wdkugdn {
 
     public static Map3d calculateWdkugdn(Map3d wdkugdn, Map3d kfwdkmsn, double displacement) {
         Double[] xAxis = wdkugdn.xAxis;

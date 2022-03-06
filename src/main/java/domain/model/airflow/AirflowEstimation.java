@@ -2,14 +2,22 @@ package domain.model.airflow;
 
 import java.util.List;
 
-public class AirflowEstimation {
-    public final List<List<Double>> estimatedAirflowGramsPerSecondLogs;
-    public final List<List<Double>> measuredAirflowGramsPerSecondLogs;
-    public final List<List<Double>> measuredRpmLogs;
+public record AirflowEstimation(List<List<Double>> estimatedAirflowGramsPerSecondLogs,
+                                List<List<Double>> measuredAirflowGramsPerSecondLogs,
+                                List<List<Double>> measuredRpmLogs) {
 
-    public AirflowEstimation(List<List<Double>> estimatedAirflowGramsPerSecondLogs, List<List<Double>> measuredAirflowGramsPerSecondLogs, List<List<Double>> measuredRpmLogs) {
-        this.estimatedAirflowGramsPerSecondLogs = estimatedAirflowGramsPerSecondLogs;
-        this.measuredAirflowGramsPerSecondLogs = measuredAirflowGramsPerSecondLogs;
-        this.measuredRpmLogs = measuredRpmLogs;
+    @Override
+    public List<List<Double>> estimatedAirflowGramsPerSecondLogs() {
+        return estimatedAirflowGramsPerSecondLogs;
+    }
+
+    @Override
+    public List<List<Double>> measuredAirflowGramsPerSecondLogs() {
+        return measuredAirflowGramsPerSecondLogs;
+    }
+
+    @Override
+    public List<List<Double>> measuredRpmLogs() {
+        return measuredRpmLogs;
     }
 }

@@ -52,9 +52,10 @@ public class ClosedLoopFuelingView implements OnTabSelectedListener {
 
     private void initViewModel() {
         ClosedLoopFuelingViewModel viewModel = new ClosedLoopFuelingViewModel();
-        viewModel.register(new Observer<ClosedLoopFuelingViewModel.ClosedLoopMlfhmModel>() {
+        viewModel.register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull ClosedLoopFuelingViewModel.ClosedLoopMlfhmModel closedLoopMlfhmModel) {
@@ -64,10 +65,12 @@ public class ClosedLoopFuelingView implements OnTabSelectedListener {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 

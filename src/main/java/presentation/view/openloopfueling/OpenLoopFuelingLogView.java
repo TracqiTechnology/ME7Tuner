@@ -70,8 +70,8 @@ public class OpenLoopFuelingLogView {
                 drawAfrFuelingLogChart(openLoopFuelingLogModel.getAfrLogs());
                 AirflowEstimation airflowEstimation = openLoopFuelingLogModel.getAirflowEstimation();
                 if(airflowEstimation != null) {
-                    drawMeasuredAirflowChart(airflowEstimation.measuredAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
-                    drawEstimatedAirflowChart(airflowEstimation.estimatedAirflowGramsPerSecondLogs, airflowEstimation.measuredRpmLogs);
+                    drawMeasuredAirflowChart(airflowEstimation.measuredAirflowGramsPerSecondLogs(), airflowEstimation.measuredRpmLogs());
+                    drawEstimatedAirflowChart(airflowEstimation.estimatedAirflowGramsPerSecondLogs(), airflowEstimation.measuredRpmLogs());
                 }
             }
 

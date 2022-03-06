@@ -7,7 +7,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import domain.math.map.Map3d;
-import domain.model.wdkugdn.WdkugdnCalculator;
+import domain.model.wdkugdn.Wdkugdn;
 import org.apache.commons.math3.util.Pair;
 import data.parser.xdf.TableDefinition;
 import data.preferences.kfwdkmsn.KfwdkmsnPreferences;
@@ -71,7 +71,7 @@ public class WdkugdnViewModel {
             Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getInstance().getSelectedMap();
             Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getInstance().getSelectedMap();
             if (wdkugdn != null && kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(WdkugdnCalculator.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName(), kfwdkmsn.getFirst().getTableName()));
+                subject.onNext(new WdkugnModel(Wdkugdn.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName(), kfwdkmsn.getFirst().getTableName()));
             } else if(wdkugdn != null) {
                 subject.onNext(new WdkugnModel(null, wdkugdn.getFirst().getTableName(), null));
             }else if(kfwdkmsn != null) {

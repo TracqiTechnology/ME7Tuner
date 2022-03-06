@@ -23,7 +23,7 @@ public class KfmiopViewModel {
 
         onTableSelected(getSelectedKfmiopTableDefinition());
 
-        KfmiopPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfmiopPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }

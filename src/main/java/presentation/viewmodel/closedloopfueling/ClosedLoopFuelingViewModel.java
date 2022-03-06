@@ -15,6 +15,7 @@ import data.writer.BinWriter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ClosedLoopFuelingViewModel {
 
@@ -56,16 +57,17 @@ public class ClosedLoopFuelingViewModel {
             }
         });
 
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
                 Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
                 ClosedLoopMlfhmModel model = behaviorSubject.getValue();
                 ClosedLoopMlfhmModel.Builder builder;
-                if(model == null) {
+                if (model == null) {
                     builder = new ClosedLoopMlfhmModel.Builder();
                 } else {
                     builder = new ClosedLoopMlfhmModel.Builder(model);
@@ -75,6 +77,52 @@ public class ClosedLoopFuelingViewModel {
                 builder.selectedTabIndex(0);
 
                 behaviorSubject.onNext(builder.build());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+
+        MlhfmPreferences.getInstance().registerOnMapChanged(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                ClosedLoopMlfhmModel model = behaviorSubject.getValue();
+                if(tableDefinitionMap3dPair.isPresent()) {
+                    ClosedLoopMlfhmModel.Builder builder;
+                    if (model == null) {
+                        builder = new ClosedLoopMlfhmModel.Builder();
+                    } else {
+                        builder = new ClosedLoopMlfhmModel.Builder(model);
+                    }
+
+                    builder.logsTabEnabled(true);
+                    builder.correctionsTabEnabled(false);
+                    builder.selectedTabIndex(0);
+
+                    behaviorSubject.onNext(builder.build());
+                } else {
+                    ClosedLoopMlfhmModel.Builder builder;
+                    if (model == null) {
+                        builder = new ClosedLoopMlfhmModel.Builder();
+                    } else {
+                        builder = new ClosedLoopMlfhmModel.Builder(model);
+                    }
+
+                    builder.logsTabEnabled(false);
+                    builder.correctionsTabEnabled(false);
+                    builder.selectedTabIndex(0);
+
+                    behaviorSubject.onNext(builder.build());
+                }
             }
 
             @Override
