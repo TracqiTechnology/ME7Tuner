@@ -3,12 +3,12 @@ package presentation.view.wdkugdn;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
-import preferences.bin.BinFilePreferences;
-import preferences.wdkugdn.WdkugdnPreferences;
+import domain.math.map.Map3d;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.wdkugdn.WdkugdnPreferences;
 import presentation.map.map.MapTable;
 import presentation.viewmodel.wdkugdn.WdkugdnViewModel;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public class WdkugdnView {
 
-    private final MapTable wdkudgnTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
+    private final MapTable wdkudgnTable = MapTable.getMapTable(new Double[1], new Double[12], new Double[1][12]);
     private JPanel panel;
     private JLabel wdkugdnFileLabel;
     private final EngineDisplacementPanel engineDisplacementPanel = new EngineDisplacementPanel(new EngineDisplacementPanel.OnValueChangedListener() {

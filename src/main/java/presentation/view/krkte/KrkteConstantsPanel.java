@@ -1,6 +1,6 @@
 package presentation.view.krkte;
 
-import preferences.primaryfueling.PrimaryFuelingPreferences;
+import data.preferences.primaryfueling.PrimaryFuelingPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

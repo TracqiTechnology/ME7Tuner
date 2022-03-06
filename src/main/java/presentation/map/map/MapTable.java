@@ -1,9 +1,9 @@
 package presentation.map.map;
 
 import io.reactivex.subjects.PublishSubject;
-import math.map.Map3d;
-import util.Debouncer;
-import util.Util;
+import domain.math.map.Map3d;
+import domain.util.Debouncer;
+import domain.util.Util;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

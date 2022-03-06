@@ -1,17 +1,17 @@
 package presentation.viewmodel.closedloopfueling;
 
-import contract.Me7LogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
-import math.map.Map3d;
+import domain.math.map.Map3d;
 import org.apache.commons.math3.util.Pair;
-import parser.me7log.ClosedLoopLogParser;
-import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmPreferences;
-import writer.BinWriter;
+import data.parser.me7log.ClosedLoopLogParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.mlhfm.MlhfmPreferences;
+import data.writer.BinWriter;
 
 import java.util.List;
 import java.util.Map;

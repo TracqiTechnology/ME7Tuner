@@ -1,8 +1,8 @@
 package presentation.view.kfurl;
 
 
-import contract.AfrLogFileContract;
-import contract.Me7LogFileContract;
+import data.contract.AfrLogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -13,7 +13,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.filechooser.FileChooserPreferences;
+import data.preferences.filechooser.FileChooserPreferences;
 import presentation.viewmodel.kfurl.KfurlViewModel;
 
 import javax.swing.*;

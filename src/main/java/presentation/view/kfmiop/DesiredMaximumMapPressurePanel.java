@@ -1,6 +1,6 @@
 package presentation.view.kfmiop;
 
-import preferences.kfmiop.KfmiopPreferences;
+import data.preferences.kfmiop.KfmiopPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

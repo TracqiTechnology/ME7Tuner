@@ -1,20 +1,20 @@
 package presentation.viewmodel.kfvpdksd;
 
-import contract.Me7LogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.RescaleAxis;
-import math.map.Map3d;
-import model.kfvpdksd.Kfvpdksd;
+import domain.math.RescaleAxis;
+import domain.math.map.Map3d;
+import domain.model.kfvpdksd.Kfvpdksd;
 import org.apache.commons.math3.util.Pair;
-import parser.bin.BinParser;
-import parser.me7log.KfvpdksdLogParser;
-import parser.me7log.Me7LogParser;
-import parser.xdf.TableDefinition;
-import preferences.kfvpdksd.KfvpdksdPreferences;
+import data.parser.bin.BinParser;
+import data.parser.me7log.KfvpdksdLogParser;
+import data.parser.me7log.Me7LogParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.kfvpdksd.KfvpdksdPreferences;
 
 import javax.swing.*;
 import java.io.File;

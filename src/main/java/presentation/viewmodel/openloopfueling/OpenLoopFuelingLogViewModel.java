@@ -1,22 +1,22 @@
 package presentation.viewmodel.openloopfueling;
 
-import contract.Me7LogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
-import model.airflow.AirflowEstimation;
-import model.airflow.AirflowEstimationManager;
+import domain.math.map.Map3d;
+import domain.model.airflow.AirflowEstimation;
+import domain.model.airflow.AirflowEstimationManager;
 import org.apache.commons.math3.util.Pair;
-import parser.afrLog.AfrLogParser;
-import parser.bin.BinParser;
-import parser.me7log.OpenLoopLogParser;
-import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmPreferences;
-import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
-import writer.BinWriter;
+import data.parser.afrLog.AfrLogParser;
+import data.parser.bin.BinParser;
+import data.parser.me7log.OpenLoopLogParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.mlhfm.MlhfmPreferences;
+import data.preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
+import data.writer.BinWriter;
 
 import java.io.File;
 import java.util.List;

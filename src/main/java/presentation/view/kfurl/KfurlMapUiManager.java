@@ -2,8 +2,8 @@ package presentation.view.kfurl;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
-import model.kfurl.Kfurl;
+import domain.math.map.Map3d;
+import domain.model.kfurl.Kfurl;
 import presentation.map.map.MapTable;
 import presentation.viewmodel.kfurl.KfurlViewModel;
 

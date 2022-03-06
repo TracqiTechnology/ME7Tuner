@@ -1,6 +1,6 @@
 package presentation.view.openloopfueling;
 
-import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
+import data.preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;

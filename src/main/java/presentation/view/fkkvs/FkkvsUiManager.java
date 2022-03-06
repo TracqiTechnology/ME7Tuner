@@ -1,6 +1,6 @@
 package presentation.view.fkkvs;
 
-import model.fkkvs.Fkkvs;
+import domain.model.fkkvs.Fkkvs;
 import presentation.map.map.MapTable;
 
 import javax.swing.*;

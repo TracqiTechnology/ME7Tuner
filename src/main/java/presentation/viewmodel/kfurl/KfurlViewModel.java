@@ -1,16 +1,16 @@
 package presentation.viewmodel.kfurl;
 
-import contract.AfrLogFileContract;
-import contract.Me7LogFileContract;
+import data.contract.AfrLogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
-import model.kfurl.KfurlCalculator;
-import model.kfurl.KfurlCorrection;
-import parser.afrLog.AfrLogParser;
-import parser.me7log.Me7LogParser;
+import domain.math.map.Map3d;
+import domain.model.kfurl.KfurlCalculator;
+import domain.model.kfurl.KfurlCorrection;
+import data.parser.afrLog.AfrLogParser;
+import data.parser.me7log.Me7LogParser;
 
 import java.io.File;
 import java.util.List;

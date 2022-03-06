@@ -1,7 +1,7 @@
 package presentation.view.configuration;
 
-import contract.Me7LogFileContract;
-import preferences.logheaderdefinition.LogHeaderPreference;
+import data.contract.Me7LogFileContract;
+import data.preferences.logheaderdefinition.LogHeaderPreference;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

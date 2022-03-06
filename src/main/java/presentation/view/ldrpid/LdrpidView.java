@@ -1,21 +1,21 @@
 package presentation.view.ldrpid;
 
-import contract.Me7LogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
-import model.ldrpid.LdrpidCalculator;
+import domain.math.map.Map3d;
+import domain.model.ldrpid.LdrpidCalculator;
 import org.apache.commons.math3.util.Pair;
-import parser.me7log.Me7LogParser;
-import parser.xdf.TableDefinition;
-import preferences.bin.BinFilePreferences;
-import preferences.kfldimx.KfldimxPreferences;
-import preferences.kfldrl.KfldrlPreferences;
-import preferences.ldrpid.LdrpidPreferences;
+import data.parser.me7log.Me7LogParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.kfldimx.KfldimxPreferences;
+import data.preferences.kfldrl.KfldrlPreferences;
+import data.preferences.ldrpid.LdrpidPreferences;
 import presentation.map.axis.MapAxis;
 import presentation.map.map.MapTable;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,11 +26,11 @@ import java.util.Map;
 public class LdrpidView {
     private LdrpidCalculator.LdrpidResult ldrpidResult;
 
-    private final MapTable nonLinearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private final MapTable linearTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private final MapTable kfldrlTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private final MapTable kfldimxTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][0]);
-    private final MapAxis kfldimxXAxis = MapAxis.getMapAxis(new Double[1][0]);
+    private final MapTable nonLinearTable = MapTable.getMapTable(new Double[16], new Double[10], new Double[16][10]);
+    private final MapTable linearTable = MapTable.getMapTable(new Double[16], new Double[10], new Double[16][10]);
+    private final MapTable kfldrlTable = MapTable.getMapTable(new Double[16], new Double[10], new Double[16][10]);
+    private final MapTable kfldimxTable = MapTable.getMapTable(new Double[16], new Double[8], new Double[16][8]);
+    private final MapAxis kfldimxXAxis = MapAxis.getMapAxis(new Double[1][8]);
 
     private JLabel logFileLabel;
 

@@ -1,18 +1,18 @@
 package presentation.viewmodel.openloopfueling;
 
-import contract.Me7LogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
+import domain.math.map.Map3d;
 import org.apache.commons.math3.util.Pair;
-import parser.afrLog.AfrLogParser;
-import parser.bin.BinParser;
-import parser.me7log.OpenLoopLogParser;
-import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmPreferences;
-import writer.BinWriter;
+import data.parser.afrLog.AfrLogParser;
+import data.parser.bin.BinParser;
+import data.parser.me7log.OpenLoopLogParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.mlhfm.MlhfmPreferences;
+import data.writer.BinWriter;
 
 import java.util.List;
 import java.util.Map;

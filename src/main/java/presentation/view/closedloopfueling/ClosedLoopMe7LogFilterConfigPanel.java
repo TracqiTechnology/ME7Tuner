@@ -1,6 +1,6 @@
 package presentation.view.closedloopfueling;
 
-import preferences.closedloopfueling.ClosedLoopFuelingLogPreferences;
+import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;

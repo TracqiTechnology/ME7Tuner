@@ -3,14 +3,14 @@ package presentation.view.kfmiop;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
-import preferences.bin.BinFilePreferences;
-import preferences.kfmiop.KfmiopPreferences;
+import domain.math.map.Map3d;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.kfmiop.KfmiopPreferences;
 import presentation.map.axis.MapAxis;
 import presentation.map.map.MapTable;
 import presentation.view.listener.OnTabSelectedListener;
 import presentation.viewmodel.kfmiop.KfmiopViewModel;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;

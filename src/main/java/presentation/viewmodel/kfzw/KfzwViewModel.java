@@ -5,13 +5,13 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
-import model.kfzw.Kfzw;
+import domain.math.map.Map3d;
+import domain.model.kfzw.Kfzw;
 import org.apache.commons.math3.util.Pair;
-import parser.bin.BinParser;
-import parser.xdf.TableDefinition;
-import preferences.kfmiop.KfmiopPreferences;
-import preferences.kfzw.KfzwPreferences;
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.kfmiop.KfmiopPreferences;
+import data.preferences.kfzw.KfzwPreferences;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +75,7 @@ public class KfzwViewModel {
 
     private void updateModel() {
         Pair<TableDefinition, Map3d> kfzwTable = KfzwPreferences.getInstance().getSelectedMap();
-        Pair<TableDefinition, math.map.Map3d> kfmiopTable = KfmiopPreferences.getInstance().getSelectedMap();
+        Pair<TableDefinition, Map3d> kfmiopTable = KfmiopPreferences.getInstance().getSelectedMap();
         if (kfzwTable != null) {
             if(kfmiopTable != null) {
                 subject.onNext(new KfzwModel(kfzwTable, KfmiopPreferences.getInstance().getSelectedMap().getSecond().xAxis, kfzwTable.getSecond()));

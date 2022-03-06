@@ -5,12 +5,12 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
-import model.kfmiop.Kfmiop;
-import model.rlsol.Rlsol;
+import domain.math.map.Map3d;
+import domain.model.kfmiop.Kfmiop;
+import domain.model.rlsol.Rlsol;
 import org.apache.commons.math3.util.Pair;
-import parser.xdf.TableDefinition;
-import preferences.kfmiop.KfmiopPreferences;
+import data.parser.xdf.TableDefinition;
+import data.preferences.kfmiop.KfmiopPreferences;
 
 import java.util.Optional;
 

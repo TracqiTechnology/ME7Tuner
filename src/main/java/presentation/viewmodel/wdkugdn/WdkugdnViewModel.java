@@ -6,12 +6,12 @@ import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
-import math.map.Map3d;
-import model.wdkugdn.WdkugdnCalculator;
+import domain.math.map.Map3d;
+import domain.model.wdkugdn.WdkugdnCalculator;
 import org.apache.commons.math3.util.Pair;
-import parser.xdf.TableDefinition;
-import preferences.kfwdkmsn.KfwdkmsnPreferences;
-import preferences.wdkugdn.WdkugdnPreferences;
+import data.parser.xdf.TableDefinition;
+import data.preferences.kfwdkmsn.KfwdkmsnPreferences;
+import data.preferences.wdkugdn.WdkugdnPreferences;
 
 import javax.swing.*;
 import java.util.Optional;

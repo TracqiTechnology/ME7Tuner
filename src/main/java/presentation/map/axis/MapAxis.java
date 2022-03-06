@@ -2,8 +2,8 @@ package presentation.map.axis;
 
 
 import io.reactivex.subjects.PublishSubject;
-import util.Debouncer;
-import util.Util;
+import domain.util.Debouncer;
+import domain.util.Util;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;

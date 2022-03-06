@@ -1,8 +1,8 @@
 package presentation.view.plsol;
 
-import model.plsol.Airflow;
-import model.plsol.Horsepower;
-import model.plsol.Plsol;
+import domain.model.plsol.Airflow;
+import domain.model.plsol.Horsepower;
+import domain.model.plsol.Plsol;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -10,7 +10,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.plsol.PlsolPreferences;
+import data.preferences.plsol.PlsolPreferences;
 
 import javax.swing.*;
 import java.awt.*;

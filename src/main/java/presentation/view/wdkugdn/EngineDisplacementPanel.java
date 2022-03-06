@@ -1,6 +1,6 @@
 package presentation.view.wdkugdn;
 
-import preferences.wdkugdn.WdkugdnPreferences;
+import data.preferences.wdkugdn.WdkugdnPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

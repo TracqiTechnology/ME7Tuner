@@ -4,7 +4,7 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
-import parser.afrLog.AfrLogParser;
+import data.parser.afrLog.AfrLogParser;
 
 import java.io.File;
 import java.util.List;

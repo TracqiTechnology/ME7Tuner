@@ -1,6 +1,6 @@
 package presentation.view.kfvpdksd;
 
-import preferences.kfvpdksd.KfvpdksdPreferences;
+import data.preferences.kfvpdksd.KfvpdksdPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

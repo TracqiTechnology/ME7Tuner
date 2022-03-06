@@ -5,12 +5,12 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
-import model.kfzwop.Kfzwop;
+import domain.math.map.Map3d;
+import domain.model.kfzwop.Kfzwop;
 import org.apache.commons.math3.util.Pair;
-import parser.bin.BinParser;
-import parser.xdf.TableDefinition;
-import preferences.kfzwop.KfzwopPreferences;
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.kfzwop.KfzwopPreferences;
 
 import java.util.List;
 import java.util.Optional;

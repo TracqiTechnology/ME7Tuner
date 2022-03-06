@@ -1,6 +1,6 @@
 package presentation.view.plsol;
 
-import preferences.plsol.PlsolPreferences;
+import data.preferences.plsol.PlsolPreferences;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

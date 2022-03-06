@@ -1,7 +1,7 @@
 package presentation.view.map;
 
-import parser.xdf.XdfParser;
-import parser.xdf.TableDefinition;
+import data.parser.xdf.XdfParser;
+import data.parser.xdf.TableDefinition;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

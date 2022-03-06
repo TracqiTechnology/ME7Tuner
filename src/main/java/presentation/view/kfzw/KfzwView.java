@@ -3,14 +3,14 @@ package presentation.view.kfzw;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
-import preferences.bin.BinFilePreferences;
-import preferences.kfzw.KfzwPreferences;
+import domain.math.map.Map3d;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.kfzw.KfzwPreferences;
 import presentation.map.axis.MapAxis;
 import presentation.map.map.MapTable;
 import presentation.view.listener.OnTabSelectedListener;
 import presentation.viewmodel.kfzw.KfzwViewModel;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,10 +18,10 @@ import java.io.IOException;
 
 public class KfzwView implements OnTabSelectedListener {
 
-    private final MapTable kfzwInput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
-    private final MapTable kfzwOutput = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
+    private final MapTable kfzwInput = MapTable.getMapTable(new Double[16], new Double[12], new Double[16][12]);
+    private final MapTable kfzwOutput = MapTable.getMapTable(new Double[16], new Double[12], new Double[16][12]);
 
-    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][0]);
+    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][11]);
 
     private JPanel panel;
 

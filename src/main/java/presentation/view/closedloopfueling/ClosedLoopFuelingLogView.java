@@ -1,12 +1,12 @@
 package presentation.view.closedloopfueling;
 
-import contract.Me7LogFileContract;
-import derivative.Derivative;
+import data.contract.Me7LogFileContract;
+import domain.derivative.Derivative;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
+import domain.math.map.Map3d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -14,8 +14,8 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import parser.me7log.ClosedLoopLogParser;
-import preferences.closedloopfueling.ClosedLoopFuelingLogPreferences;
+import data.parser.me7log.ClosedLoopLogParser;
+import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences;
 import presentation.viewmodel.closedloopfueling.ClosedLoopFuelingLogViewModel;
 
 import javax.swing.*;

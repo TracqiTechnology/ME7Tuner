@@ -3,7 +3,7 @@ package presentation.view.kfurl;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import model.kfurl.KfurlCorrection;
+import domain.model.kfurl.KfurlCorrection;
 import presentation.view.listener.OnTabSelectedListener;
 import presentation.viewmodel.kfurl.KfurlViewModel;
 

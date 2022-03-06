@@ -1,13 +1,13 @@
 package presentation.view.openloopfueling;
 
-import contract.AfrLogFileContract;
-import contract.Me7LogFileContract;
+import data.contract.AfrLogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import model.airflow.AirflowEstimation;
-import model.openloopfueling.util.AfrLogUtil;
-import model.openloopfueling.util.Me7LogUtil;
+import domain.model.airflow.AirflowEstimation;
+import domain.model.openloopfueling.util.AfrLogUtil;
+import domain.model.openloopfueling.util.Me7LogUtil;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -15,9 +15,9 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.filechooser.AfrFileChooserPreferences;
-import preferences.filechooser.OpenLoopFileChooserPreferences;
-import preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
+import data.preferences.filechooser.AfrFileChooserPreferences;
+import data.preferences.filechooser.OpenLoopFileChooserPreferences;
+import data.preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences;
 import presentation.viewmodel.openloopfueling.OpenLoopFuelingLogViewModel;
 
 import javax.swing.*;

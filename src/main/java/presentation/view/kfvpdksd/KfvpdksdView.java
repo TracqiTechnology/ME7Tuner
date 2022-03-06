@@ -3,7 +3,7 @@ package presentation.view.kfvpdksd;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import math.map.Map3d;
+import domain.math.map.Map3d;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -11,12 +11,12 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import preferences.bin.BinFilePreferences;
-import preferences.kfvpdksd.KfvpdksdPreferences;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.kfvpdksd.KfvpdksdPreferences;
 import presentation.map.map.MapTable;
 import presentation.view.listener.OnTabSelectedListener;
 import presentation.viewmodel.kfvpdksd.KfvpdksdViewModel;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,8 +27,8 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
     private JFreeChart chart;
 
-    private final MapTable kfvpdksdTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
-    private final MapTable boostTable = MapTable.getMapTable(new Double[0], new Double[0], new Double[0][]);
+    private final MapTable kfvpdksdTable = MapTable.getMapTable(new Double[12], new Double[12], new Double[12][12]);
+    private final MapTable boostTable = MapTable.getMapTable(new Double[1], new Double[12], new Double[1][12]);
 
     private JPanel panel;
 

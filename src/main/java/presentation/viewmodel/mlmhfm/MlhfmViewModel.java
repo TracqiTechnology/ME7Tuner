@@ -5,11 +5,11 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import math.map.Map3d;
+import domain.math.map.Map3d;
 import org.apache.commons.math3.util.Pair;
-import parser.bin.BinParser;
-import parser.xdf.TableDefinition;
-import preferences.mlhfm.MlhfmPreferences;
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.mlhfm.MlhfmPreferences;
 
 import java.util.List;
 import java.util.Optional;

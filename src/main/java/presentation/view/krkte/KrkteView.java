@@ -1,14 +1,14 @@
 package presentation.view.krkte;
 
-import math.map.Map3d;
-import model.krkte.KrkteCalculator;
+import domain.math.map.Map3d;
+import domain.model.krkte.KrkteCalculator;
 import org.apache.commons.math3.util.Pair;
-import parser.xdf.TableDefinition;
-import preferences.bin.BinFilePreferences;
-import preferences.krkte.KrktePreferences;
-import preferences.primaryfueling.PrimaryFuelingPreferences;
+import data.parser.xdf.TableDefinition;
+import data.preferences.bin.BinFilePreferences;
+import data.preferences.krkte.KrktePreferences;
+import data.preferences.primaryfueling.PrimaryFuelingPreferences;
 import presentation.view.listener.OnTabSelectedListener;
-import writer.BinWriter;
+import data.writer.BinWriter;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
