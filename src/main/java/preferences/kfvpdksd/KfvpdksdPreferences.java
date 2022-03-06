@@ -1,7 +1,10 @@
 package preferences.kfvpdksd;
 
 import preferences.MapPreference;
+import preferences.filechooser.FileChooserPreferences;
 
+import javax.swing.filechooser.FileSystemView;
+import java.io.File;
 import java.util.prefs.Preferences;
 
 public class KfvpdksdPreferences extends MapPreference {
@@ -10,6 +13,8 @@ public class KfvpdksdPreferences extends MapPreference {
     private static final String UNIT_PREFERENCE = "kfvpdksd_unit_preference";
 
     private static final String MAX_WASTEGATE_CRACKING_PRESSURE = "max_wastegate_cracking_pressure_preference";
+
+    private static final String LAST_USED_DIRECTORY_KEY = "kfvpdksd_last_used_directory_key";
 
     private static KfvpdksdPreferences instance;
 
@@ -33,6 +38,14 @@ public class KfvpdksdPreferences extends MapPreference {
 
     public void setMaxWasteGateCrackingPressurePreference(double max) {
         prefs.put(MAX_WASTEGATE_CRACKING_PRESSURE, String.valueOf(max));
+    }
+
+    public File getDirectory() {
+        return new File(prefs.get(LAST_USED_DIRECTORY_KEY, FileSystemView.getFileSystemView().getHomeDirectory().getAbsolutePath()));
+    }
+
+    public void setDirectory(File file) {
+        prefs.put(LAST_USED_DIRECTORY_KEY, file.getAbsolutePath());
     }
 }
 

@@ -23,5 +23,7 @@
     <orderEntry type="library" name="Maven: org.graalvm.sdk:graal-sdk:22.0.0" level="project" />
     <orderEntry type="library" name="Maven: org.graalvm.js:js-scriptengine:22.0.0" level="project" />
     <orderEntry type="library" name="Maven: org.jdom:jdom2:2.0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: com.formdev:flatlaf:2.0.2" level="project" />
+    <orderEntry type="library" name="Maven: com.formdev:flatlaf-intellij-themes:2.0.2" level="project" />
   </component>
 </module>
