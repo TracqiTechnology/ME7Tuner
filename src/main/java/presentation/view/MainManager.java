@@ -164,6 +164,8 @@ public class MainManager {
             int returnValue = fc.showOpenDialog(frame);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
+                MapPreferenceManager.clear();
+
                 File binFile = fc.getSelectedFile();
                 BinFilePreferences.getInstance().setFile(binFile);
                 BinFileChooserPreferences.setDirectory(binFile);
@@ -196,6 +198,7 @@ public class MainManager {
 
         JMenuItem clearPreferencesMenuItem = new JMenuItem("Reset Preferences");
         clearPreferencesMenuItem.addActionListener(e -> {
+
             MapPreferenceManager.clear();
             LogHeaderPreference.clear();
             XdfFilePreferences.clear();

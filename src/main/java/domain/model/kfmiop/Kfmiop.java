@@ -4,6 +4,8 @@ import domain.math.RescaleAxis;
 import domain.math.map.Map3d;
 import domain.model.plsol.Plsol;
 
+import java.util.Arrays;
+
 public class Kfmiop {
 
     private final Map3d outputKfmiop;

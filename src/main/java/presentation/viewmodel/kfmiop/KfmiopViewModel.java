@@ -1,5 +1,6 @@
 package presentation.viewmodel.kfmiop;
 
+import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -39,6 +40,29 @@ public class KfmiopViewModel {
 
             @Override
             public void onComplete() {
+            }
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
+                builder.tableDefinition(null).inputKfmiop(null).outputKfmiop(null).inputBoost(null).outputBoost(null).maxMapSensorPressure(0).maxBoostPressure(0);
+                behaviorSubject.onNext(builder.build());
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         });
     }

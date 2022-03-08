@@ -7,7 +7,7 @@ import java.util.prefs.Preferences;
 
 public class XdfFileChooserPreferences {
 
-    private static final String LAST_USED_DIRECTORY_KEY = "last_used_directory_key";
+    private static final String LAST_USED_DIRECTORY_KEY = "xdf_last_used_directory_key";
     private static final Preferences PREFERENCES = Preferences.userRoot().node(XdfFileChooserPreferences.class.getName());
 
     public static void clear() {

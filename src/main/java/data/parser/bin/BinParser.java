@@ -187,9 +187,25 @@ public class BinParser {
                 for (int i = 0; i < axis.length; i++) {
                     int value;
                     if(strideBytes == 1) {
-                        value = Byte.toUnsignedInt(slice.get());
+                        // 0x00 = unsigned, LSB last
+                        // 0x01 = signed, LSB last
+                        // 0x02 = unsigned, LSB first
+                        // 0x03 = signed, LSB first
+                        if(axisDefinition.getType() % 2 == 0) {
+                            value = Byte.toUnsignedInt(slice.get());
+                        } else {
+                            value = slice.get();
+                        }
                     } else {
-                        value = Short.toUnsignedInt(slice.getShort());
+                        // 0x00 = unsigned, LSB last
+                        // 0x01 = signed, LSB last
+                        // 0x02 = unsigned, LSB first
+                        // 0x03 = signed, LSB first
+                        if(axisDefinition.getType() % 2 == 0) {
+                            value = Short.toUnsignedInt(slice.getShort());
+                        } else {
+                            value = slice.getShort();
+                        }
                     }
 
                     axis[i] = ((Number)funcEngine.invokeFunction("func", value)).doubleValue();
@@ -242,9 +258,25 @@ public class BinParser {
                     for (int j = 0; j < axis[i].length; j++) {
                         int value;
                         if(stride == 1) {
-                            value = Byte.toUnsignedInt(slice.get());
+                            // 0x00 = unsigned, LSB last
+                            // 0x01 = signed, LSB last
+                            // 0x02 = unsigned, LSB first
+                            // 0x03 = signed, LSB first
+                            if(axisDefinition.getType() % 2 == 0) {
+                                value = Byte.toUnsignedInt(slice.get());
+                            } else {
+                                value = slice.get();
+                            }
                         } else {
-                            value = Short.toUnsignedInt(slice.getShort());
+                            // 0x00 = unsigned, LSB last
+                            // 0x01 = signed, LSB last
+                            // 0x02 = unsigned, LSB first
+                            // 0x03 = signed, LSB first
+                            if(axisDefinition.getType() % 2 == 0) {
+                                value = Short.toUnsignedInt(slice.getShort());
+                            } else {
+                                value = slice.getShort();
+                            }
                         }
 
                         axis[i][j] = ((Number)funcEngine.invokeFunction("func", value)).doubleValue();

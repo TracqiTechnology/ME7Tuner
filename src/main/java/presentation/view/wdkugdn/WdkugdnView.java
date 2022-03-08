@@ -94,6 +94,11 @@ public class WdkugdnView {
 
             @Override
             public void onNext(@NonNull WdkugdnViewModel.WdkugnModel wdkugnModel) {
+                if(wdkugnModel.getWdkugdn() == null) {
+                    Map3d defaultMap = new Map3d(new Double[12], new Double[1], new Double[1][12]);
+                    wdkudgnTable.setMap(defaultMap);
+                }
+
                 if (wdkugnModel.getWdkugdn() != null) {
                     wdkudgnTable.setMap(wdkugnModel.getWdkugdn());
                 }

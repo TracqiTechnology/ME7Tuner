@@ -1,17 +1,18 @@
 package presentation.viewmodel.kfzw;
 
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.MapPreferenceManager;
+import data.preferences.kfmiop.KfmiopPreferences;
+import data.preferences.kfzw.KfzwPreferences;
+import domain.math.map.Map3d;
+import domain.model.kfzw.Kfzw;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import domain.math.map.Map3d;
-import domain.model.kfzw.Kfzw;
 import org.apache.commons.math3.util.Pair;
-import data.parser.bin.BinParser;
-import data.parser.xdf.TableDefinition;
-import data.preferences.kfmiop.KfmiopPreferences;
-import data.preferences.kfzw.KfzwPreferences;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +60,27 @@ public class KfzwViewModel {
 
             }
         });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                subject.onNext(new KfzwModel(null, null, null));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
     public void register(Observer<KfzwModel> observer) {
@@ -99,7 +121,7 @@ public class KfzwViewModel {
         }
 
         @Nullable
-        public Pair<TableDefinition, Map3d> getKfzw() {
+        public Pair<TableDefinition, Map3d> getInputKfzw() {
             return kfzw;
         }
 

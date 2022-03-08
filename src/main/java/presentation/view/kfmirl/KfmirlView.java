@@ -210,10 +210,21 @@ public class KfmirlView implements OnTabSelectedListener {
 
                     if (kfmirlModel.getKfmirl() != null && kfmirlModel.getKfmirl().getFirst() != null) {
                         kfmirlFileLabel.setText(kfmirlModel.getKfmirl().getFirst().getTableName());
+                    } else {
+                        kfmirlFileLabel.setText("No Definition Selected");
                     }
 
                     if (kfmirlModel.getKfmiop() != null && kfmirlModel.getKfmiop().getFirst() != null) {
                         kfmiopFileLabel.setText(kfmirlModel.getKfmiop().getFirst().getTableName());
+                    } else {
+                        Map3d defaultKfmiop = new Map3d(new Double[11], new Double[16], new Double[16][11]);
+                        Map3d defaultKfmirl = new Map3d(new Double[12], new Double[16], new Double[16][12]);
+
+                        kfmiop.setMap(defaultKfmiop);
+                        kfmirl.setMap(defaultKfmirl);
+                        kfmiopXAxis.setTableData(new Double[1][11]);
+
+                        kfmirlFileLabel.setText("No Definition Selected");
                     }
 
                     if (kfmirlModel.getOutputKfmirl() != null) {

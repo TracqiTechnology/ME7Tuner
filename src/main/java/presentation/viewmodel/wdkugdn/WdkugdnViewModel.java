@@ -1,28 +1,29 @@
 package presentation.viewmodel.wdkugdn;
 
+import data.parser.xdf.TableDefinition;
+import data.preferences.MapPreferenceManager;
+import data.preferences.kfwdkmsn.KfwdkmsnPreferences;
+import data.preferences.wdkugdn.WdkugdnPreferences;
+import domain.math.map.Map3d;
+import domain.model.wdkugdn.Wdkugdn;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.Subject;
-import domain.math.map.Map3d;
-import domain.model.wdkugdn.Wdkugdn;
 import org.apache.commons.math3.util.Pair;
-import data.parser.xdf.TableDefinition;
-import data.preferences.kfwdkmsn.KfwdkmsnPreferences;
-import data.preferences.wdkugdn.WdkugdnPreferences;
 
 import javax.swing.*;
 import java.util.Optional;
 
 public class WdkugdnViewModel {
 
-    private final Subject<WdkugnModel> subject = PublishSubject.create();
+    private final Subject<WdkugnModel> subject = BehaviorSubject.create();
 
     public WdkugdnViewModel() {
 
-        WdkugdnPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        WdkugdnPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -42,7 +43,7 @@ public class WdkugdnViewModel {
             }
         });
 
-        KfwdkmsnPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfwdkmsnPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -55,6 +56,27 @@ public class WdkugdnViewModel {
             @Override
             public void onError(@NonNull Throwable throwable) {
                 throwable.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                subject.onNext(new WdkugnModel(null, null, null));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
             }
 
             @Override
@@ -70,6 +92,7 @@ public class WdkugdnViewModel {
         SwingUtilities.invokeLater(() -> {
             Pair<TableDefinition, Map3d> wdkugdn = WdkugdnPreferences.getInstance().getSelectedMap();
             Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getInstance().getSelectedMap();
+
             if (wdkugdn != null && kfwdkmsn != null) {
                 subject.onNext(new WdkugnModel(Wdkugdn.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName(), kfwdkmsn.getFirst().getTableName()));
             } else if(wdkugdn != null) {

@@ -72,26 +72,31 @@ public class MlhfmView {
 
     private void initViewModel() {
         MlhfmViewModel mlhfmViewModel = new MlhfmViewModel();
-        mlhfmViewModel.register(new Observer<MlhfmViewModel.MlfhmModel>() {
+        mlhfmViewModel.register(new Observer<>() {
             @Override
             public void onNext(@NonNull MlhfmViewModel.MlfhmModel model) {
-                if(model.isMapSelected()) {
+                if (model.isMapSelected()) {
                     fileLabel.setText(model.getTableDefinition().getTableName() + " " + model.getTableDefinition().getTableDescription());
                     drawChart(model.getMap3d());
                     drawMapTable(model.getMap3d());
                 } else {
                     fileLabel.setText("No File Selected");
+                    XYPlot plot = (XYPlot)chart.getPlot();
+                    ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
                 }
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 

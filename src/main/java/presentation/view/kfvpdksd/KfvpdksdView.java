@@ -77,6 +77,16 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull KfvpdksdViewModel.KfvpdksdModel kfvpdksdModel) {
+
+                if(kfvpdksdModel.kfvpdksdTable() == null) {
+                    Map3d defaultMap = new Map3d(new Double[12], new Double[12], new Double[12][12]);
+                    kfvpdksdTable.setMap(defaultMap);
+                    boostTable.setTableData(new Double[1][12]);
+
+                    XYPlot plot = (XYPlot) chart.getPlot();
+                    ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
+                }
+
                 if (!kfvpdksdInitialized) {
                     if (kfvpdksdModel.getKfvpdksdTable() != null) {
                         definitionFileLabel.setText(kfvpdksdModel.getKfvpdksdTable().getFirst().getTableName());

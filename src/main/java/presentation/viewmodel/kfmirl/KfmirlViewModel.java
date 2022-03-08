@@ -1,23 +1,25 @@
 package presentation.viewmodel.kfmirl;
 
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.MapPreferenceManager;
+import data.preferences.kfmiop.KfmiopPreferences;
+import data.preferences.kfmirl.KfmirlPreferences;
+import domain.math.Inverse;
+import domain.math.map.Map3d;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import domain.math.Inverse;
-import domain.math.map.Map3d;
+import io.reactivex.subjects.Subject;
 import org.apache.commons.math3.util.Pair;
-import data.parser.bin.BinParser;
-import data.parser.xdf.TableDefinition;
-import data.preferences.kfmiop.KfmiopPreferences;
-import data.preferences.kfmirl.KfmirlPreferences;
 
 import java.util.List;
 import java.util.Optional;
 
 public class KfmirlViewModel {
-    private final BehaviorSubject<KfmirlModel> behaviorSubject = BehaviorSubject.create();
+    private final Subject<KfmirlModel> subject = BehaviorSubject.create();
 
     public KfmirlViewModel() {
         BinParser.getInstance().registerMapListObserver(new Observer<>() {
@@ -60,6 +62,27 @@ public class KfmirlViewModel {
 
             }
         });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                subject.onNext(new KfmirlModel(null, null, null)); // No map found
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
     public void calculateKfmirl(Map3d kfmiop) {
@@ -74,14 +97,14 @@ public class KfmirlViewModel {
                 map3d.zAxis[i][0] = kfmirlTableDefinition.getSecond().zAxis[i][0];
             }
 
-            behaviorSubject.onNext(new KfmirlModel(kfmiopTableDefinition, kfmirlTableDefinition, map3d)); // Found the map
+            subject.onNext(new KfmirlModel(kfmiopTableDefinition, kfmirlTableDefinition, map3d)); // Found the map
         } else {
-            behaviorSubject.onNext(new KfmirlModel(kfmiopTableDefinition, kfmirlTableDefinition, null)); // No map found
+            subject.onNext(new KfmirlModel(kfmiopTableDefinition, kfmirlTableDefinition, null)); // No map found
         }
     }
 
     public void register(Observer<KfmirlModel> observer) {
-        behaviorSubject.subscribe(observer);
+        subject.subscribe(observer);
     }
 
     private void updateModel() {
@@ -90,9 +113,9 @@ public class KfmirlViewModel {
         if (kfmiopTableDefinition != null && kfmirlTableDefinition != null) {
             calculateKfmirl(kfmiopTableDefinition.getSecond());
         } else if (kfmiopTableDefinition == null) {
-            behaviorSubject.onNext(new KfmirlModel(null, kfmirlTableDefinition, null));
+            subject.onNext(new KfmirlModel(null, kfmirlTableDefinition, null));
         } else {
-            behaviorSubject.onNext(new KfmirlModel(kfmiopTableDefinition, null, null));
+            subject.onNext(new KfmirlModel(kfmiopTableDefinition, null, null));
         }
     }
 

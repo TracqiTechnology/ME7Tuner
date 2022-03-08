@@ -147,6 +147,13 @@ public class KfmiopView implements OnTabSelectedListener {
                 Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
 
                 if (inputKfmiop != null) {
+                    Map3d defaultMap = new Map3d( new Double[11], new Double[16], new Double[16][11]);
+                    KfmiopView.this.inputKfmiop.setMap(defaultMap);
+                    KfmiopView.this.outputKfmiop.setMap(defaultMap);
+                    KfmiopView.this.inputBoost.setMap(defaultMap);
+                    KfmiopView.this.outputBoost.setMap(defaultMap);
+                    KfmiopView.this.kfmiopXAxis.setTableData(new Double[1][11]);
+
                     KfmiopView.this.inputKfmiop.setColumnHeaders(inputKfmiop.xAxis);
                     KfmiopView.this.inputKfmiop.setRowHeaders(inputKfmiop.yAxis);
                     KfmiopView.this.inputKfmiop.setTableData(inputKfmiop.zAxis);
@@ -161,7 +168,7 @@ public class KfmiopView implements OnTabSelectedListener {
 
                     Double[][] xAxis = new Double[1][];
                     xAxis[0] = outputKfmiop.xAxis;
-                    kfmiopXAxis.setTableData(xAxis);
+                    KfmiopView.this.kfmiopXAxis.setTableData(xAxis);
                 }
 
                 Map3d inputBoost = kfmiopModel.getInputBoost();

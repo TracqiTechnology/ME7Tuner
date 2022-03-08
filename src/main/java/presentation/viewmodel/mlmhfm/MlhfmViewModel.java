@@ -1,5 +1,6 @@
 package presentation.viewmodel.mlmhfm;
 
+import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -19,14 +20,15 @@ public class MlhfmViewModel {
     private final BehaviorSubject<MlfhmModel> mlhfmPublishSubject = BehaviorSubject.create();
 
     public MlhfmViewModel() {
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
                 Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
-                if(tableDefinition != null) {
+                if (tableDefinition != null) {
                     mlhfmPublishSubject.onNext(new MlfhmModel(tableDefinition.getFirst(), tableDefinition.getSecond())); // Found the map
                 } else {
                     mlhfmPublishSubject.onNext(new MlfhmModel(null, null)); // No map found
@@ -34,15 +36,18 @@ public class MlhfmViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
 
-        MlhfmPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        MlhfmPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> selectedTableDefinitionPair) {
@@ -51,10 +56,33 @@ public class MlhfmViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                mlhfmPublishSubject.onNext(new MlfhmModel(null, null));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
         });
     }
 

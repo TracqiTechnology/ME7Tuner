@@ -9,6 +9,7 @@ import java.util.List;
 public class AxisDefinition {
 
     private final String id;
+    private final int type;
     private final int address;
     private final int indexCount;
     private final int sizeBits;
@@ -22,8 +23,9 @@ public class AxisDefinition {
 
     private final List<Pair<Integer, Float>> axisValues = new ArrayList<>();
 
-    public AxisDefinition(String id, int address, int indexCount, int sizeBits, int rowCount, int columnCount, String unit, String equation, String varId, List<Pair<Integer, Float>> axisValues) {
+    public AxisDefinition(String id, int type, int address, int indexCount, int sizeBits, int rowCount, int columnCount, String unit, String equation, String varId, List<Pair<Integer, Float>> axisValues) {
         this.id = id;
+        this.type = type;
         this.address = address;
         this.indexCount = indexCount;
         this.sizeBits = sizeBits;
@@ -38,6 +40,8 @@ public class AxisDefinition {
     public String getId() {
         return id;
     }
+
+    public int getType() {return type;}
 
     public int getAddress() {
         return address;

@@ -62,6 +62,14 @@ public class KfzwopView implements OnTabSelectedListener {
             @Override
             public void onNext(@NonNull KfzwopViewModel.KfzwopModel model) {
                 SwingUtilities.invokeLater(() -> {
+                    if(model.getKfzwop() == null) {
+                        Map3d defaultKfzwop = new Map3d(new Double[11], new Double[16], new Double[16][11]);
+
+                        kfzwopInput.setMap(defaultKfzwop);
+                        kfzwopInput.setMap(defaultKfzwop);
+                        kfmiopXAxis.setTableData(new Double[1][11]);
+                    }
+
                     if (model.getKfzwop() != null && !isKfzwopInitialized) {
                         kfzwopInput.setColumnHeaders(model.getKfzwop().getSecond().xAxis);
                         kfzwopInput.setRowHeaders(model.getKfzwop().getSecond().yAxis);
@@ -183,7 +191,7 @@ public class KfzwopView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull Double[][] data) {
-                viewModel.cacluateKfzwop(kfzwopInput.getMap3d(), data[0]);
+                viewModel.calculateKfzwop(kfzwopInput.getMap3d(), data[0]);
             }
 
             @Override
@@ -205,7 +213,7 @@ public class KfzwopView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull Map3d map3d) {
-                viewModel.cacluateKfzwop(map3d, kfmiopXAxis.getData()[0]);
+                viewModel.calculateKfzwop(map3d, kfmiopXAxis.getData()[0]);
             }
 
             @Override

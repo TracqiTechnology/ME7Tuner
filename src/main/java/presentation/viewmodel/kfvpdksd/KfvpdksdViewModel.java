@@ -1,6 +1,7 @@
 package presentation.viewmodel.kfvpdksd;
 
 import data.contract.Me7LogFileContract;
+import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -15,6 +16,7 @@ import data.parser.me7log.KfvpdksdLogParser;
 import data.parser.me7log.Me7LogParser;
 import data.parser.xdf.TableDefinition;
 import data.preferences.kfvpdksd.KfvpdksdPreferences;
+import presentation.viewmodel.kfzwop.KfzwopViewModel;
 
 import javax.swing.*;
 import java.io.File;
@@ -26,8 +28,6 @@ import java.util.Map;
 public class KfvpdksdViewModel {
 
     private final BehaviorSubject<KfvpdksdModel> subject = BehaviorSubject.create();
-
-
 
     public KfvpdksdViewModel() {
         BinParser.getInstance().registerMapListObserver(new Observer<>() {
@@ -72,6 +72,27 @@ public class KfvpdksdViewModel {
 
             @Override
             public void onComplete() {
+            }
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                subject.onNext(new KfvpdksdModel(null, null, null));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         });
     }

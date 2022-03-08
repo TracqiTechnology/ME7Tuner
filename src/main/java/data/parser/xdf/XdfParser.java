@@ -32,6 +32,7 @@ public class XdfParser {
     private static final String XDF_INDEX_COUNT_TAG = "indexcount";
     private static final String XDF_UNITS_TAG = "units";
 
+    private static final String XDF_TYPE_FLAG = "mmedtypeflags";
     private static final String XDF_ADDRESS_TAG = "mmedaddress";
     private static final String XDF_SIZE_BITS_TAG = "mmedelementsizebits";
     private static final String XDF_ROW_COUNT_TAG = "mmedrowcount";
@@ -101,6 +102,14 @@ public class XdfParser {
 
                 String tableName = "";
                 String tableDescription = "";
+
+                // 0x00 = unsigned, LSB last
+                // 0x01 = signed, LSB last
+                // 0x02 = unsigned, LSB first
+                // 0x03 = signed, LSB first
+                int xType = 0;
+                int yType = 0;
+                int zType = 0;
 
                 int xAddress = 0;
                 int yAddress = 0;
@@ -189,6 +198,12 @@ public class XdfParser {
                             if(axisChild.getName().equals(XDF_EMBEDDED_TAG)) {
                                 int sizeBits = axisChild.getAttribute(XDF_SIZE_BITS_TAG).getIntValue();
 
+                                Attribute typeAttribute = axisChild.getAttribute(XDF_TYPE_FLAG);
+                                int type = 0;
+                                if(typeAttribute != null) {
+                                    type = Integer.decode(typeAttribute.getValue());
+                                }
+
                                 Attribute addressAttribute = axisChild.getAttribute(XDF_ADDRESS_TAG);
                                 int address = 0;
                                 if(addressAttribute != null) {
@@ -209,18 +224,21 @@ public class XdfParser {
 
                                 switch (axis) {
                                     case "x":
+                                        xType = type;
                                         xAddress = address;
                                         xSizeBits = sizeBits;
                                         xRowCount = rowCount;
                                         xColumnCount = columnCount;
                                         break;
                                     case "y":
+                                        yType = type;
                                         yAddress = address;
                                         ySizeBits = sizeBits;
                                         yRowCount = rowCount;
                                         yColumnCount = columnCount;
                                         break;
                                     case "z":
+                                        zType = type;
                                         zAddress = address;
                                         zSizeBits = sizeBits;
                                         zRowCount = rowCount;
@@ -266,15 +284,9 @@ public class XdfParser {
                                 } catch (DataConversionException e) {}
 
                                 switch (axis) {
-                                    case "x":
-                                        xAxisValues.add(new Pair<>(index, value));
-                                        break;
-                                    case "y":
-                                        yAxisValues.add(new Pair<>(index, value));
-                                        break;
-                                    case "z":
-                                        zAxisValues.add(new Pair<>(index, value));
-                                        break;
+                                    case "x" -> xAxisValues.add(new Pair<>(index, value));
+                                    case "y" -> yAxisValues.add(new Pair<>(index, value));
+                                    case "z" -> zAxisValues.add(new Pair<>(index, value));
                                 }
                             }
 
@@ -282,21 +294,26 @@ public class XdfParser {
                     }
                 }
 
-                AxisDefinition xAxisDefinition = new AxisDefinition("x", xAddress, xIndexCount, xSizeBits, xRowCount, xColumnCount, xUnits, xEquation, xVarId, xAxisValues);
-                AxisDefinition yAxisDefinition = new AxisDefinition("y", yAddress, yIndexCount, ySizeBits, yRowCount, yColumnCount, yUnits, yEquation, yVarId, yAxisValues);
-                AxisDefinition zAxisDefinition = new AxisDefinition("z", zAddress, zIndexCount, zSizeBits, zRowCount, zColumnCount, zUnits, zEquation, zVarId, zAxisValues);
+                AxisDefinition xAxisDefinition = new AxisDefinition("x", xType, xAddress, xIndexCount, xSizeBits, xRowCount, xColumnCount, xUnits, xEquation, xVarId, xAxisValues);
+                AxisDefinition yAxisDefinition = new AxisDefinition("y", yType, yAddress, yIndexCount, ySizeBits, yRowCount, yColumnCount, yUnits, yEquation, yVarId, yAxisValues);
+                AxisDefinition zAxisDefinition = new AxisDefinition("z", zType, zAddress, zIndexCount, zSizeBits, zRowCount, zColumnCount, zUnits, zEquation, zVarId, zAxisValues);
 
                 tableDefinitions.add(new TableDefinition(tableName, tableDescription, xAxisDefinition, yAxisDefinition, zAxisDefinition));
-            } else if(element.getName().equals(XDF_CONSTANT_TAG)) {
+            } else if(element.getName().equals(XDF_CONSTANT_TAG)) { // Handle constants
                 String tableName = "";
                 String tableDescription = "";
-                String xEquation = "";
-                String xVarId = "";
-                String xUnits = "-";
+                String cEquation = "";
+                String cVarId = "";
+                String cUnits = "-";
 
-                int xAddress = 0;
-                int xSizeBits = 0;
+                // 0x00 = unsigned, LSB last
+                // 0x01 = signed, LSB last
+                // 0x02 = unsigned, LSB first
+                // 0x03 = signed, LSB first
+                int cType = 0;
 
+                int cAddress = 0;
+                int cSizeBits = 0;
 
                 List<Element> tableChildren = element.getChildren();
 
@@ -306,9 +323,15 @@ public class XdfParser {
                     } else if (tableChild.getName().equals(XDF_TABLE_DESCRIPTION_TAG)) {  // DESCRIPTION tag
                         tableDescription = tableChild.getText();
                     } else if(tableChild.getName().equals(XDF_UNITS_TAG)) {
-                        xUnits = tableChild.getValue();
+                        cUnits = tableChild.getValue();
                     } else if(tableChild.getName().equals(XDF_EMBEDDED_TAG)) {
                         int sizeBits = tableChild.getAttribute(XDF_SIZE_BITS_TAG).getIntValue();
+
+                        Attribute typeAttribute = tableChild.getAttribute(XDF_TYPE_FLAG);
+                        int type = 0;
+                        if(typeAttribute != null) {
+                            type = Integer.decode(typeAttribute.getValue());
+                        }
 
                         Attribute addressAttribute = tableChild.getAttribute(XDF_ADDRESS_TAG);
                         int address = 0;
@@ -316,8 +339,9 @@ public class XdfParser {
                             address = Integer.decode(addressAttribute.getValue());
                         }
 
-                        xAddress = address;
-                        xSizeBits = sizeBits;
+                        cType = type;
+                        cAddress = address;
+                        cSizeBits = sizeBits;
 
                     } else if(tableChild.getName().equals(XDF_MATH_TAG)) {
                         String equation = tableChild.getAttribute(XDF_EQUATION_TAG).getValue();
@@ -327,12 +351,12 @@ public class XdfParser {
                                 varId = equationChild.getAttribute(XDF_ID_TAG).getValue();
                             }
                         }
-                        xEquation = equation;
-                        xVarId = varId;
+                        cEquation = equation;
+                        cVarId = varId;
                     }
                 }
 
-                AxisDefinition zAxisDefinition = new AxisDefinition("z", xAddress, 0, xSizeBits, 0, 0, xUnits, xEquation, xVarId, new ArrayList<>());
+                AxisDefinition zAxisDefinition = new AxisDefinition("z", cType, cAddress, 0, cSizeBits, 0, 0, cUnits, cEquation, cVarId, new ArrayList<>());
 
                 tableDefinitions.add(new TableDefinition(tableName, tableDescription, null, null, zAxisDefinition));
             }

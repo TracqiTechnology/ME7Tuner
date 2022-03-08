@@ -4,13 +4,7 @@ import data.contract.Me7LogFileContract;
 
 import java.util.*;
 
-public class Kfvpdksd {
-
-    private final Double[][] kfvpdksd;
-
-    public Kfvpdksd(Double[][] kfvpdksd) {
-        this.kfvpdksd = kfvpdksd;
-    }
+public record Kfvpdksd(Double[][] kfvpdksd) {
 
     public Double[][] getKfvpdksd() {
         return kfvpdksd;
@@ -83,7 +77,7 @@ public class Kfvpdksd {
         for (int rpmIndex = 0; rpmIndex < kfvpdksd.length; rpmIndex++) {
             double maxPressureRatio = pressureRatio[rpmIndex];
             for (int prIndex = 0; prIndex < kfvpdksd[rpmIndex].length; prIndex++) {
-                if(prIndex == 0) {
+                if (prIndex == 0) {
                     kfvpdksd[rpmIndex][prIndex] = 0.965;
                     continue;
                 }

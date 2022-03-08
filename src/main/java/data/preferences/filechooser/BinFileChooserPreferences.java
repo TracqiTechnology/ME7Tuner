@@ -7,7 +7,7 @@ import java.util.prefs.Preferences;
 
 public class BinFileChooserPreferences {
 
-    private static final String LAST_USED_DIRECTORY_KEY = "last_used_directory_key";
+    private static final String LAST_USED_DIRECTORY_KEY = "bin_last_used_directory_key";
     private static final Preferences PREFERENCES = Preferences.userRoot().node(BinFileChooserPreferences.class.getName());
 
     public static void clear() {

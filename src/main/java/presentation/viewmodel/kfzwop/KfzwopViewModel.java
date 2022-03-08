@@ -1,28 +1,31 @@
 package presentation.viewmodel.kfzwop;
 
+import data.parser.bin.BinParser;
+import data.parser.xdf.TableDefinition;
+import data.preferences.MapPreferenceManager;
+import data.preferences.kfzwop.KfzwopPreferences;
+import domain.math.map.Map3d;
+import domain.model.kfzwop.Kfzwop;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import domain.math.map.Map3d;
-import domain.model.kfzwop.Kfzwop;
+import io.reactivex.subjects.Subject;
 import org.apache.commons.math3.util.Pair;
-import data.parser.bin.BinParser;
-import data.parser.xdf.TableDefinition;
-import data.preferences.kfzwop.KfzwopPreferences;
 
 import java.util.List;
 import java.util.Optional;
 
 public class KfzwopViewModel {
 
-    private final BehaviorSubject<KfzwopModel> subject = BehaviorSubject.create();
+    private final Subject<KfzwopModel> subject = BehaviorSubject.create();
 
     public KfzwopViewModel() {
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
@@ -30,16 +33,18 @@ public class KfzwopViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
             public void onComplete() {
             }
         });
 
-        KfzwopPreferences.getInstance().registerOnMapChanged(new Observer<Optional<Pair<TableDefinition, Map3d>>>() {
+        KfzwopPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
@@ -47,7 +52,29 @@ public class KfzwopViewModel {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                subject.onNext(new KfzwopModel(null, null));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
 
             @Override
             public void onComplete() {
@@ -69,7 +96,7 @@ public class KfzwopViewModel {
         subject.subscribe(observer);
     }
 
-    public void cacluateKfzwop(Map3d kfzwop, Double[] newXAxis) {
+    public void calculateKfzwop(Map3d kfzwop, Double[] newXAxis) {
         Map3d newKfzwop = new Map3d();
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
@@ -77,17 +104,18 @@ public class KfzwopViewModel {
         subject.onNext(new KfzwopModel(KfzwopPreferences.getInstance().getSelectedMap(), newKfzwop));
     }
 
-    public static class KfzwopModel {
-        private final Pair<TableDefinition, Map3d> kfzwop;
-        private final Map3d outputKfzwop;
-
+    public record KfzwopModel(
+            Pair<TableDefinition, Map3d> kfzwop,
+            Map3d outputKfzwop) {
         public KfzwopModel(@Nullable Pair<TableDefinition, Map3d> kfzwop, Map3d outputKfzwop) {
             this.kfzwop = kfzwop;
             this.outputKfzwop = outputKfzwop;
         }
 
         @Nullable
-        public Pair<TableDefinition, Map3d> getKfzwop() { return kfzwop; }
+        public Pair<TableDefinition, Map3d> getKfzwop() {
+            return kfzwop;
+        }
 
         @Nullable
         public Map3d getOutputKfzwop() {

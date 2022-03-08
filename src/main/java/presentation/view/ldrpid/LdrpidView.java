@@ -1,6 +1,7 @@
 package presentation.view.ldrpid;
 
 import data.contract.Me7LogFileContract;
+import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -16,12 +17,14 @@ import data.preferences.ldrpid.LdrpidPreferences;
 import presentation.map.axis.MapAxis;
 import presentation.map.map.MapTable;
 import data.writer.BinWriter;
+import presentation.viewmodel.kfzwop.KfzwopViewModel;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class LdrpidView {
     private LdrpidCalculator.LdrpidResult ldrpidResult;
@@ -77,7 +80,69 @@ public class LdrpidView {
 
         panel.add(getLogsButton(panel), constraints);
 
+        initObservers();
+
         return panel;
+    }
+
+    private void initObservers() {
+        KfldrlPreferences.getInstance().registerOnMapChanged(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                initKfldrlMap();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        KfldimxPreferences.getInstance().registerOnMapChanged(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                initKflimxMap();
+                initKfldimxAxis();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
+        MapPreferenceManager.registerOnClear(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                nonLinearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                linearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                kfldrlTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                kfldimxTable.setMap(new Map3d(new Double[8], new Double[16], new Double[16][8]));
+                kfldimxXAxis.setTableData(new Double[1][8]);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
     private JPanel getHeader(String title) {

@@ -62,16 +62,24 @@ public class KfzwView implements OnTabSelectedListener {
         viewModel.register(new Observer<>() {
             @Override
             public void onNext(@NonNull KfzwViewModel.KfzwModel model) {
-                if (model.getKfzw() != null && !isKfzwInitialized) {
-                    kfzwInput.setColumnHeaders(model.getKfzw().getSecond().xAxis);
-                    kfzwInput.setRowHeaders(model.getKfzw().getSecond().yAxis);
-                    kfzwInput.setTableData(model.getKfzw().getSecond().zAxis);
+                if(model.getInputKfzw() == null) {
+                    Map3d defaultKfzw = new Map3d(new Double[12], new Double[16], new Double[16][12]);
+
+                    kfzwInput.setMap(defaultKfzw);
+                    kfzwInput.setMap(defaultKfzw);
+                    kfmiopXAxis.setTableData(new Double[1][11]);
+                }
+
+                if (model.getInputKfzw() != null && !isKfzwInitialized) {
+                    kfzwInput.setColumnHeaders(model.getInputKfzw().getSecond().xAxis);
+                    kfzwInput.setRowHeaders(model.getInputKfzw().getSecond().yAxis);
+                    kfzwInput.setTableData(model.getInputKfzw().getSecond().zAxis);
 
                     Double[][] kfmiopXAxisValues = new Double[1][];
                     kfmiopXAxisValues[0] = model.getKfmiopXAxis();
                     kfmiopXAxis.setTableData(kfmiopXAxisValues);
 
-                    fileLabel.setText(model.getKfzw().getFirst().getTableName());
+                    fileLabel.setText(model.getInputKfzw().getFirst().getTableName());
 
                     isKfzwInitialized = true;
                 }
