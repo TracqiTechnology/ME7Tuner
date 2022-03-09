@@ -60,6 +60,22 @@ public class Map3d {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Map3d map3d = (Map3d) o;
+        return Arrays.equals(xAxis, map3d.xAxis) && Arrays.equals(yAxis, map3d.yAxis) && Arrays.equals(zAxis, map3d.zAxis);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(xAxis);
+        result = 31 * result + Arrays.hashCode(yAxis);
+        result = 31 * result + Arrays.hashCode(zAxis);
+        return result;
+    }
+
+    @Override
     public String toString() {
 
         StringBuilder zAxisString = new StringBuilder();
@@ -75,7 +91,7 @@ public class Map3d {
                 "\n" +
                 ", yAxis=" + Arrays.toString(yAxis) +
                 "\n" +
-                ", zAxis=" + zAxisString.toString() +
+                ", zAxis=" + zAxisString +
                 '}';
     }
 }

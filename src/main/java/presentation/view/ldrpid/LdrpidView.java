@@ -1,6 +1,7 @@
 package presentation.view.ldrpid;
 
 import data.contract.Me7LogFileContract;
+import data.parser.bin.BinParser;
 import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -86,6 +87,25 @@ public class LdrpidView {
     }
 
     private void initObservers() {
+
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
+                initKfldrlMap();
+                initKflimxMap();
+                initKfldimxAxis();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
+
         KfldrlPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {}
@@ -126,11 +146,13 @@ public class LdrpidView {
 
             @Override
             public void onNext(@NonNull Boolean aBoolean) {
-                nonLinearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
-                linearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
-                kfldrlTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
-                kfldimxTable.setMap(new Map3d(new Double[8], new Double[16], new Double[16][8]));
-                kfldimxXAxis.setTableData(new Double[1][8]);
+                SwingUtilities.invokeLater(() -> {
+                    nonLinearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                    linearTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                    kfldrlTable.setMap(new Map3d(new Double[10], new Double[16], new Double[16][10]));
+                    kfldimxTable.setMap(new Map3d(new Double[8], new Double[16], new Double[16][8]));
+                    kfldimxXAxis.setTableData(new Double[1][8]);
+                });
             }
 
             @Override
@@ -298,7 +320,7 @@ public class LdrpidView {
 
                     logFileLabel.setText(fc.getSelectedFile().getPath());
 
-                    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    SwingWorker<Void, Void> worker = new SwingWorker<>() {
                         @Override
                         public Void doInBackground() {
                             Me7LogParser parser = new Me7LogParser();

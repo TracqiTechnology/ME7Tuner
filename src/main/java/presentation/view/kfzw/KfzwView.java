@@ -29,8 +29,6 @@ public class KfzwView implements OnTabSelectedListener {
 
     private JLabel fileLabel;
 
-    private boolean isKfzwInitialized;
-
     public KfzwView() {
         viewModel = new KfzwViewModel();
     }
@@ -62,37 +60,35 @@ public class KfzwView implements OnTabSelectedListener {
         viewModel.register(new Observer<>() {
             @Override
             public void onNext(@NonNull KfzwViewModel.KfzwModel model) {
-                if (model.getInputKfzw() == null) {
-                    Map3d defaultKfzw = new Map3d(new Double[12], new Double[16], new Double[16][12]);
+                SwingUtilities.invokeLater(() -> {
+                    if (model.getInputKfzw() == null) {
+                        Map3d defaultKfzw = new Map3d(new Double[12], new Double[16], new Double[16][12]);
 
-                    kfzwInput.setMap(defaultKfzw);
-                    kfzwInput.setMap(defaultKfzw);
-                    kfmiopXAxis.setTableData(new Double[1][11]);
+                        kfzwInput.setMap(defaultKfzw);
+                        kfzwInput.setMap(defaultKfzw);
+                        kfmiopXAxis.setTableData(new Double[1][11]);
 
-                    fileLabel.setText("No Definition Selected");
+                        fileLabel.setText("No Definition Selected");
 
-                    return;
-                }
+                        return;
+                    }
 
-                if (!isKfzwInitialized) {
-                    kfzwInput.setColumnHeaders(model.getInputKfzw().getSecond().xAxis);
-                    kfzwInput.setRowHeaders(model.getInputKfzw().getSecond().yAxis);
-                    kfzwInput.setTableData(model.getInputKfzw().getSecond().zAxis);
+                    if (!kfzwInput.getMap3d().equals(model.getInputKfzw().getSecond())) {
+                        kfzwInput.setMap(model.getInputKfzw().getSecond());
 
-                    Double[][] kfmiopXAxisValues = new Double[1][];
-                    kfmiopXAxisValues[0] = model.getKfmiopXAxis();
-                    kfmiopXAxis.setTableData(kfmiopXAxisValues);
+                        Double[][] kfmiopXAxisValues = new Double[1][];
+                        kfmiopXAxisValues[0] = model.getKfmiopXAxis();
+                        kfmiopXAxis.setTableData(kfmiopXAxisValues);
 
-                    fileLabel.setText(model.getInputKfzw().getFirst().getTableName());
+                        fileLabel.setText(model.getInputKfzw().getFirst().getTableName());
+                    }
 
-                    isKfzwInitialized = true;
-                }
-
-                if (model.getOutputKfzw() != null) {
-                    kfzwOutput.setColumnHeaders(model.getOutputKfzw().xAxis);
-                    kfzwOutput.setRowHeaders(model.getOutputKfzw().yAxis);
-                    kfzwOutput.setTableData(model.getOutputKfzw().zAxis);
-                }
+                    if (model.getOutputKfzw() != null) {
+                        kfzwOutput.setColumnHeaders(model.getOutputKfzw().xAxis);
+                        kfzwOutput.setRowHeaders(model.getOutputKfzw().yAxis);
+                        kfzwOutput.setTableData(model.getOutputKfzw().zAxis);
+                    }
+                });
             }
 
             @Override
@@ -193,7 +189,7 @@ public class KfzwView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull Double[][] data) {
-                if(data[0][0] != null) {
+                if (data[0][0] != null) {
                     SwingUtilities.invokeLater(() -> viewModel.calculateKfzw(kfzwInput.getMap3d(), data[0]));
                 }
             }
@@ -216,7 +212,7 @@ public class KfzwView implements OnTabSelectedListener {
         kfzwInput.getPublishSubject().subscribe(new Observer<>() {
             @Override
             public void onNext(@NonNull Map3d map3d) {
-                if(kfmiopXAxis.getData()[0][0] != null) {
+                if (kfmiopXAxis.getData()[0][0] != null) {
                     SwingUtilities.invokeLater(() -> viewModel.calculateKfzw(map3d, kfmiopXAxis.getData()[0]));
                 }
             }

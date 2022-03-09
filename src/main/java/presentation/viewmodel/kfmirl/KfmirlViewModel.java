@@ -119,10 +119,10 @@ public class KfmirlViewModel {
         }
     }
 
-    public static class KfmirlModel {
-        private final Pair<TableDefinition, Map3d> kfmiop;
-        private final Pair<TableDefinition, Map3d> kfmirl;
-        private final Map3d outputKfmirl;
+    public record KfmirlModel(
+            Pair<TableDefinition, Map3d> kfmiop,
+            Pair<TableDefinition, Map3d> kfmirl,
+            Map3d outputKfmirl) {
 
         public KfmirlModel(@Nullable Pair<TableDefinition, Map3d> kfmiop, @Nullable Pair<TableDefinition, Map3d> kfmirl, Map3d outputKfmirl) {
             this.kfmiop = kfmiop;

@@ -1,5 +1,6 @@
 package presentation.viewmodel.kfmiop;
 
+import data.parser.bin.BinParser;
 import data.preferences.MapPreferenceManager;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
@@ -13,6 +14,7 @@ import org.apache.commons.math3.util.Pair;
 import data.parser.xdf.TableDefinition;
 import data.preferences.kfmiop.KfmiopPreferences;
 
+import java.util.List;
 import java.util.Optional;
 
 public class KfmiopViewModel {
@@ -23,6 +25,22 @@ public class KfmiopViewModel {
         behaviorSubject.onNext(new KfmiopModel.Builder().build());
 
         onTableSelected(getSelectedKfmiopTableDefinition());
+
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
+                calculateKfmiop();
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
+        });
 
         KfmiopPreferences.getInstance().registerOnMapChanged(new Observer<>() {
             @Override
@@ -102,7 +120,7 @@ public class KfmiopViewModel {
     private void cacluateKfmiop(Map3d baseKfmiop, double maxMapSensorLoad, double maxBoostPressureLoad) {
         KfmiopModel.Builder builder = new KfmiopModel.Builder(behaviorSubject.getValue());
         Kfmiop kfmiop = Kfmiop.calculateKfmiop(baseKfmiop, maxMapSensorLoad, maxBoostPressureLoad);
-        builder.outputKfmiop(kfmiop.getOutputKfmiop()).inputBoost(kfmiop.getInputBoost()).outputBoost(kfmiop.getOutputBoost()).maxMapSensorPressure(kfmiop.getMaxMapSensorPressure()).maxBoostPressure(kfmiop.getMaxBoostPressure());
+        builder.inputKfmiop(baseKfmiop).outputKfmiop(kfmiop.getOutputKfmiop()).inputBoost(kfmiop.getInputBoost()).outputBoost(kfmiop.getOutputBoost()).maxMapSensorPressure(kfmiop.getMaxMapSensorPressure()).maxBoostPressure(kfmiop.getMaxBoostPressure());
         behaviorSubject.onNext(builder.build());
     }
 

@@ -27,7 +27,6 @@ public class KfzwopView implements OnTabSelectedListener {
 
     private JPanel panel;
     private JLabel fileLabel;
-    private boolean isKfzwopInitialized;
 
     public KfzwopView() {
         viewModel = new KfzwopViewModel();
@@ -74,10 +73,8 @@ public class KfzwopView implements OnTabSelectedListener {
                         return;
                     }
 
-                    if (!isKfzwopInitialized) {
-                        kfzwopInput.setColumnHeaders(model.getKfzwop().getSecond().xAxis);
-                        kfzwopInput.setRowHeaders(model.getKfzwop().getSecond().yAxis);
-                        kfzwopInput.setTableData(model.getKfzwop().getSecond().zAxis);
+                    if (!kfzwopInput.getMap3d().equals(model.getKfzwop().getSecond())) {
+                        kfzwopInput.setMap(model.getKfzwop().getSecond());
 
                         Double[][] kfmiopXAxisValues = new Double[1][];
                         kfmiopXAxisValues[0] = model.getKfzwop().getSecond().xAxis;
@@ -85,13 +82,10 @@ public class KfzwopView implements OnTabSelectedListener {
 
                         fileLabel.setText(model.getKfzwop().getFirst().getTableName());
 
-                        isKfzwopInitialized = true;
                     }
 
                     if (model.getOutputKfzwop() != null) {
-                        kfzwopOutput.setColumnHeaders(model.getOutputKfzwop().xAxis);
-                        kfzwopOutput.setRowHeaders(model.getOutputKfzwop().yAxis);
-                        kfzwopOutput.setTableData(model.getOutputKfzwop().zAxis);
+                        kfzwopOutput.setMap(model.getOutputKfzwop());
                     }
                 });
             }

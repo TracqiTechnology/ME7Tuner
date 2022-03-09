@@ -136,49 +136,51 @@ public class KfmiopView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull KfmiopViewModel.KfmiopModel kfmiopModel) {
-                if (kfmiopModel.getTableDefinition() != null) {
-                    fileLabel.setText(kfmiopModel.getTableDefinition().getTableName());
+                SwingUtilities.invokeLater(() -> {
+                    if (kfmiopModel.getTableDefinition() != null) {
+                        fileLabel.setText(kfmiopModel.getTableDefinition().getTableName());
 
-                    Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
+                        Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
 
-                    KfmiopView.this.inputKfmiop.setMap(inputKfmiop);
-                } else {
-                    fileLabel.setText("No Definition Selected");
+                        KfmiopView.this.inputKfmiop.setMap(inputKfmiop);
+                    } else {
+                        fileLabel.setText("No Definition Selected");
 
-                    Map3d defaultMap = new Map3d( new Double[11], new Double[16], new Double[16][11]);
-                    KfmiopView.this.inputKfmiop.setMap(defaultMap);
-                    KfmiopView.this.outputKfmiop.setMap(defaultMap);
-                    KfmiopView.this.inputBoost.setMap(defaultMap);
-                    KfmiopView.this.outputBoost.setMap(defaultMap);
-                    KfmiopView.this.kfmiopXAxis.setTableData(new Double[1][11]);
+                        Map3d defaultMap = new Map3d(new Double[11], new Double[16], new Double[16][11]);
+                        KfmiopView.this.inputKfmiop.setMap(defaultMap);
+                        KfmiopView.this.outputKfmiop.setMap(defaultMap);
+                        KfmiopView.this.inputBoost.setMap(defaultMap);
+                        KfmiopView.this.outputBoost.setMap(defaultMap);
+                        KfmiopView.this.kfmiopXAxis.setTableData(new Double[1][11]);
 
-                    return;
-                }
+                        return;
+                    }
 
-                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.MAP_SENSOR_MAX, (int) kfmiopModel.getMaxMapSensorPressure());
-                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.BOOST_PRESSURE_MAX, (int) kfmiopModel.getMaxBoostPressure());
+                    calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.MAP_SENSOR_MAX, (int) kfmiopModel.getMaxMapSensorPressure());
+                    calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.BOOST_PRESSURE_MAX, (int) kfmiopModel.getMaxBoostPressure());
 
-                Map3d outputKfmiop = kfmiopModel.getOutputKfmiop();
+                    Map3d outputKfmiop = kfmiopModel.getOutputKfmiop();
 
-                if (outputKfmiop != null) {
-                    KfmiopView.this.outputKfmiop.setMap(outputKfmiop);
+                    if (outputKfmiop != null) {
+                        KfmiopView.this.outputKfmiop.setMap(outputKfmiop);
 
-                    Double[][] xAxis = new Double[1][];
-                    xAxis[0] = outputKfmiop.xAxis;
-                    KfmiopView.this.kfmiopXAxis.setTableData(xAxis);
-                }
+                        Double[][] xAxis = new Double[1][];
+                        xAxis[0] = outputKfmiop.xAxis;
+                        KfmiopView.this.kfmiopXAxis.setTableData(xAxis);
+                    }
 
-                Map3d inputBoost = kfmiopModel.getInputBoost();
+                    Map3d inputBoost = kfmiopModel.getInputBoost();
 
-                if (inputBoost != null) {
-                    KfmiopView.this.inputBoost.setMap(inputBoost);
-                }
+                    if (inputBoost != null) {
+                        KfmiopView.this.inputBoost.setMap(inputBoost);
+                    }
 
-                Map3d outputBoost = kfmiopModel.getOutputBoost();
+                    Map3d outputBoost = kfmiopModel.getOutputBoost();
 
-                if (outputBoost != null) {
-                    KfmiopView.this.outputBoost.setMap(outputBoost);
-                }
+                    if (outputBoost != null) {
+                        KfmiopView.this.outputBoost.setMap(outputBoost);
+                    }
+                });
             }
 
             @Override

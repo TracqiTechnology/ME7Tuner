@@ -52,12 +52,6 @@ public class OpenLoopMlhfmCorrectionManager {
     }
 
     private void generateMlhfm(Map3d mlhfm, List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList) {
-        if (me7LogList.size() != afrLogList.size()) {
-            throw new IllegalArgumentException("ME7 Log size does not match AFR Log size! " + me7LogList.size() + " AFR: " + afrLogList.size());
-        } else if (me7LogList.size() == 0) {
-            throw new IllegalArgumentException("Not enough log files! " + "ME7: " + me7LogList.size() + " AFR: " + afrLogList.size());
-        }
-
         List<Double> mlhfmVoltage = Arrays.asList(mlhfm.yAxis);
 
         // Calculate the initial corrections sets
@@ -160,8 +154,11 @@ public class OpenLoopMlhfmCorrectionManager {
     }
 
     private void calculateCorrections(List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList, List<Double> mlhfmVoltageList) {
+
+       int size = Math.min(me7LogList.size(), afrLogList.size());
+
         // Loop over each log
-        for (int i = 0; i < me7LogList.size(); i++) {
+        for (int i = 0; i < size; i++) {
             Map<Me7LogFileContract.Header, List<Double>> me7Log = me7LogList.get(i);
             Map<String, List<Double>> afrLog = afrLogList.get(i);
 

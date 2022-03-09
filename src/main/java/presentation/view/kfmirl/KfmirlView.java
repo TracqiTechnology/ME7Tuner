@@ -29,8 +29,6 @@ public class KfmirlView implements OnTabSelectedListener {
 
     private final KfmirlViewModel viewModel;
 
-    private boolean kfmiopInitialized;
-
     private CompositeDisposable compositeDisposable;
 
     public KfmirlView() {
@@ -203,16 +201,13 @@ public class KfmirlView implements OnTabSelectedListener {
             @Override
             public void onNext(@NonNull KfmirlViewModel.KfmirlModel kfmirlModel) {
                 SwingUtilities.invokeLater(() -> {
-                    if (kfmirlModel.getKfmiop() != null && !kfmiopInitialized) {
+                    if (kfmirlModel.getKfmiop() != null && !kfmiop.getMap3d().equals(kfmirlModel.getKfmiop().getSecond())) {
                         Map3d kfmiopMap = kfmirlModel.getKfmiop().getSecond();
-                        kfmiop.setColumnHeaders(kfmiopMap.xAxis);
-                        kfmiop.setRowHeaders(kfmiopMap.yAxis);
-                        kfmiop.setTableData(kfmiopMap.zAxis);
+                        kfmiop.setMap(kfmiopMap);
 
                         Double[][] xAxis = new Double[1][];
                         xAxis[0] = kfmiopMap.xAxis;
                         kfmiopXAxis.setTableData(xAxis);
-                        kfmiopInitialized = true;
                     }
 
                     if (kfmirlModel.getKfmirl() != null && kfmirlModel.getKfmirl().getFirst() != null) {
@@ -224,8 +219,6 @@ public class KfmirlView implements OnTabSelectedListener {
                     if (kfmirlModel.getKfmiop() != null && kfmirlModel.getKfmiop().getFirst() != null) {
                         kfmiopFileLabel.setText(kfmirlModel.getKfmiop().getFirst().getTableName());
                     } else {
-                        compositeDisposable.dispose();
-
                         Map3d defaultKfmiop = new Map3d(new Double[11], new Double[16], new Double[16][11]);
                         Map3d defaultKfmirl = new Map3d(new Double[12], new Double[16], new Double[16][12]);
 
@@ -234,20 +227,14 @@ public class KfmirlView implements OnTabSelectedListener {
                         kfmiopXAxis.setTableData(new Double[1][11]);
 
                         kfmirlFileLabel.setText("No Definition Selected");
-
-                        initMapObservers();
                     }
 
                     if (kfmirlModel.getOutputKfmirl() != null) {
                         Map3d kfmirlMap = kfmirlModel.getOutputKfmirl();
-                        kfmirl.setColumnHeaders(kfmirlMap.xAxis);
-                        kfmirl.setRowHeaders(kfmirlMap.yAxis);
-                        kfmirl.setTableData(kfmirlMap.zAxis);
+                        kfmirl.setMap(kfmirlMap);
                     } else if (kfmirlModel.getKfmirl() != null) {
                         Map3d kfmirlMap = kfmirlModel.getKfmirl().getSecond();
-                        kfmirl.setColumnHeaders(kfmirlMap.xAxis);
-                        kfmirl.setRowHeaders(kfmirlMap.yAxis);
-                        kfmirl.setTableData(kfmirlMap.zAxis);
+                        kfmirl.setMap(kfmirlMap);
                     }
                 });
             }

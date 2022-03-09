@@ -71,7 +71,7 @@ public class WdkugdnViewModel {
 
             @Override
             public void onNext(@NonNull Boolean aBoolean) {
-                subject.onNext(new WdkugnModel(null, null, null));
+                subject.onNext(new WdkugnModel(null, null));
             }
 
             @Override
@@ -94,11 +94,11 @@ public class WdkugdnViewModel {
             Pair<TableDefinition, Map3d> kfwdkmsn = KfwdkmsnPreferences.getInstance().getSelectedMap();
 
             if (wdkugdn != null && kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(Wdkugdn.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName(), kfwdkmsn.getFirst().getTableName()));
+                subject.onNext(new WdkugnModel(Wdkugdn.calculateWdkugdn(wdkugdn.getSecond(), kfwdkmsn.getSecond(), WdkugdnPreferences.getInstance().getEngineDisplacementPreference()), wdkugdn.getFirst().getTableName()));
             } else if(wdkugdn != null) {
-                subject.onNext(new WdkugnModel(null, wdkugdn.getFirst().getTableName(), null));
+                subject.onNext(new WdkugnModel(null, wdkugdn.getFirst().getTableName()));
             }else if(kfwdkmsn != null) {
-                subject.onNext(new WdkugnModel(null, null, kfwdkmsn.getFirst().getTableName()));
+                subject.onNext(new WdkugnModel(null, null));
             }
         });
     }
@@ -107,15 +107,10 @@ public class WdkugdnViewModel {
         subject.subscribe(observer);
     }
 
-    public static class WdkugnModel {
-        private final String wdkudgnDefinitionTitle;
-        private final String kfwdkmsnDefinitionTitle;
-        private final Map3d wdkudgn;
-
-        private WdkugnModel(@Nullable Map3d wdkudgn, @Nullable String wdkudgnDefinitionTitle, @Nullable String kfwdkmsnDefinitionTitle) {
+    public record WdkugnModel(Map3d wdkudgn, String wdkudgnDefinitionTitle) {
+        public WdkugnModel(@Nullable Map3d wdkudgn, @Nullable String wdkudgnDefinitionTitle) {
             this.wdkudgn = wdkudgn;
             this.wdkudgnDefinitionTitle = wdkudgnDefinitionTitle;
-            this.kfwdkmsnDefinitionTitle = kfwdkmsnDefinitionTitle;
         }
 
         @Nullable
@@ -126,11 +121,6 @@ public class WdkugdnViewModel {
         @Nullable
         public String getWdkudgnDefinitionTitle() {
             return wdkudgnDefinitionTitle;
-        }
-
-        @Nullable
-        public String getKfwdkmsnDefinitionTitle() {
-            return kfwdkmsnDefinitionTitle;
         }
     }
 }
