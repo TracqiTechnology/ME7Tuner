@@ -5,7 +5,7 @@ import data.parser.xdf.TableDefinition;
 import data.preferences.MapPreferenceManager;
 import data.preferences.kfzwop.KfzwopPreferences;
 import domain.math.map.Map3d;
-import domain.model.kfzwop.Kfzwop;
+import domain.model.kfzw.Kfzw;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
@@ -96,11 +96,11 @@ public class KfzwopViewModel {
         subject.subscribe(observer);
     }
 
-    public void calculateKfzwop(Map3d kfzwop, Double[] newXAxis) {
+    public void calculateKfzwop(@NonNull Map3d kfzwop, @NonNull Double[] newXAxis) {
         Map3d newKfzwop = new Map3d();
         newKfzwop.xAxis = newXAxis;
         newKfzwop.yAxis = kfzwop.yAxis;
-        newKfzwop.zAxis = Kfzwop.generateKfzwop(kfzwop.xAxis, kfzwop.zAxis, newXAxis);
+        newKfzwop.zAxis = Kfzw.generateKfzw(kfzwop.xAxis, kfzwop.zAxis, newXAxis);
         subject.onNext(new KfzwopModel(KfzwopPreferences.getInstance().getSelectedMap(), newKfzwop));
     }
 

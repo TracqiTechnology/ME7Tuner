@@ -188,7 +188,7 @@ public class MapTable extends JList implements TableModelListener {
             try {
                 setText(formatter.format(Double.parseDouble(value.toString())));
             } catch (NumberFormatException e) {
-                setText("0.0");
+                setText(value.toString());
             }
 
             return this;

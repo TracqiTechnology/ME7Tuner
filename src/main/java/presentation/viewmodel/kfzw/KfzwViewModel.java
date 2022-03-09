@@ -5,6 +5,7 @@ import data.parser.xdf.TableDefinition;
 import data.preferences.MapPreferenceManager;
 import data.preferences.kfmiop.KfmiopPreferences;
 import data.preferences.kfzw.KfzwPreferences;
+import domain.math.RescaleAxis;
 import domain.math.map.Map3d;
 import domain.model.kfzw.Kfzw;
 import io.reactivex.Observer;
@@ -14,6 +15,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
 import org.apache.commons.math3.util.Pair;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,11 +89,15 @@ public class KfzwViewModel {
         subject.subscribe(observer);
     }
 
-    public void cacluateKfzw(Map3d kfzw, Double[] newXAxis) {
+    public void calculateKfzw(@NonNull Map3d kfzw, @NonNull Double[] newXAxis) {
         Map3d newKfzw = new Map3d();
-        newKfzw.xAxis = newXAxis;
+        // We need to, potentially, generate a load axis with more elements since KFZW has (maybe?) more resolution than KFMIRL
+        double maxValue = newXAxis[newXAxis.length -1];
+
+        newKfzw.xAxis = RescaleAxis.rescaleAxis(kfzw.xAxis, maxValue);
         newKfzw.yAxis = kfzw.yAxis;
-        newKfzw.zAxis = Kfzw.generateKfzw(kfzw.xAxis, kfzw.zAxis, newXAxis);
+        newKfzw.zAxis = Kfzw.generateKfzw(kfzw.xAxis, kfzw.zAxis, newKfzw.xAxis);
+
         subject.onNext(new KfzwModel(KfzwPreferences.getInstance().getSelectedMap(), KfmiopPreferences.getInstance().getSelectedMap().getSecond().xAxis, newKfzw));
     }
 

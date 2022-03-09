@@ -1,29 +1,25 @@
 package presentation.viewmodel.kfvpdksd;
 
 import data.contract.Me7LogFileContract;
+import data.parser.bin.BinParser;
+import data.parser.me7log.KfvpdksdLogParser;
+import data.parser.me7log.Me7LogParser;
+import data.parser.xdf.TableDefinition;
 import data.preferences.MapPreferenceManager;
+import data.preferences.kfvpdksd.KfvpdksdPreferences;
+import domain.math.RescaleAxis;
+import domain.math.map.Map3d;
+import domain.model.kfvpdksd.Kfvpdksd;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.BehaviorSubject;
-import domain.math.RescaleAxis;
-import domain.math.map.Map3d;
-import domain.model.kfvpdksd.Kfvpdksd;
 import org.apache.commons.math3.util.Pair;
-import data.parser.bin.BinParser;
-import data.parser.me7log.KfvpdksdLogParser;
-import data.parser.me7log.Me7LogParser;
-import data.parser.xdf.TableDefinition;
-import data.preferences.kfvpdksd.KfvpdksdPreferences;
-import presentation.viewmodel.kfzwop.KfzwopViewModel;
 
 import javax.swing.*;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class KfvpdksdViewModel {
 
@@ -50,6 +46,25 @@ public class KfvpdksdViewModel {
             @Override
             public void onComplete() {
             }
+        });
+
+        KfvpdksdPreferences.getInstance().registerOnMapChanged(new Observer<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {}
+
+            @Override
+            public void onNext(@NonNull Optional<Pair<TableDefinition, Map3d>> tableDefinitionMap3dPair) {
+                Pair<TableDefinition, Map3d> kfvpdksdTable = KfvpdksdPreferences.getInstance().getSelectedMap();
+                if (kfvpdksdTable != null) {
+                    subject.onNext(new KfvpdksdModel(kfvpdksdTable, null, null));
+                }
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {}
+
+            @Override
+            public void onComplete() {}
         });
 
         KfvpdksdLogParser.getInstance().registerLogOnChangeObserver(new Observer<>() {

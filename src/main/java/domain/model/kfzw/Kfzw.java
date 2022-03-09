@@ -9,8 +9,6 @@ public class Kfzw {
 
     public static Double[][] generateKfzw(Double[] xAxisOld, Double[][] kfzwOld, Double[] xAxisNew) {
 
-        // TODO Build a polynomial function instead of linear extrapolation
-
         Double[][] kwzwNew = new Double[kfzwOld.length][kfzwOld[0].length];
 
         for (int i = 0; i < kfzwOld.length; i++) {

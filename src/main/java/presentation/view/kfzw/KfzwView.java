@@ -21,7 +21,7 @@ public class KfzwView implements OnTabSelectedListener {
     private final MapTable kfzwInput = MapTable.getMapTable(new Double[16], new Double[12], new Double[16][12]);
     private final MapTable kfzwOutput = MapTable.getMapTable(new Double[16], new Double[12], new Double[16][12]);
 
-    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][11]);
+    private final MapAxis kfmiopXAxis = MapAxis.getMapAxis(new Double[1][11]);
 
     private JPanel panel;
 
@@ -62,15 +62,19 @@ public class KfzwView implements OnTabSelectedListener {
         viewModel.register(new Observer<>() {
             @Override
             public void onNext(@NonNull KfzwViewModel.KfzwModel model) {
-                if(model.getInputKfzw() == null) {
+                if (model.getInputKfzw() == null) {
                     Map3d defaultKfzw = new Map3d(new Double[12], new Double[16], new Double[16][12]);
 
                     kfzwInput.setMap(defaultKfzw);
                     kfzwInput.setMap(defaultKfzw);
                     kfmiopXAxis.setTableData(new Double[1][11]);
+
+                    fileLabel.setText("No Definition Selected");
+
+                    return;
                 }
 
-                if (model.getInputKfzw() != null && !isKfzwInitialized) {
+                if (!isKfzwInitialized) {
                     kfzwInput.setColumnHeaders(model.getInputKfzw().getSecond().xAxis);
                     kfzwInput.setRowHeaders(model.getInputKfzw().getSecond().yAxis);
                     kfzwInput.setTableData(model.getInputKfzw().getSecond().zAxis);
@@ -115,7 +119,7 @@ public class KfzwView implements OnTabSelectedListener {
         constraints.gridx = 0;
         constraints.gridy = 0;
 
-        panel.add(new JLabel("KFMIOP X-Axis (Input)"),constraints);
+        panel.add(new JLabel("KFMIOP X-Axis (Input)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -123,19 +127,19 @@ public class KfzwView implements OnTabSelectedListener {
 
         initXAxis();
 
-        panel.add(kfmiopXAxis.getScrollPane() ,constraints);
+        panel.add(kfmiopXAxis.getScrollPane(), constraints);
 
         initMap();
 
         constraints.gridx = 0;
         constraints.gridy = 2;
 
-        panel.add(getHeader("KFZW (Input)"),constraints);
+        panel.add(getHeader("KFZW (Input)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
 
-        panel.add(kfzwInput.getScrollPane(),constraints);
+        panel.add(kfzwInput.getScrollPane(), constraints);
 
         constraints.gridy = 4;
 
@@ -155,7 +159,7 @@ public class KfzwView implements OnTabSelectedListener {
         constraints.gridx = 0;
         constraints.gridy = 0;
 
-        panel.add(getHeader("KFZW (Output)"),constraints);
+        panel.add(getHeader("KFZW (Output)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -179,7 +183,7 @@ public class KfzwView implements OnTabSelectedListener {
         c.gridx = 0;
 
         JLabel label = new JLabel(title);
-        panel.add(label,c);
+        panel.add(label, c);
 
         return panel;
     }
@@ -189,7 +193,9 @@ public class KfzwView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull Double[][] data) {
-                viewModel.cacluateKfzw(kfzwInput.getMap3d(), data[0]);
+                if(data[0][0] != null) {
+                    SwingUtilities.invokeLater(() -> viewModel.calculateKfzw(kfzwInput.getMap3d(), data[0]));
+                }
             }
 
             @Override
@@ -210,7 +216,9 @@ public class KfzwView implements OnTabSelectedListener {
         kfzwInput.getPublishSubject().subscribe(new Observer<>() {
             @Override
             public void onNext(@NonNull Map3d map3d) {
-                viewModel.cacluateKfzw(map3d, kfmiopXAxis.getData()[0]);
+                if(kfmiopXAxis.getData()[0][0] != null) {
+                    SwingUtilities.invokeLater(() -> viewModel.calculateKfzw(map3d, kfmiopXAxis.getData()[0]));
+                }
             }
 
             @Override

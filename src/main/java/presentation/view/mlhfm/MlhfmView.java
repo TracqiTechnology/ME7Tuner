@@ -25,7 +25,7 @@ public class MlhfmView {
 
     private JFreeChart chart;
     private JPanel mlhfmPanel;
-    private MapTable mapTable;
+    private final MapTable mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
     private JLabel fileLabel;
 
     public MlhfmView() {
@@ -83,6 +83,9 @@ public class MlhfmView {
                     fileLabel.setText("No File Selected");
                     XYPlot plot = (XYPlot)chart.getPlot();
                     ((XYSeriesCollection)plot.getDataset()).removeAllSeries();
+
+                    mapTable.setRowHeaders(new Double[0]);
+                    mapTable.setTableData(new Double[0][]);
                 }
             }
 
@@ -164,8 +167,7 @@ public class MlhfmView {
     }
 
     private void initMapTable() {
-        mapTable = MapTable.getMapTable(new Double[0], new String[]{"kg/hr"}, new Double[0][]);
-        mapTable.setToolTipText("Base MLHFM");
+
     }
 
     private void drawMapTable(Map3d mlhfmMap) {

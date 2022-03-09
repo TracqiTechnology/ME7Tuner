@@ -77,55 +77,51 @@ public class KfvpdksdView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull KfvpdksdViewModel.KfvpdksdModel kfvpdksdModel) {
-
-                if(kfvpdksdModel.kfvpdksdTable() == null) {
+                if (kfvpdksdModel.kfvpdksdTable() == null) {
                     Map3d defaultMap = new Map3d(new Double[12], new Double[12], new Double[12][12]);
                     kfvpdksdTable.setMap(defaultMap);
                     boostTable.setTableData(new Double[1][12]);
 
                     XYPlot plot = (XYPlot) chart.getPlot();
                     ((XYSeriesCollection) plot.getDataset()).removeAllSeries();
+
+                    return;
                 }
 
-                if (!kfvpdksdInitialized) {
-                    if (kfvpdksdModel.getKfvpdksdTable() != null) {
-                        definitionFileLabel.setText(kfvpdksdModel.getKfvpdksdTable().getFirst().getTableName());
+                if (kfvpdksdModel.getKfvpdksdTable() != null && !kfvpdksdInitialized) {
+                    definitionFileLabel.setText(kfvpdksdModel.getKfvpdksdTable().getFirst().getTableName());
 
-                        boostTable.setRowHeaders(new Double[]{0.0});
-                        boostTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis);
-                        boostTable.setTableData(new Double[1][kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis.length]);
+                    boostTable.setRowHeaders(new Double[]{0.0});
+                    boostTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis);
+                    boostTable.setTableData(new Double[1][kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis.length]);
 
-                        kfvpdksdTable.setColumnHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().xAxis);
-                        kfvpdksdTable.setRowHeaders(kfvpdksdModel.getKfvpdksdTable().getSecond().yAxis);
-                        kfvpdksdTable.setTableData(kfvpdksdModel.getKfvpdksdTable().getSecond().zAxis);
+                    kfvpdksdTable.setMap(kfvpdksdModel.getKfvpdksdTable().getSecond());
 
-                        drawPressure(kfvpdksdModel.getKfvpdksdTable().getSecond());
+                    drawPressure(kfvpdksdModel.getKfvpdksdTable().getSecond());
 
-                        kfvpdksdInitialized = true;
+                    kfvpdksdInitialized = true;
+                }
+
+
+                if (kfvpdksdModel.getKfvpdksd() != null && kfvpdksdModel.getPressure() != null && !pressureInitialized) {
+                    Map3d kfvpdks = kfvpdksdModel.getKfvpdksdTable().getSecond();
+
+                    Double[][] data = new Double[1][];
+                    data[0] = kfvpdksdModel.getPressure();
+
+                    for (int i = 0; i < data[0].length; i++) {
+                        data[0][i] *= 0.0145038;
                     }
+
+                    boostTable.setTableData(data);
+
+                    kfvpdks.zAxis = data;
+
+                    drawPressure(kfvpdks);
+
+                    pressureInitialized = true;
                 }
 
-                if (!pressureInitialized) {
-                    if (kfvpdksdModel.getKfvpdksd() != null && kfvpdksdModel.getPressure() != null) {
-
-                        Map3d kfvpdks = kfvpdksdModel.getKfvpdksdTable().getSecond();
-
-                        Double[][] data = new Double[1][];
-                        data[0] = kfvpdksdModel.getPressure();
-
-                        for (int i = 0; i < data[0].length; i++) {
-                            data[0][i] *= 0.0145038;
-                        }
-
-                        boostTable.setTableData(data);
-
-                        kfvpdks.zAxis = data;
-
-                        drawPressure(kfvpdks);
-
-                        pressureInitialized = true;
-                    }
-                }
 
                 if (kfvpdksdModel.getKfvpdksd() != null) {
                     kfvpdksdTable.setTableData(kfvpdksdModel.getKfvpdksd().getKfvpdksd());

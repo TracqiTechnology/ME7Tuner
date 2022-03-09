@@ -136,17 +136,15 @@ public class KfmiopView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull KfmiopViewModel.KfmiopModel kfmiopModel) {
-
                 if (kfmiopModel.getTableDefinition() != null) {
                     fileLabel.setText(kfmiopModel.getTableDefinition().getTableName());
-                }
 
-                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.MAP_SENSOR_MAX, (int) kfmiopModel.getMaxMapSensorPressure());
-                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.BOOST_PRESSURE_MAX, (int) kfmiopModel.getMaxBoostPressure());
+                    Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
 
-                Map3d inputKfmiop = kfmiopModel.getInputKfmiop();
+                    KfmiopView.this.inputKfmiop.setMap(inputKfmiop);
+                } else {
+                    fileLabel.setText("No Definition Selected");
 
-                if (inputKfmiop != null) {
                     Map3d defaultMap = new Map3d( new Double[11], new Double[16], new Double[16][11]);
                     KfmiopView.this.inputKfmiop.setMap(defaultMap);
                     KfmiopView.this.outputKfmiop.setMap(defaultMap);
@@ -154,17 +152,16 @@ public class KfmiopView implements OnTabSelectedListener {
                     KfmiopView.this.outputBoost.setMap(defaultMap);
                     KfmiopView.this.kfmiopXAxis.setTableData(new Double[1][11]);
 
-                    KfmiopView.this.inputKfmiop.setColumnHeaders(inputKfmiop.xAxis);
-                    KfmiopView.this.inputKfmiop.setRowHeaders(inputKfmiop.yAxis);
-                    KfmiopView.this.inputKfmiop.setTableData(inputKfmiop.zAxis);
+                    return;
                 }
+
+                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.MAP_SENSOR_MAX, (int) kfmiopModel.getMaxMapSensorPressure());
+                calculatedMaximumMapPressurePanel.setFieldText(CalculatedMaximumMapPressurePanel.FieldTitle.BOOST_PRESSURE_MAX, (int) kfmiopModel.getMaxBoostPressure());
 
                 Map3d outputKfmiop = kfmiopModel.getOutputKfmiop();
 
                 if (outputKfmiop != null) {
-                    KfmiopView.this.outputKfmiop.setColumnHeaders(outputKfmiop.xAxis);
-                    KfmiopView.this.outputKfmiop.setRowHeaders(outputKfmiop.yAxis);
-                    KfmiopView.this.outputKfmiop.setTableData(outputKfmiop.zAxis);
+                    KfmiopView.this.outputKfmiop.setMap(outputKfmiop);
 
                     Double[][] xAxis = new Double[1][];
                     xAxis[0] = outputKfmiop.xAxis;
@@ -174,17 +171,13 @@ public class KfmiopView implements OnTabSelectedListener {
                 Map3d inputBoost = kfmiopModel.getInputBoost();
 
                 if (inputBoost != null) {
-                    KfmiopView.this.inputBoost.setColumnHeaders(inputBoost.xAxis);
-                    KfmiopView.this.inputBoost.setRowHeaders(inputBoost.yAxis);
-                    KfmiopView.this.inputBoost.setTableData(inputBoost.zAxis);
+                    KfmiopView.this.inputBoost.setMap(inputBoost);
                 }
 
                 Map3d outputBoost = kfmiopModel.getOutputBoost();
 
                 if (outputBoost != null) {
-                    KfmiopView.this.outputBoost.setColumnHeaders(outputBoost.xAxis);
-                    KfmiopView.this.outputBoost.setRowHeaders(outputBoost.yAxis);
-                    KfmiopView.this.outputBoost.setTableData(outputBoost.zAxis);
+                    KfmiopView.this.outputBoost.setMap(outputBoost);
                 }
             }
 

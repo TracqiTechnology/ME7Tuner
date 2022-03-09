@@ -21,7 +21,7 @@ public class KfzwopView implements OnTabSelectedListener {
     private final MapTable kfzwopInput = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
     private final MapTable kfzwopOutput = MapTable.getMapTable(new Double[16], new Double[11], new Double[16][11]);
 
-    private final MapAxis kfmiopXAxis =  MapAxis.getMapAxis(new Double[1][11]);
+    private final MapAxis kfmiopXAxis = MapAxis.getMapAxis(new Double[1][11]);
 
     private final KfzwopViewModel viewModel;
 
@@ -62,15 +62,19 @@ public class KfzwopView implements OnTabSelectedListener {
             @Override
             public void onNext(@NonNull KfzwopViewModel.KfzwopModel model) {
                 SwingUtilities.invokeLater(() -> {
-                    if(model.getKfzwop() == null) {
+                    if (model.getKfzwop() == null) {
                         Map3d defaultKfzwop = new Map3d(new Double[11], new Double[16], new Double[16][11]);
 
                         kfzwopInput.setMap(defaultKfzwop);
-                        kfzwopInput.setMap(defaultKfzwop);
+                        kfzwopOutput.setMap(defaultKfzwop);
                         kfmiopXAxis.setTableData(new Double[1][11]);
+
+                        fileLabel.setText("No Definition Selected");
+
+                        return;
                     }
 
-                    if (model.getKfzwop() != null && !isKfzwopInitialized) {
+                    if (!isKfzwopInitialized) {
                         kfzwopInput.setColumnHeaders(model.getKfzwop().getSecond().xAxis);
                         kfzwopInput.setRowHeaders(model.getKfzwop().getSecond().yAxis);
                         kfzwopInput.setTableData(model.getKfzwop().getSecond().zAxis);
@@ -129,7 +133,7 @@ public class KfzwopView implements OnTabSelectedListener {
         constraints.gridx = 0;
         constraints.gridy = 2;
 
-        panel.add(getHeader("KFZWOP (Input)"),constraints);
+        panel.add(getHeader("KFZWOP (Input)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 3;
@@ -156,7 +160,7 @@ public class KfzwopView implements OnTabSelectedListener {
         constraints.gridx = 0;
         constraints.gridy = 0;
 
-        mapPanel.add(getHeader("KFZWOP (Output)"),constraints);
+        mapPanel.add(getHeader("KFZWOP (Output)"), constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -167,7 +171,7 @@ public class KfzwopView implements OnTabSelectedListener {
         constraints.gridx = 0;
         constraints.gridy = 2;
 
-        mapPanel.add(getFileButton(),constraints);
+        mapPanel.add(getFileButton(), constraints);
 
 
         return mapPanel;
@@ -181,7 +185,7 @@ public class KfzwopView implements OnTabSelectedListener {
         c.gridx = 0;
 
         JLabel label = new JLabel(title);
-        panel.add(label,c);
+        panel.add(label, c);
 
         return panel;
     }
@@ -190,12 +194,14 @@ public class KfzwopView implements OnTabSelectedListener {
         kfmiopXAxis.getPublishSubject().subscribe(new Observer<>() {
 
             @Override
-            public void onNext(@NonNull Double[][] data) {
-                viewModel.calculateKfzwop(kfzwopInput.getMap3d(), data[0]);
+            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {
+            public void onNext(@NonNull Double[][] data) {
+                if(data[0][0] != null) {
+                    SwingUtilities.invokeLater(() -> viewModel.calculateKfzwop(kfzwopInput.getMap3d(), data[0]));
+                }
             }
 
             @Override
@@ -213,7 +219,9 @@ public class KfzwopView implements OnTabSelectedListener {
 
             @Override
             public void onNext(@NonNull Map3d map3d) {
-                viewModel.calculateKfzwop(map3d, kfmiopXAxis.getData()[0]);
+                if(kfmiopXAxis.getData()[0][0] != null) {
+                    SwingUtilities.invokeLater(() -> viewModel.calculateKfzwop(map3d, kfmiopXAxis.getData()[0]));
+                }
             }
 
             @Override

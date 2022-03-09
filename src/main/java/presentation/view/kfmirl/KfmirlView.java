@@ -2,6 +2,7 @@ package presentation.view.kfmirl;
 
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import domain.math.map.Map3d;
 import data.preferences.bin.BinFilePreferences;
@@ -29,6 +30,8 @@ public class KfmirlView implements OnTabSelectedListener {
     private final KfmirlViewModel viewModel;
 
     private boolean kfmiopInitialized;
+
+    private CompositeDisposable compositeDisposable;
 
     public KfmirlView() {
         viewModel = new KfmirlViewModel();
@@ -63,7 +66,7 @@ public class KfmirlView implements OnTabSelectedListener {
         panel.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
 
-        initKfmiopMap();
+        initMapObservers();
 
         constraints.gridx = 0;
         constraints.gridy = 0;
@@ -143,17 +146,20 @@ public class KfmirlView implements OnTabSelectedListener {
         return panel;
     }
 
-    private void initKfmiopMap() {
+    private void initMapObservers() {
+        compositeDisposable = new CompositeDisposable();
+
         kfmiop.getPublishSubject().subscribe(new Observer<>() {
+
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+                compositeDisposable.add(disposable);
+            }
 
             @Override
             public void onNext(@NonNull Map3d map3d) {
                 Map3d kfmiop = new Map3d(kfmiopXAxis.getData()[0], map3d.yAxis, map3d.zAxis);
                 viewModel.calculateKfmirl(kfmiop);
-            }
-
-            @Override
-            public void onSubscribe(@NonNull Disposable disposable) {
             }
 
             @Override
@@ -168,6 +174,7 @@ public class KfmirlView implements OnTabSelectedListener {
         kfmiopXAxis.getPublishSubject().subscribe(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
+                compositeDisposable.add(disposable);
             }
 
             @Override
@@ -217,6 +224,8 @@ public class KfmirlView implements OnTabSelectedListener {
                     if (kfmirlModel.getKfmiop() != null && kfmirlModel.getKfmiop().getFirst() != null) {
                         kfmiopFileLabel.setText(kfmirlModel.getKfmiop().getFirst().getTableName());
                     } else {
+                        compositeDisposable.dispose();
+
                         Map3d defaultKfmiop = new Map3d(new Double[11], new Double[16], new Double[16][11]);
                         Map3d defaultKfmirl = new Map3d(new Double[12], new Double[16], new Double[16][12]);
 
@@ -225,6 +234,8 @@ public class KfmirlView implements OnTabSelectedListener {
                         kfmiopXAxis.setTableData(new Double[1][11]);
 
                         kfmirlFileLabel.setText("No Definition Selected");
+
+                        initMapObservers();
                     }
 
                     if (kfmirlModel.getOutputKfmirl() != null) {
