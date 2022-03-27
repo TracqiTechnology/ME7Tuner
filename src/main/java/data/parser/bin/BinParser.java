@@ -169,7 +169,7 @@ public class BinParser {
             buffer.position(address);
             int strideBytes = axisDefinition.getSizeBits()/8;
             // Determine how many bytes per row to get the last index of the axis
-            buffer.limit(address + (strideBytes*axisDefinition.getColumnCount()));
+            buffer.limit(address + (strideBytes*axisDefinition.getIndexCount()));
 
             ByteBuffer slice = buffer.slice().order(ByteOrder.LITTLE_ENDIAN);
             slice.position(0);
@@ -182,7 +182,7 @@ public class BinParser {
 
                 Invocable funcEngine = (Invocable) compiledScript.getEngine();
 
-                Double[] axis = new Double[axisDefinition.getColumnCount()];
+                Double[] axis = new Double[axisDefinition.getIndexCount()];
 
                 for (int i = 0; i < axis.length; i++) {
                     int value;
