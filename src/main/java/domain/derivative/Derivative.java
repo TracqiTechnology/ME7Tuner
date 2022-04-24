@@ -16,7 +16,7 @@ public class Derivative {
         }
 
         List<Double> me7Voltages = me7Logs.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);
-        List<Double> me7Timestamps = me7Logs.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
+        List<Double> me7Timestamps = me7Logs.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER);
         List<Double> me7voltageDt = getDt(me7Voltages, me7Timestamps);
 
         for (int i = 0; i < me7voltageDt.size(); i++) {

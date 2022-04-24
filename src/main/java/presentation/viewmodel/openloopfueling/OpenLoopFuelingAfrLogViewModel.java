@@ -37,6 +37,6 @@ public class OpenLoopFuelingAfrLogViewModel {
     }
 
     public void loadFile(File file) {
-       AfrLogParser.getInstance().loadFile(file);
+       AfrLogParser.getInstance().load(file);
     }
 }

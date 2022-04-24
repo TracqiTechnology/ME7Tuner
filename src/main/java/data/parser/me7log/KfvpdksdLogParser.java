@@ -42,7 +42,7 @@ public class KfvpdksdLogParser {
     public void loadDirectory(File directory, Me7LogParser.ProgressCallback progressCallback) {
         if (directory.isDirectory()) {
             Me7LogParser me7LogParser = new Me7LogParser();
-            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory, progressCallback)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<Me7LogFileContract.Header, List<Double>>>() {
+            Single.fromCallable(() -> me7LogParser.parseLogDirectory(Me7LogParser.LogType.KFVPDKSD, directory, progressCallback)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<>() {
                 @Override
                 public void onSubscribe(@NonNull Disposable disposable) {}
 

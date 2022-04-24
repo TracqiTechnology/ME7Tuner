@@ -303,6 +303,10 @@ public class MapTable extends JList implements TableModelListener {
     }
 
     public void setColumnHeaders(Double[] columnHeaders) {
+        if(columnHeaders.length == 0) {
+            return;
+        }
+
         this.columnHeaders = columnHeaders;
         tableModel.setDataVector(this.data, this.columnHeaders);
         enforceTableColumnWidth(this.table);

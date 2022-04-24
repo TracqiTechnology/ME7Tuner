@@ -54,6 +54,7 @@ public class OpenLoopLogParser {
 
             @Override
             public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
             }
         });
     }

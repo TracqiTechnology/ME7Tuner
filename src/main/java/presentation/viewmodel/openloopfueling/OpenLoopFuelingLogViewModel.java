@@ -44,11 +44,17 @@ public class OpenLoopFuelingLogViewModel {
 
                 builder.me7Logs(logs);
 
-                behaviorSubject.onNext(builder.build());
+                System.out.println("onNext");
+                behaviorSubject.onNext(builder.build()); // Before ME7.5 the wide band afr must be parsed from another log
+
+                if(!logs.get(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER).isEmpty()) {
+                    AfrLogParser.getInstance().load(logs); // ME7.5+ might have the wide band afr with it
+                }
             }
 
             @Override
             public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
             }
 
             @Override
@@ -56,7 +62,7 @@ public class OpenLoopFuelingLogViewModel {
             }
         });
 
-        AfrLogParser.getInstance().register(new Observer<Map<String, List<Double>>>() {
+        AfrLogParser.getInstance().register(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -77,6 +83,7 @@ public class OpenLoopFuelingLogViewModel {
 
             @Override
             public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
             }
 
             @Override
@@ -84,7 +91,7 @@ public class OpenLoopFuelingLogViewModel {
             }
         });
 
-        BinParser.getInstance().registerMapListObserver(new Observer<List<Pair<TableDefinition, Map3d>>>() {
+        BinParser.getInstance().registerMapListObserver(new Observer<>() {
             @Override
             public void onSubscribe(@NonNull Disposable disposable) {
             }
@@ -92,7 +99,7 @@ public class OpenLoopFuelingLogViewModel {
             @Override
             public void onNext(@NonNull List<Pair<TableDefinition, Map3d>> pairs) {
                 Pair<TableDefinition, Map3d> tableDefinition = MlhfmPreferences.getInstance().getSelectedMap();
-                if(tableDefinition != null) {
+                if (tableDefinition != null) {
                     OpenLoopFuelingLogModel model = behaviorSubject.getValue();
                     OpenLoopFuelingLogModel.Builder builder;
                     if (model == null) {
@@ -108,6 +115,7 @@ public class OpenLoopFuelingLogViewModel {
 
             @Override
             public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
             }
 
             @Override
@@ -115,22 +123,26 @@ public class OpenLoopFuelingLogViewModel {
             }
         });
 
-        BinWriter.getInstance().register(new Observer<TableDefinition>() {
+        BinWriter.getInstance().register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull TableDefinition tableDefinition) {
-                if(tableDefinition.getTableName().contains("MLHFM")) {
+                if (tableDefinition.getTableName().contains("MLHFM")) {
                     behaviorSubject.onNext(new OpenLoopFuelingLogModel.Builder().build());
                 }
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
+            }
 
             @Override
-            public void onComplete() { }
+            public void onComplete() {
+            }
         });
     }
 
@@ -143,12 +155,12 @@ public class OpenLoopFuelingLogViewModel {
     }
 
     public void loadAfrFile(File file) {
-        AfrLogParser.getInstance().loadFile(file);
+        AfrLogParser.getInstance().load(file);
     }
 
     private OpenLoopFuelingLogModel generateAirflowEstimation(OpenLoopFuelingLogModel model) {
         if (model.me7Logs != null && model.afrLogs != null) {
-            AirflowEstimationManager airflowEstimationManager = new AirflowEstimationManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference(), OpenLoopFuelingLogFilterPreferences.getFuelInjectorSizePreference(), OpenLoopFuelingLogFilterPreferences.getNumFuelInjectorsPreference(), OpenLoopFuelingLogFilterPreferences.getGasolineGramsPerCubicCentimeterPreference());
+            AirflowEstimationManager airflowEstimationManager = new AirflowEstimationManager(OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference(), OpenLoopFuelingLogFilterPreferences.getFuelInjectorSizePreference(), OpenLoopFuelingLogFilterPreferences.getNumFuelInjectorsPreference(), OpenLoopFuelingLogFilterPreferences.getGasolineGramsPerCubicCentimeterPreference());
             airflowEstimationManager.estimate(model.me7Logs, model.afrLogs);
             AirflowEstimation airflowEstimation = airflowEstimationManager.getAirflowEstimation();
 

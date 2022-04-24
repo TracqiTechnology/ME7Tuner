@@ -39,6 +39,7 @@ public class Me7LogUtil {
         List<Double> rpm = me7Log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
         List<Double> onTime = me7Log.get(Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER);
         List<Double> gsec = me7Log.get(Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER);
+        List<Double> afr = me7Log.get(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER);
 
         Map<Me7LogFileContract.Header, List<Double>> log = new HashMap<>();
         log.put(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER, voltages.subList(start, end));
@@ -50,6 +51,10 @@ public class Me7LogUtil {
         log.put(Me7LogFileContract.Header.RPM_COLUMN_HEADER, rpm.subList(start, end));
         log.put(Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER, onTime.subList(start, end));
         log.put(Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER, gsec.subList(start, end));
+        // Wide band O2 is optional for ME7.5+
+        if(!afr.isEmpty()) {
+            log.put(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER, afr.subList(start, end));
+        }
 
         return log;
     }

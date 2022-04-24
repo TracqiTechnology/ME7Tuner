@@ -1,6 +1,7 @@
 package data.parser.afrLog;
 
 import data.contract.AfrLogFileContract;
+import data.contract.Me7LogFileContract;
 import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
@@ -45,10 +46,11 @@ public class AfrLogParser {
         SwingUtilities.invokeLater(() -> publishSubject.subscribe(observer));
     }
 
-    public void loadFile(File file) {
-        Single.fromCallable(() -> parse(file)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<Map<String, List<Double>>>() {
+    public void load(File file) {
+        Single.fromCallable(() -> parse(file)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
@@ -56,8 +58,55 @@ public class AfrLogParser {
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
+            }
         });
+    }
+
+    public void load(Map<Me7LogFileContract.Header, List<Double>> logs) {
+        Single.fromCallable(() -> parse(logs)).subscribeOn(Schedulers.io()).subscribe(new SingleObserver<>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
+
+            @Override
+            public void onSuccess(@NonNull Map<String, List<Double>> logMap) {
+                SwingUtilities.invokeLater(() -> publishSubject.onNext(logMap));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        });
+    }
+
+    private Map<String, List<Double>> parse(Map<Me7LogFileContract.Header, List<Double>> log) {
+
+        Map<String, List<Double>> map = new HashMap<>();
+
+        if(!log.get(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER).isEmpty()) {
+            map.put(AfrLogFileContract.START_TIME, new ArrayList<>());
+            map.put(AfrLogFileContract.TIMESTAMP, new ArrayList<>());
+            map.put(AfrLogFileContract.RPM_HEADER, new ArrayList<>());
+            map.put(AfrLogFileContract.AFR_HEADER, new ArrayList<>());
+            map.put(AfrLogFileContract.TPS_HEADER, new ArrayList<>());
+            map.put(AfrLogFileContract.BOOST_HEADER, new ArrayList<>());
+
+            double startTime = log.get(Me7LogFileContract.Header.START_TIME_HEADER).get(0);
+            map.get(AfrLogFileContract.START_TIME).add(startTime);
+
+            for(int i = 0; i < log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER).size(); i++) {
+                map.get(AfrLogFileContract.START_TIME).add(log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER).get(i));
+                map.get(AfrLogFileContract.RPM_HEADER).add(log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER).get(i));
+                // ME7.5 afr is normalized. Covert to stoichiometric gasoline ratio
+                map.get(AfrLogFileContract.AFR_HEADER).add(log.get(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER).get(i) * 14.7);
+                map.get(AfrLogFileContract.TPS_HEADER).add(log.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER).get(i));
+            }
+        }
+
+        return map;
     }
 
     private Map<String, List<Double>> parse(File file) {
@@ -86,21 +135,11 @@ public class AfrLogParser {
             for (CSVRecord record : records) {
                 for (int i = 0; i < record.size(); i++) {
                     switch (record.get(i).trim()) {
-                        case AfrLogFileContract.TIMESTAMP:
-                            timeColumnIndex = i;
-                            break;
-                        case AfrLogFileContract.TPS_HEADER:
-                            tpsColumnIndex = i;
-                            break;
-                        case AfrLogFileContract.RPM_HEADER:
-                            rpmColumnIndex = i;
-                            break;
-                        case AfrLogFileContract.AFR_HEADER:
-                            afrColumnIndex = i;
-                            break;
-                        case AfrLogFileContract.BOOST_HEADER:
-                            boostColumnIndex = i;
-                            break;
+                        case AfrLogFileContract.TIMESTAMP -> timeColumnIndex = i;
+                        case AfrLogFileContract.TPS_HEADER -> tpsColumnIndex = i;
+                        case AfrLogFileContract.RPM_HEADER -> rpmColumnIndex = i;
+                        case AfrLogFileContract.AFR_HEADER -> afrColumnIndex = i;
+                        case AfrLogFileContract.BOOST_HEADER -> boostColumnIndex = i;
                     }
 
                     if (headersFound = headersFound(timeColumnIndex, rpmColumnIndex, tpsColumnIndex, afrColumnIndex, boostColumnIndex)) {

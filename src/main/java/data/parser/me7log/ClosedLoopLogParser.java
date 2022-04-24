@@ -54,7 +54,9 @@ public class ClosedLoopLogParser {
                 }
 
                 @Override
-                public void onError(@NonNull Throwable throwable) {}
+                public void onError(@NonNull Throwable throwable) {
+                    throwable.printStackTrace();
+                }
             });
         }
     }

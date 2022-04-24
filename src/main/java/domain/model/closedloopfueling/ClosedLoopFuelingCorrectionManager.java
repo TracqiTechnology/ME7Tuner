@@ -67,7 +67,7 @@ public class ClosedLoopFuelingCorrectionManager {
 
     private void calculateCorrections(Map<Double, List<Double>> correctionError, Map<Me7LogFileContract.Header, List<Double>> me7LogMap, Map3d mlhfm) {
         List<Double> me7Voltages = me7LogMap.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);
-        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
+        List<Double> me7Timestamps = me7LogMap.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER);
         List<Double> me7voltageDt = Derivative.getDt(me7Voltages, me7Timestamps);
         List<Double> stft = me7LogMap.get(Me7LogFileContract.Header.STFT_COLUMN_HEADER);
         List<Double> ltft = me7LogMap.get(Me7LogFileContract.Header.LTFT_COLUMN_HEADER);

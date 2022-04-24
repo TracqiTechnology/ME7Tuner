@@ -76,7 +76,7 @@ public class KfvpdksdViewModel {
             public void onNext(@NonNull Map<Me7LogFileContract.Header, List<Double>> log) {
                 Pair<TableDefinition, Map3d> kfvpdksdTable = KfvpdksdPreferences.getInstance().getSelectedMap();
                 if (kfvpdksdTable != null) {
-                    cacluateKfvpdksd(Kfvpdksd.parsePressure(log, kfvpdksdTable.getSecond().yAxis));
+                    calculateKfvpdksd(Kfvpdksd.parsePressure(log, kfvpdksdTable.getSecond().yAxis));
                 }
             }
 
@@ -120,7 +120,7 @@ public class KfvpdksdViewModel {
         KfvpdksdLogParser.getInstance().loadDirectory(file, progressCallback);
     }
 
-    public void cacluateKfvpdksd(Double[] maxPressure) {
+    public void calculateKfvpdksd(Double[] maxPressure) {
         Pair<TableDefinition, Map3d> kfvpdksdTable = KfvpdksdPreferences.getInstance().getSelectedMap();
         if(kfvpdksdTable != null) {
             Double[] rescaledPressureRatio = RescaleAxis.rescaleAxis(kfvpdksdTable.getSecond().xAxis, (1000+getMax(maxPressure))/1000d);

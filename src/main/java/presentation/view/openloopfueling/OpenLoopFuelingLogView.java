@@ -60,26 +60,29 @@ public class OpenLoopFuelingLogView {
         estimatedAirflowDataset = new XYSeriesCollection();
 
         viewModel = new OpenLoopFuelingLogViewModel();
-        viewModel.register(new Observer<OpenLoopFuelingLogViewModel.OpenLoopFuelingLogModel>() {
+        viewModel.register(new Observer<>() {
             @Override
-            public void onSubscribe(@NonNull Disposable disposable) {}
+            public void onSubscribe(@NonNull Disposable disposable) {
+            }
 
             @Override
             public void onNext(@NonNull OpenLoopFuelingLogViewModel.OpenLoopFuelingLogModel openLoopFuelingLogModel) {
                 drawMe7FuelingLogChart(openLoopFuelingLogModel.getMe7Logs());
                 drawAfrFuelingLogChart(openLoopFuelingLogModel.getAfrLogs());
                 AirflowEstimation airflowEstimation = openLoopFuelingLogModel.getAirflowEstimation();
-                if(airflowEstimation != null) {
+                if (airflowEstimation != null) {
                     drawMeasuredAirflowChart(airflowEstimation.measuredAirflowGramsPerSecondLogs(), airflowEstimation.measuredRpmLogs());
                     drawEstimatedAirflowChart(airflowEstimation.estimatedAirflowGramsPerSecondLogs(), airflowEstimation.measuredRpmLogs());
                 }
             }
 
             @Override
-            public void onError(@NonNull Throwable throwable) {}
+            public void onError(@NonNull Throwable throwable) {
+            }
 
             @Override
-            public void onComplete() {}
+            public void onComplete() {
+            }
         });
     }
 
@@ -437,7 +440,7 @@ public class OpenLoopFuelingLogView {
             return;
         }
 
-        List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
+        List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList = Me7LogUtil.findMe7Logs(me7LogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), 0, OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMinMe7PointsPreference());
 
         int logCount = 1;
         for (Map<Me7LogFileContract.Header, List<Double>> map : me7LogList) {
@@ -464,7 +467,7 @@ public class OpenLoopFuelingLogView {
             return;
         }
 
-        List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLogMap, 80, 2000, 15, 150);
+        List<Map<String, List<Double>>> afrLogList = AfrLogUtil.findAfrLogs(afrLogMap, OpenLoopFuelingLogFilterPreferences.getMinThrottleAnglePreference(), OpenLoopFuelingLogFilterPreferences.getMinRpmPreference(), OpenLoopFuelingLogFilterPreferences.getMaxAfrPreference(), OpenLoopFuelingLogFilterPreferences.getMinAfrPointsPreference());
 
         int logCount = 1;
         for (Map<String, List<Double>> map : afrLogList) {
@@ -484,7 +487,7 @@ public class OpenLoopFuelingLogView {
         plot.setDataset(AFR_FUELING_AIRFLOW_DATA_SERIES_INDEX, afrFuelingDataset);
     }
 
-    private class CSVFileFilter extends FileFilter {
+    private static class CSVFileFilter extends FileFilter {
         public boolean accept(File f) {
             if (f.isDirectory()) {
                 return true;

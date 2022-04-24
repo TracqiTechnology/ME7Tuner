@@ -1,6 +1,5 @@
 package domain.math;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,11 @@ public class Index {
      * @return The proportion of x between a and b
      */
     public static double proportion(double a, double b, double x) {
-        if(a >= b) {
+        if(a == b) {
+            return a;
+        }
+
+        if(a > b) {
             throw new IllegalArgumentException("b must be greater than a! ->" + "b: " + b + " a: " + a);
         }
 

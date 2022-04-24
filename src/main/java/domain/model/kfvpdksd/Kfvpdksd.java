@@ -17,7 +17,7 @@ public record Kfvpdksd(Double[][] kfvpdksd) {
             boostValues.add(new ArrayList<>());
         }
 
-        List<Double> timestamps = log.get(Me7LogFileContract.Header.TIME_COLUMN_HEADER);
+        List<Double> timestamps = log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER);
         List<Double> throttleAngle = log.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER);
         List<Double> rpm = log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER);
         List<Double> barometricPressure = log.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER);

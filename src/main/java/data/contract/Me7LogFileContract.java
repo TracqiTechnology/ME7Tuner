@@ -17,10 +17,11 @@ public class Me7LogFileContract {
     public static final String BAROMETRIC_PRESSURE_LABEL = "pus_w";
     public static final String ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL = "pvdks_w";
     public static final String SELECTED_GEAR_LABEL = "gangi";
+    public static final String WIDE_BAND_O2_LABEL = "lamsoni_w";
     
     public enum Header {
         START_TIME_HEADER(START_TIME_LABEL, "Start Time"),
-        TIME_COLUMN_HEADER(TIME_COLUMN_LABEL, "Timestamp"),
+        TIME_STAMP_COLUMN_HEADER(TIME_COLUMN_LABEL, "Timestamp"),
         RPM_COLUMN_HEADER(RPM_COLUMN_LABEL, "RPM"),
         STFT_COLUMN_HEADER(STFT_COLUMN_LABEL, "Short Term Fuel Trim"),
         LTFT_COLUMN_HEADER(LTFT_COLUMN_LABEL, "Long Term Fuel Trim"),
@@ -34,7 +35,8 @@ public class Me7LogFileContract {
         WASTEGATE_DUTY_CYCLE_HEADER(WASTEGATE_DUTY_CYCLE_LABEL, "Wastegate Duty Cycle"),
         BAROMETRIC_PRESSURE_HEADER(BAROMETRIC_PRESSURE_LABEL, "Barometric Pressure"),
         ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER(ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL, "Absolute Pressure"),
-        SELECTED_GEAR_HEADER(SELECTED_GEAR_LABEL, "Selected Gear");
+        SELECTED_GEAR_HEADER(SELECTED_GEAR_LABEL, "Selected Gear"),
+        WIDE_BAND_O2_HEADER(WIDE_BAND_O2_LABEL, "Wide Band O2");
 
         private String header;
         private final String title;
