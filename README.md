@@ -215,18 +215,19 @@ If the MAF diameter can not be increased enough to achieve the desired range a n
 
 Read [Diameter Effect on Airflow](https://s4wiki.com/wiki/Mass_air_flow#MAF_housing_diameter)
 
-Significantly increasing the diameter of the MAF housing can change the airflow through the MAF housing enough that it results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed (and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is difficult and tedious work. It is more simple to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
-
-* **Solid Line** - 100mm housing scaled based on a constant derived from the change in housing diameter
-* **Broken Line** - Estimated airflow based on fuel consumption and air-fuel ratio
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2019/02/100mmHitachi_vs_hpx.png "Under-scaled 100mm housing")
+Significantly increasing the diameter of the MAF housing can change the airflow through the MAF housing enough that it
+results in a *non-linear* change to the original linearization curve (MLHFM). Since the injector scaling (KRKTE) is fixed
+(and linear) this means making changes in KFKHFM and/or FKKVS to get the fuel trims close to 0% corrections. This is 
+difficult and tedious work. It is more simple to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
 
 ### Changing MAF sensors
 
-Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown irregularities. The original curve is inaccurate enough that KFKHFM and/or FKKVS would have to be significantly modified to get the engine to idle and WOT fueling safe. Again, it is more simple to scale the MAF accurately and leave KFKHFM and FKKVS more or less alone.
-
-![alt text](http://kircherelectronics.com/wp-content/uploads/2020/10/Original-and-Corrected-Curve.png "Changing MAF Sensors")
+Changing to a MAF sensor with an increased range may be a better option than reusing your stock sensor in a larger diameter 
+housing. Even if a transfer function is provided, you may find that the new sensor and housing in your specific configuration 
+doesn't flow exactly as expected due to non-linearities in airflow at specific (or all) air velocities or other unknown 
+irregularities. The original curve is inaccurate enough that KFKHFM and/or FKKVS would have to be significantly modified 
+to get the engine to idle and WOT fueling safe. Again, it is more simple to scale the MAF accurately and leave KFKHFM and 
+FKKVS more or less alone.
 
 ### Scaling Your MAF
 
@@ -283,33 +284,33 @@ Logging Instructions:
 * Save your log and put it into a directory (along with other closed-loop logs from the same tune if desired).
 * Open ME7Tuner and click on the "Close Loop Fueling" tab at the top
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.18.54-PM.png "MLHFM")
+<img src="/documentation/images/closed_loop_mlhfm.png" width="800">
 
 * Click the "ME7 Logs" tab on the left side of the screen and click the "Load Logs" button at the bottom. Select the directory that contains your closed loop logs from ME7Logger. The derivative (dMAFv/dt) of the logged MAF voltages should plot on the screen. The vertical lines represent clusters of data at different derivative (rates of change, delta, etc...) for a given MAF voltage. You want to select the data under the smallest derivative possible while also including the largest voltage range as possible. I find 1 to be a good derivative to start with.
 * Green samples are included by the filter. 
 * Red samples are excluded by the filter.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.21.29-PM.png "Closed Loop Derivative")
+<img src="/documentation/images/closed_loop_mlhfm_filter.png" width="800">
 
 * Click "Configure Filter" in the bottom left corner of the screen. This is where you can configure the filter for the incoming data. You can filter data by a minimum throttle angle, a minimum RPM, a maximum derivative (1 is usually a good start).
 
 * Click the "Correction" tab on the left side of the screen. You will see the current MLHFM plotted in blue and the corrected MLHFM plotted in red. The corrected MLHFM is also displayed in a table on the right hand side of the screen and can be copied directly into TunerPro. Clicking "Save MLFHM" will allow you to save MLFHM to a .csv file which can be loaded for the next set of corrections.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.24.02-PM.png "Corrected closed loop MLHFM")
+<img src="/documentation/images/closed_loop_mlhfm_corrected.png" width="800">
 
 * Click the "dMAFv/dt" tab at the bottom of the screen. This displays the derivative of the filtered data used to calculate the corrections. Remember that a smaller derivative is better because the MAF's rate of change smaller (more stable).
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.25.07-PM.png "Filtered Closed Loop Std Dev")
+<img src="/documentation/images/closed_loop_mlhfm_derivative.png" width="800">
 
 * Click the "AFR Correction %" tab at the bottom of the screen. This displays the raw point cloud of Correction Errors with the Mean, Mode and Final AFR correction plotted on-top of the point cloud. Note how noisy the Correction Errors are.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.26.25-PM.png "Filtered Closed Loop AFR Corection%")
+<img src="/documentation/images/closed_loop_mlhfm_corrected_percentage.png" width="800">
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your STFT/LTFT at idle and part throttle.
 
 * You may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This could be due to non-linearities in airflow due to changes in airflow velocity, but it is likely just noise we want to get rid of.  ME7Tuner has an option to fit your curve to a polynomial of a user configurable degree which will "smooth" your curve. Click the "Fit MLHFM" button with a reasonable polynomial degree (I find a 6th degree function to work well) to smooth your curve.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.27.20-PM.png "Polynomial Fit MLHFM Corection%")
+<img src="/documentation/images/closed_loop_mlhfm_corrected_best_fit.png" width="800">
 
 # MLHFM - Open Loop
 
