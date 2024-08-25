@@ -12,3 +12,5 @@ workflows:
     jobs:
       - maven/test:
           executor: java17
+      - store_artifacts:
+          path: me7tuner/build/outputs/jar
