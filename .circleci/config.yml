@@ -7,10 +7,20 @@ executors:
     docker:
       - image: cimg/openjdk:17.0
 
+jobs:
+  release-build:
+    executor: java17
+    steps:
+      - maven/test
+      - store_artifacts:
+          path: me7tuner/build/outputs/jar
+
 workflows:
   maven_test:
     jobs:
-      - maven/test:
-          executor: java17
-      - store_artifacts:
-          path: me7tuner/build/outputs/jar
+      - release-build:
+          filters:
+            branches:
+              only:
+                - master
+
