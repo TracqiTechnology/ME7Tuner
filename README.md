@@ -388,27 +388,33 @@ Logging Instructions:
 
 # PLSOL -> RLSOL (Pressure to Load Conversion)
 
-The pressure to load conversions are provided as a sanity check. The key is that the *only* parameter that affects load is pressure. The barometric pressure, intake air temperature and
-the pressure to load conversion (KFURL) are assumed to be constant.
+The pressure to load conversions are provided as a sanity check. The key is that the *only* parameter that affects load 
+is pressure. The barometric pressure, intake air temperature and the pressure to load conversion (KFURL) are assumed to be constant.
 
 In this simplified model the assumptions mean that as long as the turbocharger can produce the boost it will make as much power as any other turbocharger that can provide the boost. In other words, 16psi is 16psi no matter what produces that 16psi. Despite the simplicity
 of this model I have found it to be very consistent with real world results.
 
 You can edit the barometric pressure, the intake air temperature and pressure to load conversion to see how ME7 would respond to these parameters changing in the real world.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.31.46-AM.png "PLSOL")
+This estimates how much pressure is required to achieve a given load request. This is useful for determining if your hardware can support a given load request.
+
+Note that for 2.7L of displacement to approach 900 horsepower the pressure required is approaching 3bar (45psi).
+
+<img src="/documentation/images/plsol.png" width="800">
 
 ### PLSOL -> Airflow (Pressure to Airflow)
 
 ME7Tuner will calculate the estimated airflow for a given load based on engine displacement (in liters) and RPM.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-3.24.06-PM.png "Airflow")
+This estimates how much airflow is required to achieve a given load request. This is useful for determining if your MAF can support a given load request.
+
+<img src="/documentation/images/plsol_airflow.png" width="800">
 
 ### PLSOL -> Power (Pressure to Horsepower)
 
 ME7Tuner will calculate the estimated horsepower for a given load based on engine displacement (in liters) and RPM.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-3.25.31-PM.png "Horsepower")
+<img src="/documentation/images/plsol_power.png" width="800">
 
 # KFMIOP (Load/Fill to Torque)
 
@@ -416,7 +422,7 @@ KFMIOP describes optimal engine torque.
 
 Note that KFMIRL is the inverse of KFMIOP, not the other way around.
 
-### Algorithm
+### Tuning Philosophy
 
 KFMIOP is the optimum boost table for the engine's configuration, but it is expressed as a normalization relative to the maximum limit of the MAP sensor.
 
@@ -427,7 +433,7 @@ When we look at KFMIOP for a B5 S4 (M-box) we can see that the table is set up a
 
 The maximum pressure that a K03 can efficiently produce is about 1bar (15psi) relative (2bar absolute) of pressure which results in ~191% load when run through the rlsol calculations.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/K03s.webp "KO3 Flow")
+<img src="/documentation/images/k03_compressor_map.JPG" width="800">
 
 On the stock M-box KFMIOP you will note that the maximum load is limited to 191% and maximum torque is 89% which is because 191 is 89% of 215... or 191 load is 89% of 215 maximum load.
 Each column in KFMIOP is mapping itself to a normalized peak torque value given by the peak load of 215% which is defined by the 2.5 bar MAP sensor.
