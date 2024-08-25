@@ -441,7 +441,7 @@ When we look at KFMIOP for a B5 S4 (M-box) we can see that the table is set up a
 
 The maximum pressure that a K03 can efficiently produce is about 1bar (15psi) relative (2bar absolute) of pressure which results in ~191% load when run through the rlsol calculations.
 
-<img src="/documentation/images/k03_compressor_map.JPG" width="800">
+<img src="/documentation/images/k03_compressor_map.JPG" width="500">
 
 On the stock M-box KFMIOP you will note that the maximum load is limited to 191% and maximum torque is 89% which is because 191 is 89% of 215... or 191 load is 89% of 215 maximum load.
 Each column in KFMIOP is mapping itself to a normalized peak torque value given by the peak load of 215% which is defined by the 2.5 bar MAP sensor.
