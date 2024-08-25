@@ -4,7 +4,7 @@
  
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
 
-<img src="/documentation/images/me7Tuner.png" width="300">
+<img src="/documentation/images/me7Tuner.png" width="800">
 
 # Version 1.0
 
@@ -131,7 +131,7 @@ ME7Tuner works from a binary file and an XDF definition file. You will need to l
 * File -> Open Bin
 * XDF -> Select XDF
 
-<img src="/documentation/images/xdf.png" width="300">
+<img src="/documentation/images/xdf.png" width="800">
 
 ### Map Definitions
 
@@ -151,7 +151,7 @@ You will need to tell ME7Tuner what definition you want to use for *all* fields.
 
 ME7Tuner automatically filters map definitions base on what is in the editable text box.
 
-<img src="/documentation/images/configuration.png" width="300">
+<img src="/documentation/images/configuration.png" width="800">
 
 ### Log Headers
 
