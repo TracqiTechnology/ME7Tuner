@@ -357,34 +357,34 @@ Logging Instructions:
 * Save your logs and put them into a directory
 * Open ME7Tuner and click on the "Open Loop Fueling" tab at the top
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.01.06-AM.png "MLHFM")
+<img src="/documentation/images/open_loop_mlhfm.png" width="800">
 
 * Click the "ME7 Logs" tab on the left side of the screen.
 * Click "Load ME7 Logs" and select the ME7Logger .csv file
 * Click "Load AFR Logs" and select the Zeitronix .csv file
 * You should see the requested AFR from ME7 plotted in orange and the actual AFR from Zeitronix in red. *If the requested AFR doesn't match the actual AFR the MAF scaling is incorrect.*
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.04.58-AM.png "Open Loop Fueling")
+<img src="/documentation/images/open_loop_mlhfm_logs.png" width="800">
 
 * Click the "Airflow" tab at the bottom of the screen. You will see the airflow measured by the MAF in blue and the estimated airflow from the AFR in red. The measured airflow and estimated airflow should be the same or there the MAF scaling is incorrect.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.06.34-AM.png "Open Loop Airflow")
+<img src="/documentation/images/open_loop_mlhfm_airflow.png" width="800">
 
 * Click the "Configure" filter button in the bottom left of the screen. You can see the minimum throttle angle, minimum RPM, minimum number of points from ME7Logger to count as a pull, the minimum number of points from Zeitronix to count as a pull and a maximum AFR. Note that Zeitronx can log at 40Hz while ME7Logger is usually 20Hz, so you may need to think about the number of points if your logging frequency is different.
 
 * Click the "Correction" tab on the left side of the screen. You will see the current MLHFM plotted in blue and the corrected MLHFM plotted in red. The corrected MLHFM is also displayed in a table on the right side of the screen and can be copied directly into TunerPro. Clicking "Save MLFHM" will allow you to save MLFHM to a .csv file which can be loaded for the next set of corrections.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.07.35-AM.png "Open Loop MLHFM Correction")
+<img src="/documentation/images/open_loop_mlhfm_correction.png" width="800">
 
 * Click the "AFR Correction %" tab at the bottom of the screen. This displays the raw point cloud of Correction Errors with the Mean, Mode and Final AFR correction plotted on-top of the point cloud. Note how noisy the Correction Errors are.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.09.09-AM.png "Open Loop MLHFM AFR Correction%")
+<img src="/documentation/images/open_loop_mlhfm_correction_percentage.png" width="800">
 
 * Load the corrected MLHFM into a tune, take another set of logs and repeat the process until you are satisfied with your AFR at WOT.
 
 * You may notice MLHFM starting to become 'bumpy' or 'not smooth' (for lack of a better term). This could be due to non-linearities in airflow due to changes in airflow velocity, but it is likely just noise we want to get rid of.  ME7Tuner has an option to fit your curve to a polynomial of a user configurable degree which will "smooth" your curve. Click the "Fit MLHFM" button with a reasonable polynomial degree (I find a 6th degree function to work well) to smooth your curve.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.10.38-AM.png "Open Loop Polynomial Fit")
+<img src="/documentation/images/open_loop_mlhfm_correction_best_fit.png" width="800">
 
 # PLSOL -> RLSOL (Pressure to Load Conversion)
 
