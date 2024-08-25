@@ -9,8 +9,5 @@
         <module name="ME7Tuner" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="ME7Tuner" target="17" />
-    </bytecodeTargetLevel>
   </component>
 </project>
