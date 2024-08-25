@@ -18,7 +18,7 @@ jobs:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: /home/circleci/.m2/repository/com/kircherelectronics/ME7Tuner/1.0-SNAPSHOT
+          path: /home/circleci/.m2/repository/com/tracqi/ME7Tuner/1.0
 
 workflows:
   release-build-workflow:
