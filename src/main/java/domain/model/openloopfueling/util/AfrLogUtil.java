@@ -33,11 +33,13 @@ public class AfrLogUtil {
         List<Double> rpm = afrLog.get(AfrLogFileContract.RPM_HEADER);
         List<Double> afr = afrLog.get(AfrLogFileContract.AFR_HEADER);
         List<Double> tps = afrLog.get(AfrLogFileContract.TPS_HEADER);
+        List<Double> boost = afrLog.get(AfrLogFileContract.BOOST_HEADER);
 
         Map<String, List<Double>> log = new HashMap<>();
         log.put(AfrLogFileContract.RPM_HEADER, rpm.subList(start, end));
         log.put(AfrLogFileContract.AFR_HEADER, afr.subList(start, end));
         log.put(AfrLogFileContract.TPS_HEADER, tps.subList(start, end));
+        log.put(AfrLogFileContract.BOOST_HEADER, boost.subList(start, end));
 
         return log;
     }

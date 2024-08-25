@@ -28,10 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 public class OpenLoopFuelingLogView {
-
     private static final int ME7_FUELING_DATA_SERIES_INDEX = 0;
     private static final int AFR_FUELING_AIRFLOW_DATA_SERIES_INDEX = 1;
-
     private static final int MEASURED_AIRFLOW_DATA_SERIES_INDEX = 0;
     private static final int ESTIMATED_AIRFLOW_DATA_SERIES_INDEX = 1;
 
@@ -308,14 +306,14 @@ public class OpenLoopFuelingLogView {
         button.addActionListener(e -> {
             final JFileChooser fc = new JFileChooser();
             fc.setFileFilter(new CSVFileFilter());
-            fc.setCurrentDirectory(AfrFileChooserPreferences.getDirectory());
+            fc.setCurrentDirectory(OpenLoopFileChooserPreferences.getDirectory());
 
             int returnValue = fc.showOpenDialog(openLoopLogPanel);
 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 this.afrLogFile = fc.getSelectedFile();
                 loadAfrFile(this.afrLogFile);
-                AfrFileChooserPreferences.setDirectory(this.afrLogFile.getParentFile());
+                OpenLoopFileChooserPreferences.setDirectory(this.afrLogFile.getParentFile());
             }
         });
 
