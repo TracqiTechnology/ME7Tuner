@@ -1,31 +1,24 @@
 # General
 
- <a href="https://github.com/KalebKE/ME7Tuner/releases/download/v1.0.5/ME7Tuner_v1.0.5.jar" rel="ME7Tuner_v1.0.5.jar">![ME7Tuner](https://img.shields.io/badge/ME7Tuner-v1.0.5-GREEN)</a>
- 
-ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is somewhat specific to an ME7 M-box ECU.
+ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is 
+somewhat specific to an ME7 M-box ECU.
 
 <img src="/documentation/images/me7Tuner.png" width="800">
 
-# Version 1.0
+# Warning
 
-There are significant changes to ME7Tuner v1.0
+ME7Tuner is free software written by some guy on the internet. ***ME7Tuner comes with no warranty.*** Use at your own risk!
 
-* Updated from Java 8 to Java 17
-* New Look and Feel
-* Removed 3D rendering which causes lots of GPU problems on Linux systems
-* The map definitions are user defined and can handle all versions of ME7 and potentially sub-sets of any ME version
-* ME7Tuner now works from the binary to load tables
-* Read and write directly to the binary
-* ME7Tuner works from XDF files for map definitions
-* KFKHFM has been removed
-* KFWDKMSN inverse has been removed
-* KFURL has been removed
-* PLSOL -> RLSOL calculator has been added
-* KFMIOP has been reworked to derive KFMIOP form user inputs
-* KFMIRL is derived as the inverse of KFMIOP
-* KFVPDKSD/E support has been added
-* WDKUGDN is now derived from KFMSNWDK
-* Improvements to LDRPID make the algorithm more stable
+It is a certainty that ME7Tuner will produce garbage outputs at some point you will damage your engine if you do not know what you are doing.
+ME7Tuner is software that *helps* you calibrate your engine. It does not calibrate your engine for you. It is not a replacement for knowledge of how to calibrate an engine.
+
+## Installation
+
+ME7Tuner is packaged as a JAR file. You will need to have Java installed on your system to run it. You can download Java from [here](https://www.oracle.com/java/technologies/downloads/).
+
+Note that ME7Tuner built against Java 17, so you will need to have Java 17+ installed on your system to run it. Once you have Java 17+ installed and the JAR file, simply double click the JAR file to run it.
+
+<a href="https://github.com/KalebKE/ME7Tuner/releases/download/v1.0.5/ME7Tuner_v1.0.5.jar" rel="ME7Tuner_v1.0.5.jar">![ME7Tuner](https://img.shields.io/badge/ME7Tuner-v1.0.5-GREEN)</a>
 
 #### Table of contents
 1. [Tuning Philosophy](#tuning-philosophy)
@@ -56,11 +49,15 @@ Note that no amount of modifications (intake, exhaust, turbo, boost controllers,
 
 ME7Tuner can provide calculations that allow ME7 to be tuned with accurate airflow, pressure and load measurements which can simplify calibrations.
 
-## Do I need to use ME7Tuner?
+## READ ME FIRST! Do I need to use ME7Tuner?
 
-Not unless you have significantly increased power requirements. Refer to the following tables.
+You probably don't need to use ME7Tuner. For most applications, the stock M-box is sufficient to support the power you want to make.
 
 In general ME7Tuner is only useful if you need to request more than 191% load on an M-Box. This means that K03 and most K04 configurations do not need the level of calibrations provided by ME7Tuner.
+
+The following information should give you a good estimate of what hardware you need to achieve a given power goal, how much calibration you will need to do to support that power and if ME7Tuner is useful to you.
+
+Refer to the following tables to determine if ME7Tuner is useful to you:
 
 ##### Stock MAP Limit 
 
@@ -71,6 +68,8 @@ The stock MAP limit is the primary limitation to calibration. A stock M-box has 
 Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)  
 Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0)
 
+Unless you are planning on making more than 2.5 bar absolute (~22.45 psi relative) of pressure, you don't need to use ME7Tuner.
+
 ##### Turbo Airflow
 
 * K03 16 lbs/min (120 g/sec) (~160hp)
@@ -79,7 +78,9 @@ Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0)
 * 650R 37 lbs/min (287 g/sec) (~370hp)
 * 770R 48 lbs/min (370 g/sec) ((~490hp)
 
-Note: Remember to multiply by the number of turbos
+Note: Remember to multiply by the number of turbo. The 2.7T has two turbos.
+
+Unless you are planning on maxing your K04's, or have a larger turbo frame, you don't need to use ME7Tuner.
 
 ##### MAF Airflow
 
@@ -90,6 +91,8 @@ Note: Remember to multiply by the number of turbos
 
 Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
 
+Unless you are planning on maxing the stock MAF, or have a larger MAF, you don't need to use ME7Tuner.
+
 ##### Fuel for Airflow (10:1 AFR)
 
 * K03 16 lbs/min air ->  ~1000 cc/min fuel
@@ -98,7 +101,7 @@ Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
 * 650R 37 lbs/min air -> ~2200 cc/min fuel
 * 770R 48 lbs/min air -> ~3024 cc/min fuel
 
-Note: Remember to multiply air by the number of turbos and divide fuel by the number of fuel injectors
+Note: Remember to multiply air by the number of turbos and divide fuel by the number of fuel injectors. The 2.7T has 6 fuel injectors.
 
 ##### Theoretical fuel injector size for a V6 bi-turbo configuration
 
@@ -120,10 +123,6 @@ Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 
 Note that a stock M-box has a maximum load request of 191%, but can be increased with the stock MAP sensor to ~215%.
 
-##### Summary
-
-This information should give you a good estimate of what hardware you need to achieve a given power goal, how much calibration you will need to do to support that power and if ME7Tuner is useful to you.
-
 # Configuration
 
 ME7Tuner works from a binary file and an XDF definition file. You will need to load these using the ME7Toolbar.
@@ -135,7 +134,10 @@ ME7Tuner works from a binary file and an XDF definition file. You will need to l
 
 ### Map Definitions
 
-You will need to tell ME7Tuner what definition you want to use for *all* fields. Pay attention to the units! ME7Tuner makes the following assumptions about units:
+You will need to tell ME7Tuner what definition you want to use for *all* fields. This is necessary because many XDF
+files have multiple definitions for the same map using different units. ***Pay attention to the units!***
+
+ME7Tuner makes the following assumptions about units:
 
 * KRKTE - ms/%
 * MLHFM - kg/h
@@ -155,27 +157,47 @@ ME7Tuner automatically filters map definitions base on what is in the editable t
 
 ### Log Headers
 
-There are often many flavors of the same logged parameter. You can define the headers for the parameters that the log parser uses here.
+In some cases ME7Tuner can parse logs automatically to suggest calibrations. There are often many names of the same logged parameter. 
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-06-at-10.32.26-AM.png "ME7Tuner Configuration")
+You *must* define the headers for the parameters that the log parser uses here.
+
+<img src="/documentation/images/configuration.png" width="800">
 
 # Order of Calibrations
 
-In general, you should start with a stock binary and follow order provided by this document. It is extremely important that you calibrate primary fueling *first*. Fueling is one known constant to calibrate the MAF which should be performed after fueling. Once the fueling and MAF are calibrated load request, ignition advance and pressure (boost) requested can be calibrated. Ignition advance and pressure request calibrations will need to be iterated upon as you approach your power goals.
+In general, you should start with a stock binary and follow order provided by this document. 
+
+*It is critical that you calibrate primary fueling first*. 
+
+Fueling is the ***one and only*** known constant to calibrate the MAF. It is highly recommended that you calibrate your fueling
+with an accurate specification of the fuel injectors.
+
+When the fueling has been calibrated, you can take logs to have ME7Tuner suggest a MAF scaling.
+
+Once the fueling and MAF are calibrated load request, ignition advance and pressure (boost) requested can be calibrated.
 
 # KRKTE (Primary Fueling)
 
 * Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
 
-The first step is to calculate a reasonable value for KRKTE (primary fueling). This is the value that allows the ECU to determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cylinder filling. It is critical that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, your MAF is likely over/under scaled.
+The first step is to calculate a reasonable value for KRKTE (primary fueling). This is the value that allows the ECU to
+determine how much fuel is required to achieve a given AFR (air fuel ratio) based on a requested load/cylinder filling. 
+It is critical that KRKTE is close to the calculated value. If your KRKTE deviates significantly from the calculated value, 
+your MAF is likely over/under scaled.
 
-Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, but the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 so high ethanol blends can be even denser.
+Pay attention to the density of gasoline (Gasoline Grams per Cubic Centimeter). The stock M-box assumes a value of 0.71 g/cc^3, 
+although the [generally accepted density of gasoline](https://www.aqua-calc.com/page/density-table) is 0.75 g/cc^3. Also consider that ethanol has a density of 0.7893 g/cc^3 
+so high ethanol blends can be even denser.
 
-Note that the decision to use a fuel density of 0.71 g/cc^3 (versus ~0.75 g/cc^3) will have the effect of under-scaling the MAF (more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compensate). As a result, the measured engine load (rl_w) will be under-scaled which is key to keeping estimated manifold pressure (ps_w) slightly below actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load to pressure.
+Note that the decision to use a fuel density of 0.71 g/cc^3 (versus ~0.75 g/cc^3) will have the effect of under-scaling the MAF (
+more fuel will be injected per duty cycle so less airflow will need to be reported from the MAF to compensate). As a result, 
+the measured engine load (rl_w) will be under-scaled which is key to keeping estimated manifold pressure (ps_w) slightly below 
+actual pressure (pvdks_w) without making irrational changes to the VE model (KFURL) which converts pressure to load and load
+to pressure.
 
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-04-at-4.16.49-PM.png "Primary Fueling (KRKTE)")
+<img src="/documentation/images/krkte.png" width="800">
 
 # MLHFM (MAF Scaling)
 
