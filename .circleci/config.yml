@@ -1,16 +1,31 @@
 version: '2.1'
-orbs:
-  maven: circleci/maven@1.4.1
 
 executors:
   java17:
     docker:
       - image: cimg/openjdk:17.0
 
-workflows:
-  maven_test:
-    jobs:
-      - maven/test:
-          executor: java17
+jobs:
+  release-build:
+    executor: java17
+    steps:
+      - checkout
+      - restore_cache:
+          key: jars-{{ checksum "pom.xml" }}
+      - run: mvn clean install
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
           path: me7tuner/build/outputs/jar
+
+workflows:
+  release-build-workflow:
+    jobs:
+      - release-build:
+          filters:
+            branches:
+              only:
+                - master
+
