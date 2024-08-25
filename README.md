@@ -582,14 +582,15 @@ While this model can used to achieve a baseline WDKUGDN, it appears that it has 
 
 ### Useage
 
-* Paste KFMSNWDK into the KFMSNWDK Table
-* The inverse map will be output in the KFWDKMSN Table.
+* Calculate WDKUGDN for your engines displacement
 
 # LDRPID (Feed-Forward PID)
 
 Provide a feed-forward (pre-control) factor to the existing PID. Highly recommended. The linearization process can be a lot of work. ME7Tuner can do most of the work for you. You just need to provide the logs.
 
 Read [Actual pre-control in LDRPID](http://nefariousmotorsports.com/forum/index.php?topic=12352.0title=)
+
+<img src="/documentation/images/ldrpid.png" width="800">
 
 ### Algorithm
 
@@ -611,4 +612,4 @@ The algorithm is mostly based on [elRey's algorithm](http://nefariousmotorsports
 
 * I would advise requesting 95% duty cycle at any RPM ranges that can't produce the minimum boost required for cracking the wastegates (because you might as well be spooling as hard as you can here).
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-2.06.03-PM.png "LDRPID")
+
