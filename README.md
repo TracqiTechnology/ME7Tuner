@@ -3,6 +3,14 @@
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is 
 somewhat specific to an ME7 M-box ECU.
 
+There are vast number of binary formats for ME7. TunerPro is equipped to handle most of them and supports MSB<->LSB,
+and other complex definitions, but ME7Tuner is not. ME7Tuner is designed to work with a specific binary format,
+specifically the B5 S4 2.7T M-box. If you have a different binary format, there is a possibility that ME7Tuner will not work.
+
+I have no intention of modifying ME7Tuner to work with other binary formats, but you can certainly do so yourself.
+
+See the example binary format and xdf in the `example` directory to see the supported binary format.
+
 <img src="/documentation/images/me7Tuner.png" width="800">
 
 # Warning
@@ -488,7 +496,7 @@ Inverts the input for the output.
 
 If you modified KFMIRL/KFMIOP you will want to modify the table and axis of KFZWOP to reflect to the new load range.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-1.28.45-PM.png "KFZWOP")
+<img src="/documentation/images/kfzwop.png" width="800">
 
 ### Algorithm
 
@@ -505,7 +513,7 @@ The input KFZWOP is extrapolated to the input KFZWOP x-axis range (engine load f
 
 If you modified KFMIRL/KFMIOP you will want to modify the table and axis of KFZW/2 to reflect to the new load range.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-1.29.52-PM.png "KFZW")
+<img src="/documentation/images/kfzw.png" width="800">
 
 ### Algorithm
 
@@ -525,7 +533,7 @@ If the pressure cannot be reached at the given RPM the throttle opens to 100% to
 The Z-axis of KFVPDKSD is a pressure ratio which is effectively the last 5% transitioning between atmospheric pressure (< 1) to boost pressure (> 1). In other words, the Z-axis is indicating where pressure will be greater than atmospheric (~1) or less than atmospheric (~0.95).
 In areas where the desired pressure can be made, but that pressure is less than the wastegate cracking pressure (the N75 is unresponsive), the throttle is used to keep boost under control at the requested limit.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-1.50.59-PM.png "KFVPDKSD")
+<img src="/documentation/images/kfvpdksd.png" width="800">
 
 ### Algorithm
 
@@ -554,7 +562,7 @@ WDKUGDN is the choked flow point of the throttle body at a given RPM. This value
 For a given displacement, RPM and throttle body area there is a range beyond the choke point where increasing the throttle angle will not increase airflow. Inversely, there is a range where decreasing the throttle will not decrease airflow until the choke point has been reached. 
 The transition between restricted airflow and unrestricted airflow is the choke point -> the point at which the throttle angle becomes either throttled or unthrottled. 
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-2.01.47-PM.png "WDKUGDN")
+<img src="/documentation/images/wdkugdn.png" width="800">
 
 ### Algorithm
 
