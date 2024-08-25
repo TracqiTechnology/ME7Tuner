@@ -11,14 +11,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: jars-{{ checksum "pom.xml" }}
+          key: release-{{ checksum "pom.xml" }}
       - run: mvn clean install
       - save_cache:
           paths:
             - ~/.m2
-          key: jars-{{ checksum "pom.xml" }}
+          key: release-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: /home/circleci/project/target/
+          path: /home/circleci/.m2/repository/com/tracqi/ME7Tuner/1.0
 
 workflows:
   release-build-workflow:
