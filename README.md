@@ -398,7 +398,7 @@ You can edit the barometric pressure, the intake air temperature and pressure to
 
 This estimates how much pressure is required to achieve a given load request. This is useful for determining if your hardware can support a given load request.
 
-Note that for 2.7L of displacement to approach 900 horsepower the pressure required is approaching 3bar (45psi).
+Note that for 2.7L of displacement to approach 900 horsepower the pressure required is approaching 3bar (45psi) relative and 4bar (60psi) absolute.
 
 <img src="/documentation/images/plsol.png" width="800">
 
@@ -463,7 +463,7 @@ Additional empirical tuning points:
 * After providing the MAP sensor limit and desired pressure limit ME7Tuner will output a new KFMIOP table and axis
 * Copy the KFMIOP table and axis to other tables (KFMIRL/KFZWOP/KFZW) to generate corresponding maps.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-11.13.30-AM.png "KFMIOP")
+<img src="/documentation/images/kfmiop.png" width="800">
 
 Note that KFMIOP also produces axes for KFMIOP, KFZWOP and KFZW so you can scale your ignition timing correctly.
 
@@ -471,7 +471,7 @@ Note that KFMIOP also produces axes for KFMIOP, KFZWOP and KFZW so you can scale
 
 KFMIRL is the inverse of the KFMIOP map and exists entirely as an optimization so the ECU doesn't have to search KFMIOP every time it wants to covert a torque request into a load request.
 
-![alt text](http://kircherelectronics.com/wp-content/uploads/2022/03/Screen-Shot-2022-03-05-at-1.23.58-PM.png "KFMIRL")
+<img src="/documentation/images/kfmirl.png" width="800">
 
 ### Algorithm
 
