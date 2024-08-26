@@ -6,7 +6,7 @@
 
     <groupId>com.tracqi</groupId>
     <artifactId>ME7Tuner</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <scm>
         <developerConnection>scm:git:git@github.com:KalebKE/ME7Tuner.git</developerConnection>
