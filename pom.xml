@@ -9,7 +9,7 @@
     <version>1.0.1</version>
 
     <scm>
-        <developerConnection>scm:git:https://github.com/my-org/my-project.git</developerConnection>
+        <developerConnection>scm:git:https://github.com/KalebKE/ME7Tuner.git</developerConnection>
     </scm>
 
     <build>
