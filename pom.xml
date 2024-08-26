@@ -9,8 +9,6 @@
     <version>1.0.1</version>
 
     <scm>
-        <url>https://github.com/KalebKE/ME7Tuner</url>
-        <connection>scm:git:git://github.com/KalebKE/ME7Tuner.git</connection>
         <developerConnection>scm:git:git@github.com:KalebKE/ME7Tuner.git</developerConnection>
     </scm>
 
