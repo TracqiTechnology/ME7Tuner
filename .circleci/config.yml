@@ -22,7 +22,7 @@ jobs:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: /home/circleci/project/target/archive-tmp/*.jar
+          path: /home/circleci/project/target/archive-tmp/
 
 workflows:
   release-build-workflow:
