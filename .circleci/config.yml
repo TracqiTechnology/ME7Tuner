@@ -17,14 +17,12 @@ jobs:
           git config --global user.email "build@tracqi.com"
           git config --global user.name "Circle CI"
       - run: mvn --batch-mode release:prepare
-      - run: git checkout HEAD~1
-      - run: mvn clean install
       - save_cache:
           paths:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: /home/circleci/.m2/repository/com/tracqi/ME7Tuner/1.0
+          path: /home/circleci/project/target/archive-tmp/*.jar
 
 workflows:
   release-build-workflow:
