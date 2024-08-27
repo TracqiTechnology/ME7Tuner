@@ -12,6 +12,10 @@ jobs:
       - checkout
       - restore_cache:
           key: jars-{{ checksum "pom.xml" }}
+      - run:
+         command: |
+          git config --global user.email "build@tracqi.com"
+          git config --global user.name "Circle CI"
       - run: mvn --batch-mode release:prepare
       - run: mvn --batch-mode release:perform
       - run: mvn clean install
