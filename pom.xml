@@ -51,6 +51,7 @@
                 <version>3.1.1</version>
                 <configuration>
                     <projectVersionPolicyId>SemVerVersionPolicy</projectVersionPolicyId>
+                    <scmCommentPrefix xml:space="preserve">[skip ci] </scmCommentPrefix>
                 </configuration>
             </plugin>
 
