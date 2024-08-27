@@ -12,8 +12,8 @@ jobs:
       - checkout
       - restore_cache:
           key: jars-{{ checksum "pom.xml" }}
-      - run: mvn release:prepare
-      - run: mvn release:perform
+      - run: mvn --batch-mode release:prepare
+      - run: mvn --batch-mode release:perform
       - run: mvn clean install
       - save_cache:
           paths:
