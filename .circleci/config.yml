@@ -17,6 +17,8 @@ jobs:
           git config --global user.email "build@tracqi.com"
           git config --global user.name "Circle CI"
       - run: mvn --batch-mode release:prepare
+      - run: |
+         cp $BASH_ENV bash.env
       - run:
          command: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
