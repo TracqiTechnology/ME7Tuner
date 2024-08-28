@@ -19,8 +19,8 @@ jobs:
       - run: mvn --batch-mode release:prepare
       - run:
          command: |
+          git checkout HEAD~1
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo $VERSION
           echo "export VERSION_NAME=$VERSION" >> "$BASH_ENV"
           source "$BASH_ENV"
       - run: |
@@ -34,7 +34,7 @@ jobs:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: /home/circleci/project/target/archive-tmp/
+          path: /home/circleci/project/target/archive-tmp
       - persist_to_workspace:
           root: /home/circleci/project/target/archive-tmp
           paths:
@@ -49,11 +49,12 @@ jobs:
       - run: |
           cat bash.env >> $BASH_ENV
       - attach_workspace:
-          at: /home/circleci/project/target/archive-tmp/
+          at: /home/circleci/project/target/archive-tmp
       - run:
           name: "Publish Release on GitHub"
           command: |
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./home/circleci/project/target/archive-tmp/       
+            echo $VERSION_NAME
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./home/circleci/project/target/archive-tmp     
   
 
 workflows:
