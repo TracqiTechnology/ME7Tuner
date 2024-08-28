@@ -53,7 +53,6 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            echo $VERSION_NAME
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./home/circleci/project/target/archive-tmp/     
   
 
