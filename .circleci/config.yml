@@ -34,9 +34,9 @@ jobs:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: home/circleci/project/target/archive-tmp
+          path: target/archive-tmp
       - persist_to_workspace:
-          root: home/circleci/project/target/archive-tmp
+          root: target/archive-tmp
           paths:
             - .
 
@@ -49,7 +49,7 @@ jobs:
       - run: |
           cat bash.env >> $BASH_ENV
       - attach_workspace:
-          at: home/circleci/project/target/archive-tmp
+          at: target/archive-tmp
       - run:
           name: "Publish Release on GitHub"
           command: |
