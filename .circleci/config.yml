@@ -36,9 +36,9 @@ jobs:
       - store_artifacts:
           path: target/archive-tmp
       - persist_to_workspace:
-          root: target/archive-tmp
+          root: target
           paths:
-            - .
+            - /archive-tmp
 
   publish-github-release:
     docker:
