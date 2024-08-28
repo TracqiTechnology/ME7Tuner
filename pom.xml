@@ -4,11 +4,11 @@
 
     <groupId>com.tracqi</groupId>
     <artifactId>ME7Tuner</artifactId>
-    <version>1.63.0-SNAPSHOT</version>
+    <version>1.63.0</version>
 
     <scm>
         <developerConnection>scm:git:git@github.com:KalebKE/ME7Tuner.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>ME7Tuner-1.63.0</tag>
   </scm>
 
     <build>
