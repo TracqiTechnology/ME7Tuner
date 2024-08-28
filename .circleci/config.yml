@@ -34,11 +34,11 @@ jobs:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
-          path: home/circleci/project/target/archive-tmp
+          path: /home/circleci/project/target/archive-tmp
       - persist_to_workspace:
-          root: home/circleci/project/target/archive-tmp
+          root: .
           paths:
-            - .
+            - /home/circleci/project/target/archive-tmp
 
   publish-github-release:
     docker:
