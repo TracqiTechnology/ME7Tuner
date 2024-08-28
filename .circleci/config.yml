@@ -17,12 +17,41 @@ jobs:
           git config --global user.email "build@tracqi.com"
           git config --global user.name "Circle CI"
       - run: mvn --batch-mode release:prepare
+      - run:
+         command: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "export VERSION_NAME=$VERSION" >> "$BASH_ENV"
+          source "$BASH_ENV"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bash.env
       - save_cache:
           paths:
             - ~/.m2
           key: jars-{{ checksum "pom.xml" }}
       - store_artifacts:
           path: /home/circleci/project/target/archive-tmp/
+      - persist_to_workspace:
+          root: /home/circleci/project/target
+          paths:
+                - /archive-tmp
+
+  publish-github-release:
+    docker:
+      - image: cibuilds/github:0.10
+    steps:
+      - attach_workspace:
+          at: .
+      - run: |
+          cat bash.env >> $BASH_ENV
+      - attach_workspace:
+          at: /home/circleci/project/target/archive-tmp/
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./home/circleci/project/target/archive-tmp/       
+  
 
 workflows:
   release-build-workflow:
@@ -32,4 +61,7 @@ workflows:
             branches:
               only:
                 - master
+      - publish-github-release:
+         requires:
+            - release-build
 
