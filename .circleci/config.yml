@@ -36,9 +36,9 @@ jobs:
       - store_artifacts:
           path: /home/circleci/project/target/archive-tmp
       - persist_to_workspace:
-          root: .
+          root: /home/circleci/project/target/archive-tmp
           paths:
-            - /home/circleci/project/target/archive-tmp
+            - .
 
   publish-github-release:
     docker:
