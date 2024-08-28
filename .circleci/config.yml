@@ -36,9 +36,9 @@ jobs:
       - store_artifacts:
           path: /home/circleci/project/target/archive-tmp
       - persist_to_workspace:
-          root: .
+          root: /home/circleci/project/target
           paths:
-            - /home/circleci/project/target/archive-tmp
+            - /archive-tmp
 
   publish-github-release:
     docker:
@@ -49,7 +49,7 @@ jobs:
       - run: |
           cat bash.env >> $BASH_ENV
       - attach_workspace:
-          at: home/circleci/project/target/archive-tmp
+          at: /home/circleci/project/target/archive-tmp
       - run:
           name: "Publish Release on GitHub"
           command: |
