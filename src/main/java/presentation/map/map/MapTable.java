@@ -303,7 +303,7 @@ public class MapTable extends JList implements TableModelListener {
     }
 
     public void setColumnHeaders(Double[] columnHeaders) {
-        if(columnHeaders.length == 0) {
+        if(this.data.length == 0 || columnHeaders.length == 0) {
             return;
         }
 
