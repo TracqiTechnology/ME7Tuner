@@ -1,5 +1,7 @@
 # General
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is 
 somewhat specific to an ME7 M-box ECU.
 
