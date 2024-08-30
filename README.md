@@ -26,7 +26,7 @@ ME7Tuner is packaged as a JAR file. You will need to have Java installed on your
 
 Note that ME7Tuner built against Java 17, so you will need to have Java 17+ installed on your system to run it. Once you have Java 17+ installed and the JAR file, simply double click the JAR file to run it.
 
-![GitHub Release](https://img.shields.io/github/v/release/KalebKE/ME7Tuner?color=GREEN)
+<a href="https://github.com/KalebKE/ME7Tuner/releases/latest">![GitHub Release](https://img.shields.io/github/v/release/KalebKE/ME7Tuner?color=GREEN)</a>
 
 #### Table of contents
 1. [Tuning Philosophy](#tuning-philosophy)
