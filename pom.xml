@@ -51,6 +51,7 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>3.1.1</version>
                 <configuration>
+                    <preparationGoals>clean verify package</preparationGoals>
                     <projectVersionPolicyId>SemVerVersionPolicy</projectVersionPolicyId>
                     <scmCommentPrefix xml:space="preserve">[skip ci] </scmCommentPrefix>
                 </configuration>
