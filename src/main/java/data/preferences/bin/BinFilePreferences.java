@@ -12,7 +12,7 @@ public class BinFilePreferences {
 
     private static final String FILE_PATH_KEY = "file_path_key";
     private static final Preferences PREFERENCES = Preferences.userRoot().node(BinFilePreferences.class.getName());
-    private static BinFilePreferences instance;
+    private static volatile BinFilePreferences instance;
 
     private final BehaviorSubject<File> behaviorSubject = BehaviorSubject.create();
 

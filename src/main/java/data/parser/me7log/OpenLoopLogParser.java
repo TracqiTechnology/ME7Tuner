@@ -18,7 +18,7 @@ public class OpenLoopLogParser {
 
     private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
-    private static OpenLoopLogParser instance;
+    private static volatile OpenLoopLogParser instance;
 
     public static OpenLoopLogParser getInstance() {
         if (instance == null) {

@@ -55,15 +55,15 @@ public class LdrpidCalculator {
                     pressure[rpmIndex][dutyCycleIndex] += relativeBoostPressure;
                     count[rpmIndex][dutyCycleIndex] += 1;
                 }
+            }
+        }
 
-                for(int j = 0; j < nonLinearTable.length; j++) {
-                    for(int k = 0; k < nonLinearTable[j].length; k++) {
-                        if(count[j][k] != 0) {
-                            nonLinearTable[j][k] = (pressure[j][k] / count[j][k]) * 0.0145038;
-                        } else {
-                            nonLinearTable[j][k] = pressure[j][k] * 0.0145038;
-                        }
-                    }
+        for(int j = 0; j < nonLinearTable.length; j++) {
+            for(int k = 0; k < nonLinearTable[j].length; k++) {
+                if(count[j][k] != 0) {
+                    nonLinearTable[j][k] = (pressure[j][k] / count[j][k]) * 0.0145038;
+                } else {
+                    nonLinearTable[j][k] = pressure[j][k] * 0.0145038;
                 }
             }
         }
@@ -168,7 +168,7 @@ public class LdrpidCalculator {
         return new Map3d(kfldimxXAxis, kfldimxMap.yAxis, kfldimx);
     }
 
-    public static LdrpidResult caclulateLdrpid(Map<Me7LogFileContract.Header, List<Double>> values, Map3d kfldrlMap, Map3d kfldimxMap) {
+    public static LdrpidResult calculateLdrpid(Map<Me7LogFileContract.Header, List<Double>> values, Map3d kfldrlMap, Map3d kfldimxMap) {
 
         Map3d nonLinearTable = calculateNonLinearTable(values, kfldrlMap);
         Map3d linearTable = calculateLinearTable(nonLinearTable.zAxis, kfldrlMap);
@@ -177,32 +177,5 @@ public class LdrpidCalculator {
 
         return new LdrpidResult(nonLinearTable, linearTable, kfldrl, kfldimxMap3d);
     }
-
-    private static int getMaxIndex(double number, Double[] array){
-        if(number <= array[0]) {
-            return -1;
-        } else if(number >= array[array.length -1]) {
-            return array.length;
-        } else {
-            for (int i = 0; i < array.length - 1; i++) {
-                if(number >= array[i] && number < array[i + 1]) {
-                    return i + 1;
-                }
-            }
-        }
-
-        return -1;
-    }
-
-    private static void reverse(Double[] array) {
-        for (int i = 0; i < array.length / 2; i++) {
-            double temp = array[i];
-            array[i] = array[array.length - i - 1];
-            array[array.length - i - 1] = temp;
-        }
-    }
-
-
-
 
 }

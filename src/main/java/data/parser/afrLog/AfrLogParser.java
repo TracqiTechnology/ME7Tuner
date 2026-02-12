@@ -94,12 +94,22 @@ public class AfrLogParser {
             double startTime = log.get(Me7LogFileContract.Header.START_TIME_HEADER).get(0);
             map.get(AfrLogFileContract.START_TIME).add(startTime);
 
+            List<Double> absolutePressure = log.get(Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER);
+            List<Double> barometricPressure = log.get(Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER);
+            boolean hasBoostData = absolutePressure != null && barometricPressure != null && !absolutePressure.isEmpty();
+
             for(int i = 0; i < log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER).size(); i++) {
-                map.get(AfrLogFileContract.START_TIME).add(log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER).get(i));
+                map.get(AfrLogFileContract.TIMESTAMP).add(log.get(Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER).get(i));
                 map.get(AfrLogFileContract.RPM_HEADER).add(log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER).get(i));
                 // ME7.5 afr is normalized. Covert to stoichiometric gasoline ratio
                 map.get(AfrLogFileContract.AFR_HEADER).add(log.get(Me7LogFileContract.Header.WIDE_BAND_O2_HEADER).get(i) * 14.7);
                 map.get(AfrLogFileContract.TPS_HEADER).add(log.get(Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER).get(i));
+                if (hasBoostData) {
+                    double relativePressure = (absolutePressure.get(i) - barometricPressure.get(i)) * 0.0145038;
+                    map.get(AfrLogFileContract.BOOST_HEADER).add(relativePressure);
+                } else {
+                    map.get(AfrLogFileContract.BOOST_HEADER).add(0.0);
+                }
             }
         }
 

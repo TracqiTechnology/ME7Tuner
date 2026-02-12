@@ -334,7 +334,7 @@ public class LdrpidView {
                             Pair<TableDefinition, Map3d> kfldimxTableDefinition = KfldimxPreferences.getInstance().getSelectedMap();
                             Pair<TableDefinition, Map3d> kfldrlTableDefinition = KfldrlPreferences.getInstance().getSelectedMap();
 
-                            ldrpidResult = LdrpidCalculator.caclulateLdrpid(values, kfldrlTableDefinition.getSecond(), kfldimxTableDefinition.getSecond());
+                            ldrpidResult = LdrpidCalculator.calculateLdrpid(values, kfldrlTableDefinition.getSecond(), kfldimxTableDefinition.getSecond());
                             return null;
                         }
 

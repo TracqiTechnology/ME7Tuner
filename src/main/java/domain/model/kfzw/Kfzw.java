@@ -16,6 +16,11 @@ public class Kfzw {
 
                 int indexKey = Index.getInsertIndex(Arrays.asList(xAxisOld), xAxisNew[j]);
 
+                // Ensure we pick the bracket that contains xAxisNew[j]
+                if (indexKey > 0 && indexKey < kfzwOld[i].length - 1 && xAxisNew[j] < xAxisOld[indexKey]) {
+                    indexKey--;
+                }
+
                 double x0;
                 double x1;
                 double y0;

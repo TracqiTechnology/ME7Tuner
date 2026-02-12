@@ -11,7 +11,7 @@ public class XdfFilePreferences {
 
     private static final String FILE_PATH_KEY = "file_path_key";
     private static final Preferences PREFERENCES = Preferences.userRoot().node(XdfFilePreferences.class.getName());
-    private static XdfFilePreferences instance;
+    private static volatile XdfFilePreferences instance;
 
     private final BehaviorSubject<File> behaviorSubject = BehaviorSubject.create();
 

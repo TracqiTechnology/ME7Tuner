@@ -39,7 +39,7 @@ public class XdfParser {
     private static final String XDF_COLUMN_COUNT_TAG = "mmedcolcount";
     private static final String XDF_EQUATION_TAG = "equation";
 
-    private static XdfParser instance;
+    private static volatile XdfParser instance;
 
     private final List<TableDefinition> tableDefinitions = new ArrayList<>();
 
@@ -53,8 +53,8 @@ public class XdfParser {
             @Override
             public void onNext(@NonNull File file) {
                 if(file.exists() && file.isFile()) {
-                    try {
-                        parse(new BufferedInputStream(new FileInputStream(file)));
+                    try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+                        parse(is);
                     } catch (JDOMException | IOException e) {
                         e.printStackTrace();
                     }

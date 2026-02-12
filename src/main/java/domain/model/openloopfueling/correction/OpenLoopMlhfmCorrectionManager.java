@@ -156,6 +156,9 @@ public class OpenLoopMlhfmCorrectionManager {
     private void calculateCorrections(List<Map<Me7LogFileContract.Header, List<Double>>> me7LogList, List<Map<String, List<Double>>> afrLogList, List<Double> mlhfmVoltageList) {
 
        int size = Math.min(me7LogList.size(), afrLogList.size());
+        if (me7LogList.size() != afrLogList.size()) {
+            System.err.println("[OpenLoopMlhfmCorrectionManager] Warning: ME7 pull count (" + me7LogList.size() + ") does not match AFR pull count (" + afrLogList.size() + "). Only the first " + size + " pulls will be used.");
+        }
 
         // Initialize the corrections map once before processing all logs
         for (Double mlhfmVoltage : mlhfmVoltageList) {
@@ -180,7 +183,7 @@ public class OpenLoopMlhfmCorrectionManager {
 
                 // Calculate a corrected AFR for each index that is found
                 for (int me7Index : me7VoltageIndices) {
-                    if (me7Index != 1 && me7Index != me7VoltageList.size() - 1) {
+                    if (me7Index != 0 && me7Index != me7VoltageList.size() - 1) {
                         double stft = me7Log.get(Me7LogFileContract.Header.STFT_COLUMN_HEADER).get(me7Index) - 1;
                         double ltft = me7Log.get(Me7LogFileContract.Header.LTFT_COLUMN_HEADER).get(me7Index) - 1;
                         double rpm = me7Log.get(Me7LogFileContract.Header.RPM_COLUMN_HEADER).get(me7Index);

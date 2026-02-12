@@ -260,13 +260,15 @@ This algorithm is roughly based on [mafscaling](https://github.com/vimsh/mafscal
 
 ### Algorithm
 
-The average of your LTFT and STFT corrections at each voltage for MLHFM are calculated and then applied to the transformation.
+The LTFT and STFT corrections at each voltage for MLHFM are calculated and then applied to the transformation.
 
-The Correction Error is calculated as LTFT + STFT at each measured voltage for MLHFM.
+The Correction Error at each measured voltage is calculated as **(STFT - 1) + (LTFT - 1)**, scaled by the ratio of the logged voltage to the nearest MLHFM voltage (**logged_voltage / nearest_MLHFM_voltage**). Voltages with fewer than 5 samples receive no correction.
 
 The Total Correction is the average of the mean and mode of the Correction Errors at each measured voltage for MLHFM.
 
-The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * ((tot_corr% / 100) + 1)**.
+A 5-point moving average is applied to smooth the corrections before the optional polynomial fit.
+
+The corrected kg/hr transformation for MLHFM is calculated as **current_kg/hr * (tot_corr + 1)**.
 
 ### Usage
 
@@ -282,7 +284,7 @@ Log the following parameters:
 * MAF Voltage - 'uhfm_w'
 * Throttle Plate Angle - 'wdkba'
 * Lambda Control Active - 'B_lr'
-* Engine Load - rl_w'
+* Engine Load - 'rl_w' (required by parser, not used in correction algorithm)
 
 Logging Instructions:
 
@@ -344,7 +346,7 @@ The corrected kg/hr transformation for MLHFM is calculated as current_kg/hr * ((
 
 ### Usage
 
-Unlike closed loop corrections, open loop logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. ME7Tuner correlates the ME7Logger logs and Zeitronix logs based on throttle position so both sets of logs need to contain the same number of pulls.
+Unlike closed loop corrections, open loop logs must be contained a single ME7Logger file and a single Zeitronix log. Both ME7Logger and Zeitronix logger need to be started before the first pull and stopped after the last pull. ME7Tuner uses throttle position to detect WOT pull boundaries in each log, then matches pulls by order (1st ME7 pull with 1st Zeitronix pull, 2nd with 2nd, etc.). Within each matched pull, data points are correlated by RPM. Both sets of logs need to contain the same number of pulls.
 
 * Get [ME7Logger](http://nefariousmotorsports.com/forum/index.php/topic,837.0title,.html)
 

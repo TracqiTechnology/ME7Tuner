@@ -4,7 +4,6 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.subjects.PublishSubject;
 import domain.math.map.Map3d;
-import data.parser.bin.BinParser;
 import data.parser.xdf.TableDefinition;
 
 import javax.script.*;
@@ -21,8 +20,8 @@ import java.util.regex.Pattern;
 public class BinWriter {
     private static final int INVALID_ADDRESS = 0;
 
-    private static BinWriter instance;
-    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
+    private static volatile BinWriter instance;
+    private final ScriptEngine engine = new ScriptEngineManager().getEngineByName("graal.js");
 
 
     private final PublishSubject<TableDefinition> publishSubject = PublishSubject.create();
@@ -32,7 +31,7 @@ public class BinWriter {
 
     public static BinWriter getInstance() {
         if (instance == null) {
-            synchronized ((BinParser.class)) {
+            synchronized (BinWriter.class) {
                 if (instance == null) {
                     instance = new BinWriter();
                 }
@@ -47,42 +46,42 @@ public class BinWriter {
     }
 
     public void write(@NonNull File file, @NonNull TableDefinition tableDefinition, @NonNull Map3d map) throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(file, "rws");
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rws")) {
 
-        if (tableDefinition.getXAxis() != null && tableDefinition.getXAxis().getAddress() != INVALID_ADDRESS) {
-            double[] xAxis = new double[Math.max(tableDefinition.getXAxis().getRowCount(), 1) * Math.max(tableDefinition.getXAxis().getIndexCount(), 1)];
-            for (int i = 0; i < map.xAxis.length; i++) {
-                xAxis[i] = map.xAxis[i];
-            }
-
-            write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
-        }
-
-        if (tableDefinition.getYAxis() != null && tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
-            double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
-
-            for (int i = 0; i < map.yAxis.length; i++) {
-                yAxis[i] = map.yAxis[i];
-            }
-
-            write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
-        }
-
-        if (tableDefinition.getZAxis() != null && tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
-            double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getColumnCount(), 1)];
-
-            int index = 0;
-            for (int i = 0; i < map.zAxis.length; i++) {
-                for (int j = 0; j < map.zAxis[i].length; j++) {
-                    zAxis[index++] = map.zAxis[i][j];
+            if (tableDefinition.getXAxis() != null && tableDefinition.getXAxis().getAddress() != INVALID_ADDRESS) {
+                double[] xAxis = new double[Math.max(tableDefinition.getXAxis().getRowCount(), 1) * Math.max(tableDefinition.getXAxis().getIndexCount(), 1)];
+                for (int i = 0; i < map.xAxis.length; i++) {
+                    xAxis[i] = map.xAxis[i];
                 }
+
+                write(raf, tableDefinition.getXAxis().getAddress(), tableDefinition.getXAxis().getSizeBits(), tableDefinition.getXAxis().getEquation(), xAxis);
             }
 
-            write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
+            if (tableDefinition.getYAxis() != null && tableDefinition.getYAxis().getAddress() != INVALID_ADDRESS) {
+                double[] yAxis = new double[Math.max(tableDefinition.getYAxis().getRowCount(), 1) * Math.max(tableDefinition.getYAxis().getIndexCount(), 1)];
+
+                for (int i = 0; i < map.yAxis.length; i++) {
+                    yAxis[i] = map.yAxis[i];
+                }
+
+                write(raf, tableDefinition.getYAxis().getAddress(), tableDefinition.getYAxis().getSizeBits(), tableDefinition.getYAxis().getEquation(), yAxis);
+            }
+
+            if (tableDefinition.getZAxis() != null && tableDefinition.getZAxis().getAddress() != INVALID_ADDRESS) {
+                double[] zAxis = new double[Math.max(tableDefinition.getZAxis().getRowCount(), 1) * Math.max(tableDefinition.getZAxis().getColumnCount(), 1)];
+
+                int index = 0;
+                for (int i = 0; i < map.zAxis.length; i++) {
+                    for (int j = 0; j < map.zAxis[i].length; j++) {
+                        zAxis[index++] = map.zAxis[i][j];
+                    }
+                }
+
+                write(raf, tableDefinition.getZAxis().getAddress(), tableDefinition.getZAxis().getSizeBits(), tableDefinition.getZAxis().getEquation(), zAxis);
+            }
         }
 
         publishSubject.onNext(tableDefinition);
-
     }
 
     private void write(RandomAccessFile raf, int address, int size, String equation, double[] values) throws IOException {
@@ -119,22 +118,29 @@ public class BinWriter {
             return equation;
         }
 
-        String inverse = "";
+        boolean hasMultiply = !operators.isEmpty() && operators.get(0).equals("*");
+        Double scale = hasMultiply && !operands.isEmpty() ? operands.get(0) : null;
+        Double offset = null;
 
-        if (operators.size() > 1) {
-            if (operators.get(1).equals("+")) {
-                inverse += "(X - " + operands.get(1) + ")";
-            }
+        if (operators.size() > 1 && operands.size() > 1) {
+            // X * a + b
+            offset = operands.get(1);
+        } else if (hasMultiply && operands.size() > 1) {
+            // X * a - b (subtraction captured as negative operand)
+            offset = operands.get(1);
+        } else if (!hasMultiply && !operands.isEmpty()) {
+            // X + b or X - b
+            offset = operands.get(0);
         }
 
-        if (operators.size() > 0) {
-            if (operators.get(0).equals("*")) {
-                if (operators.size() > 1) {
-                    inverse += " / " + operands.get(0);
-                } else {
-                    inverse += "X / " + operands.get(0);
-                }
-            }
+        String inverse = "";
+
+        if (scale != null && offset != null) {
+            inverse = "(X - " + offset + ") / " + scale;
+        } else if (scale != null) {
+            inverse = "X / " + scale;
+        } else if (offset != null) {
+            inverse = "X - " + offset;
         }
 
         return inverse;
@@ -153,7 +159,7 @@ public class BinWriter {
     }
 
     private static List<Double> extractOperands(String equation) {
-        Pattern regex = Pattern.compile("(\\+|-)?([0-9]*(\\.[0-9]+))");
+        Pattern regex = Pattern.compile("(\\+|-)?([0-9]*\\.?[0-9]+)");
         Matcher matcher = regex.matcher(equation);
 
         List<Double> operands = new ArrayList<>();

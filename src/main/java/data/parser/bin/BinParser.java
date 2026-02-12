@@ -133,9 +133,11 @@ public class BinParser {
     private void parse(InputStream inputStream, List<TableDefinition> tableDefinitions) throws IOException {
         mapList.clear();
 
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-        byte[] bytes = new byte[bufferedInputStream.available()];
-        bufferedInputStream.read(bytes);
+        byte[] bytes;
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+            bytes = bufferedInputStream.readAllBytes();
+        }
+
         for(TableDefinition tableDefinition:tableDefinitions) {
             AxisDefinition xAxisDefinition = tableDefinition.getXAxis();
             AxisDefinition yAxisDefinition = tableDefinition.getYAxis();

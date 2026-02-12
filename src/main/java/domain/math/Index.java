@@ -24,8 +24,11 @@ public class Index {
     }
 
     public static int getInsertIndex(List<Double> values, double value) {
-        int index = Collections.binarySearch(values, value);
+        if (!isSorted(values)) {
+            return linearScanNearest(values, value);
+        }
 
+        int index = Collections.binarySearch(values, value);
 
         if (index < 0) {
             index = Math.abs(index + 1);
@@ -46,5 +49,29 @@ public class Index {
         }
 
         return index;
+    }
+
+    private static boolean isSorted(List<Double> values) {
+        for (int i = 1; i < values.size(); i++) {
+            if (values.get(i) < values.get(i - 1)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int linearScanNearest(List<Double> values, double value) {
+        int nearestIndex = 0;
+        double nearestDistance = Math.abs(values.get(0) - value);
+
+        for (int i = 1; i < values.size(); i++) {
+            double distance = Math.abs(values.get(i) - value);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestIndex = i;
+            }
+        }
+
+        return nearestIndex;
     }
 }

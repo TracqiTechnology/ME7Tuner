@@ -64,6 +64,9 @@ public class AirflowEstimationManager {
         }
 
         int size = Math.min(dutyCycleLogs.size(), afrLogList.size());
+        if (me7LogList.size() != afrLogList.size()) {
+            System.err.println("[AirflowEstimationManager] Warning: ME7 pull count (" + me7LogList.size() + ") does not match AFR pull count (" + afrLogList.size() + "). Only the first " + size + " pulls will be used.");
+        }
         for(int i = 0; i < size; i++) {
             estimatedAirflowGramsPerSecondLogs.add(new ArrayList<>());
 

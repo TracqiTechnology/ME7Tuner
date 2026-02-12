@@ -1,6 +1,7 @@
 package domain.model.kfvpdksd;
 
 import data.contract.Me7LogFileContract;
+import domain.math.Index;
 
 import java.util.*;
 
@@ -26,13 +27,7 @@ public record Kfvpdksd(Double[][] kfvpdksd) {
         for (int i = 0; i < timestamps.size(); i++) {
             if (throttleAngle.get(i) > 80) {
 
-                int index = Arrays.binarySearch(rpmAxis, rpm.get(i));
-
-                if (index < 0) {
-                    index = Math.abs(index + 1);
-                }
-
-                index = Math.min(index, rpmAxis.length - 1);
+                int index = Index.getInsertIndex(Arrays.asList(rpmAxis), rpm.get(i));
 
                 boostValues.get(index).add(absolutePressure.get(i) - barometricPressure.get(i));
             }

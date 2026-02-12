@@ -9,6 +9,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class KfvpdksdLogParser {
 
     private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
-    private static KfvpdksdLogParser instance;
+    private static volatile KfvpdksdLogParser instance;
 
     public static KfvpdksdLogParser getInstance() {
         if (instance == null) {
@@ -48,7 +49,7 @@ public class KfvpdksdLogParser {
 
                 @Override
                 public void onSuccess(@NonNull Map<Me7LogFileContract.Header, List<Double>> logMap) {
-                    publishSubject.onNext(logMap);
+                    SwingUtilities.invokeLater(() -> publishSubject.onNext(logMap));
                 }
 
                 @Override

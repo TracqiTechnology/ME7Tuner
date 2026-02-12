@@ -18,7 +18,7 @@ public class ClosedLoopLogParser {
 
     private final PublishSubject<Map<Me7LogFileContract.Header, List<Double>>> publishSubject;
 
-    private static ClosedLoopLogParser instance;
+    private static volatile ClosedLoopLogParser instance;
 
     public static ClosedLoopLogParser getInstance() {
         if (instance == null) {
