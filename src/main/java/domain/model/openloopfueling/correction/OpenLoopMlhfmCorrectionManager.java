@@ -157,6 +157,11 @@ public class OpenLoopMlhfmCorrectionManager {
 
        int size = Math.min(me7LogList.size(), afrLogList.size());
 
+        // Initialize the corrections map once before processing all logs
+        for (Double mlhfmVoltage : mlhfmVoltageList) {
+            correctionsAfrMap.put(mlhfmVoltage, new ArrayList<>());
+        }
+
         // Loop over each log
         for (int i = 0; i < size; i++) {
             Map<Me7LogFileContract.Header, List<Double>> me7Log = me7LogList.get(i);
@@ -166,8 +171,6 @@ public class OpenLoopMlhfmCorrectionManager {
             for (int j = 0; j < mlhfmVoltageList.size(); j++) {
 
                 double mlhfmVoltage = mlhfmVoltageList.get(j);
-
-                correctionsAfrMap.put(mlhfmVoltage, new ArrayList<>());
 
                 // Get the measured MAF voltages in the log
                 List<Double> me7VoltageList = me7Log.get(Me7LogFileContract.Header.MAF_VOLTAGE_HEADER);

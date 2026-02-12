@@ -63,7 +63,8 @@ public class AirflowEstimationManager {
             measuredRpmLogs.add(rpm);
         }
 
-        for(int i = 0; i < dutyCycleLogs.size(); i++) {
+        int size = Math.min(dutyCycleLogs.size(), afrLogList.size());
+        for(int i = 0; i < size; i++) {
             estimatedAirflowGramsPerSecondLogs.add(new ArrayList<>());
 
             List<Double> dutyCycleLog = dutyCycleLogs.get(i);
@@ -86,6 +87,10 @@ public class AirflowEstimationManager {
         List<Double> dutyCycle = new ArrayList<>();
 
         for(int i = 0; i < rpm.size(); i++) {
+            if(rpm.get(i) <= 0) {
+                dutyCycle.add(0.0);
+                continue;
+            }
             double engineCycleMs = (1/((rpm.get(i)/2.0)/60.0))*1000;
             double injectorOnTime = fuelInjectorOnTime.get(i);
             dutyCycle.add(injectorOnTime/engineCycleMs);

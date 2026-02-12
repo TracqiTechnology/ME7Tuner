@@ -5,6 +5,9 @@ import java.util.Arrays;
 public class LinearInterpolation {
 
     public static Double[] interpolate(Double[] x, Double[] y, Double[] xi) throws IllegalArgumentException {
+        // Work on copies to avoid mutating caller's arrays
+        x = x.clone();
+        y = y.clone();
 
         if (x.length != y.length) {
             throw new IllegalArgumentException("X and Y must be the same length");

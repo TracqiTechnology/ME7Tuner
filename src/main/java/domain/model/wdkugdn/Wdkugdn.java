@@ -38,6 +38,7 @@ public class Wdkugdn {
             }
 
             airflowIndex = Math.min(airflowIndex, kfwdkmsn.yAxis.length - 1);
+            airflowIndex = Math.max(airflowIndex, 1);
 
             Double[] x = new Double[]{kfwdkmsn.yAxis[airflowIndex - 1], kfwdkmsn.yAxis[airflowIndex]};
             Double[] y = new Double[]{throttleAngle[airflowIndex - 1], throttleAngle[airflowIndex]};

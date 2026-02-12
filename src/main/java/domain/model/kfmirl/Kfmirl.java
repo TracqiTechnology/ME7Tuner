@@ -59,6 +59,14 @@ public class Kfmirl {
             }
         }
 
+        // Enforce monotonicity: each value must be >= the previous column value
+        for (int i = 0; i < scaledKfmirl.length; i++) {
+            for (int j = 1; j < scaledKfmirl[i].length; j++) {
+                if (scaledKfmirl[i][j] < scaledKfmirl[i][j - 1]) {
+                    scaledKfmirl[i][j] = scaledKfmirl[i][j - 1];
+                }
+            }
+        }
 
         return scaledKfmirl;
     }

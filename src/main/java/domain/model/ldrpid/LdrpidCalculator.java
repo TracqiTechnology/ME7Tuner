@@ -103,7 +103,7 @@ public class LdrpidCalculator {
             double step = (max - min)/ (nonLinearTable.length - 1);
 
             for(int j = 0; j < linearTable.length; j++) {
-                linearTable[j][i] = step * j;
+                linearTable[j][i] = min + step * j;
             }
         }
 
@@ -147,7 +147,7 @@ public class LdrpidCalculator {
 
         double min = (Math.ceil(linearBoostMax[0]/100.0))*100;
         double max = (Math.ceil(linearBoostMax[linearBoostMax.length - 1]/100.0))*100;
-        double interval = (max - min)/kfldimxXAxis.length;
+        double interval = (max - min)/(kfldimxXAxis.length - 1);
 
         for(int i = 0; i < kfldimxXAxis.length; i++) {
             kfldimxXAxis[i] = min + (interval * i);

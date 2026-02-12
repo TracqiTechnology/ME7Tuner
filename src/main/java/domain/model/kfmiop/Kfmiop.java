@@ -47,12 +47,6 @@ public class Kfmiop {
         Double[] yAxis = baseKfmiop.yAxis;
         Double[][] zAxis = baseKfmiop.zAxis;
 
-        double[] ratios = new double[xAxis.length];
-
-        for (int i = 0; i < xAxis.length - 1; i++) {
-            ratios[i] = xAxis[i] / xAxis[i + 1];
-        }
-
         Double[][] optimalLoad = new Double[yAxis.length][xAxis.length];
 
         double currentMaxLoad;
