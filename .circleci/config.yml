@@ -11,16 +11,21 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: jars-{{ checksum "pom.xml" }}
+          key: gradle-{{ checksum "build.gradle.kts" }}-{{ checksum "settings.gradle.kts" }}
       - run:
          command: |
           git config --global user.email "build@tracqi.com"
           git config --global user.name "Circle CI"
-      - run: mvn --batch-mode release:prepare
       - run:
+         name: "Build"
+         command: ./gradlew build
+      - run:
+         name: "Package Distributable"
+         command: ./gradlew packageDistributable
+      - run:
+         name: "Extract Version"
          command: |
-          git checkout HEAD~1
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          VERSION=$(./gradlew -q printVersion 2>/dev/null || grep 'packageVersion' build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
           echo "export VERSION_NAME=$VERSION" >> "$BASH_ENV"
           source "$BASH_ENV"
       - run: |
@@ -31,14 +36,14 @@ jobs:
             - bash.env
       - save_cache:
           paths:
-            - ~/.m2
-          key: jars-{{ checksum "pom.xml" }}
+            - ~/.gradle
+          key: gradle-{{ checksum "build.gradle.kts" }}-{{ checksum "settings.gradle.kts" }}
       - store_artifacts:
-          path: target/archive-tmp
+          path: build/compose/binaries
       - persist_to_workspace:
-          root: target
+          root: build/compose
           paths:
-            - archive-tmp
+            - binaries
 
   publish-github-release:
     docker:
@@ -49,12 +54,11 @@ jobs:
       - run: |
           cat bash.env >> $BASH_ENV
       - attach_workspace:
-          at: target
+          at: build/compose
       - run:
           name: "Publish Release on GitHub"
           command: |
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./archive-tmp/     
-  
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION_NAME} ./binaries/
 
 workflows:
   release-build-workflow:
@@ -67,4 +71,3 @@ workflows:
       - publish-github-release:
          requires:
             - release-build
-
