@@ -10,8 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ui.theme.GridColor
@@ -51,6 +55,13 @@ fun ScatterPlot(
         ScatterBounds(xMin - xPad, xMax + xPad, yMin - yPad, yMax + yPad)
     }
 
+    val density = LocalDensity.current
+    val leftMarginPx = with(density) { 50.dp.toPx() }
+    val bottomMarginPx = with(density) { 30.dp.toPx() }
+    val rightMarginPx = with(density) { 16.dp.toPx() }
+    val topMarginPx = with(density) { 8.dp.toPx() }
+    val textMeasurer = rememberTextMeasurer()
+
     Column(modifier = modifier) {
         if (title.isNotEmpty()) {
             Text(
@@ -78,16 +89,17 @@ fun ScatterPlot(
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().padding(start = 50.dp, bottom = 30.dp, end = 16.dp, top = 8.dp)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
+                val chartW = size.width - leftMarginPx - rightMarginPx
+                val chartH = size.height - topMarginPx - bottomMarginPx
                 val xRange = bounds.xMax - bounds.xMin
                 val yRange = bounds.yMax - bounds.yMin
                 val formatter = DecimalFormat("#.##")
+                val tickLabelStyle = TextStyle(color = Color(0xFFF8F8F2), fontSize = 10.sp)
 
-                fun mapX(x: Double) = ((x - bounds.xMin) / xRange * w).toFloat()
-                fun mapY(y: Double) = (h - (y - bounds.yMin) / yRange * h).toFloat()
+                fun mapX(x: Double) = (leftMarginPx + (x - bounds.xMin) / xRange * chartW).toFloat()
+                fun mapY(y: Double) = (topMarginPx + chartH - (y - bounds.yMin) / yRange * chartH).toFloat()
 
                 // Grid
                 val xTicks = niceTickValues(bounds.xMin, bounds.xMax, 8)
@@ -95,31 +107,26 @@ fun ScatterPlot(
 
                 for (tick in xTicks) {
                     val x = mapX(tick)
-                    drawLine(GridColor, Offset(x, 0f), Offset(x, h), strokeWidth = 0.5f)
-                    drawContext.canvas.nativeCanvas.apply {
-                        val paint = org.jetbrains.skia.Paint().apply {
-                            color = 0xFFF8F8F2.toInt()
-                            isAntiAlias = true
-                        }
-                        val font = org.jetbrains.skia.Font().apply { size = 10f }
-                        drawString(formatter.format(tick), x - 15f, h + 14f, font, paint)
-                    }
+                    drawLine(GridColor, Offset(x, topMarginPx), Offset(x, topMarginPx + chartH), strokeWidth = 0.5f)
+                    drawLine(GridColor, Offset(x, topMarginPx + chartH), Offset(x, topMarginPx + chartH + 5f), strokeWidth = 1f)
+                    val tickText = textMeasurer.measure(formatter.format(tick), tickLabelStyle)
+                    drawText(tickText, topLeft = Offset(x - tickText.size.width / 2f, topMarginPx + chartH + 2f))
                 }
 
                 for (tick in yTicks) {
                     val y = mapY(tick)
-                    drawLine(GridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.5f)
-                    drawContext.canvas.nativeCanvas.apply {
-                        val paint = org.jetbrains.skia.Paint().apply {
-                            color = 0xFFF8F8F2.toInt()
-                            isAntiAlias = true
-                        }
-                        val font = org.jetbrains.skia.Font().apply { size = 10f }
-                        drawString(formatter.format(tick), -44f, y + 4f, font, paint)
-                    }
+                    drawLine(GridColor, Offset(leftMarginPx, y), Offset(leftMarginPx + chartW, y), strokeWidth = 0.5f)
+                    drawLine(GridColor, Offset(leftMarginPx - 5f, y), Offset(leftMarginPx, y), strokeWidth = 1f)
+                    val tickText = textMeasurer.measure(formatter.format(tick), tickLabelStyle)
+                    drawText(tickText, topLeft = Offset(leftMarginPx - tickText.size.width - 4f, y - tickText.size.height / 2f))
                 }
 
-                drawRect(GridColor, style = Stroke(1f))
+                drawRect(
+                    GridColor,
+                    topLeft = Offset(leftMarginPx, topMarginPx),
+                    size = androidx.compose.ui.geometry.Size(chartW, chartH),
+                    style = Stroke(1f)
+                )
 
                 // Series
                 for (s in series) {
@@ -151,7 +158,7 @@ fun ScatterPlot(
                     text = yAxisLabel,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.CenterStart).offset(x = (-46).dp)
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
                 )
             }
 
@@ -160,7 +167,7 @@ fun ScatterPlot(
                     text = xAxisLabel,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.BottomCenter).offset(y = 24.dp)
+                    modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
         }

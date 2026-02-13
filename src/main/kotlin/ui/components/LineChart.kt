@@ -13,7 +13,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ui.theme.GridColor
@@ -62,6 +66,13 @@ fun LineChart(
         ChartBounds(xMin - xPad, xMax + xPad, yMin - yPad, yMax + yPad)
     }
 
+    val density = LocalDensity.current
+    val leftMarginPx = with(density) { 50.dp.toPx() }
+    val bottomMarginPx = with(density) { 30.dp.toPx() }
+    val rightMarginPx = with(density) { 16.dp.toPx() }
+    val topMarginPx = with(density) { 8.dp.toPx() }
+    val textMeasurer = rememberTextMeasurer()
+
     Column(modifier = modifier) {
         if (title.isNotEmpty()) {
             Text(
@@ -90,9 +101,9 @@ fun LineChart(
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().padding(start = 50.dp, bottom = 30.dp, end = 16.dp, top = 8.dp)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawChartArea(bounds, series)
+                drawChartArea(bounds, series, leftMarginPx, topMarginPx, rightMarginPx, bottomMarginPx, textMeasurer)
             }
 
             // Y-axis label
@@ -101,7 +112,7 @@ fun LineChart(
                     text = yAxisLabel,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.CenterStart).offset(x = (-46).dp)
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
                 )
             }
 
@@ -111,7 +122,7 @@ fun LineChart(
                     text = xAxisLabel,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.BottomCenter).offset(y = 24.dp)
+                    modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
         }
@@ -120,15 +131,24 @@ fun LineChart(
 
 private data class ChartBounds(val xMin: Double, val xMax: Double, val yMin: Double, val yMax: Double)
 
-private fun DrawScope.drawChartArea(bounds: ChartBounds, seriesList: List<ChartSeries>) {
-    val w = size.width
-    val h = size.height
+private fun DrawScope.drawChartArea(
+    bounds: ChartBounds,
+    seriesList: List<ChartSeries>,
+    leftMargin: Float,
+    topMargin: Float,
+    rightMargin: Float,
+    bottomMargin: Float,
+    textMeasurer: TextMeasurer
+) {
+    val chartW = size.width - leftMargin - rightMargin
+    val chartH = size.height - topMargin - bottomMargin
     val xRange = bounds.xMax - bounds.xMin
     val yRange = bounds.yMax - bounds.yMin
     val formatter = DecimalFormat("#.##")
+    val tickLabelStyle = TextStyle(color = Color(0xFFF8F8F2), fontSize = 10.sp)
 
-    fun mapX(x: Double) = ((x - bounds.xMin) / xRange * w).toFloat()
-    fun mapY(y: Double) = (h - (y - bounds.yMin) / yRange * h).toFloat()
+    fun mapX(x: Double) = (leftMargin + (x - bounds.xMin) / xRange * chartW).toFloat()
+    fun mapY(y: Double) = (topMargin + chartH - (y - bounds.yMin) / yRange * chartH).toFloat()
 
     // Grid lines
     val xTicks = niceTickValues(bounds.xMin, bounds.xMax, 8)
@@ -136,32 +156,27 @@ private fun DrawScope.drawChartArea(bounds: ChartBounds, seriesList: List<ChartS
 
     for (tick in xTicks) {
         val x = mapX(tick)
-        drawLine(GridColor, Offset(x, 0f), Offset(x, h), strokeWidth = 0.5f)
-        drawContext.canvas.nativeCanvas.apply {
-            val paint = org.jetbrains.skia.Paint().apply {
-                color = 0xFFF8F8F2.toInt()
-                isAntiAlias = true
-            }
-            val font = org.jetbrains.skia.Font().apply { size = 10f }
-            drawString(formatter.format(tick), x - 15f, h + 14f, font, paint)
-        }
+        drawLine(GridColor, Offset(x, topMargin), Offset(x, topMargin + chartH), strokeWidth = 0.5f)
+        drawLine(GridColor, Offset(x, topMargin + chartH), Offset(x, topMargin + chartH + 5f), strokeWidth = 1f)
+        val tickText = textMeasurer.measure(formatter.format(tick), tickLabelStyle)
+        drawText(tickText, topLeft = Offset(x - tickText.size.width / 2f, topMargin + chartH + 2f))
     }
 
     for (tick in yTicks) {
         val y = mapY(tick)
-        drawLine(GridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.5f)
-        drawContext.canvas.nativeCanvas.apply {
-            val paint = org.jetbrains.skia.Paint().apply {
-                color = 0xFFF8F8F2.toInt()
-                isAntiAlias = true
-            }
-            val font = org.jetbrains.skia.Font().apply { size = 10f }
-            drawString(formatter.format(tick), -44f, y + 4f, font, paint)
-        }
+        drawLine(GridColor, Offset(leftMargin, y), Offset(leftMargin + chartW, y), strokeWidth = 0.5f)
+        drawLine(GridColor, Offset(leftMargin - 5f, y), Offset(leftMargin, y), strokeWidth = 1f)
+        val tickText = textMeasurer.measure(formatter.format(tick), tickLabelStyle)
+        drawText(tickText, topLeft = Offset(leftMargin - tickText.size.width - 4f, y - tickText.size.height / 2f))
     }
 
     // Border
-    drawRect(GridColor, style = Stroke(1f))
+    drawRect(
+        GridColor,
+        topLeft = Offset(leftMargin, topMargin),
+        size = androidx.compose.ui.geometry.Size(chartW, chartH),
+        style = Stroke(1f)
+    )
 
     // Series
     for (series in seriesList) {
