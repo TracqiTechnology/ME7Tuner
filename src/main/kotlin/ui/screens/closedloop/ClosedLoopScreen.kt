@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import data.contract.Me7LogFileContract
 import data.parser.bin.BinParser
 import data.parser.me7log.ClosedLoopLogParser
+import data.parser.me7log.LogLoadProgress
 import data.parser.xdf.TableDefinition
 import data.preferences.bin.BinFilePreferences
 import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences
@@ -130,8 +131,8 @@ private fun ClosedLoopLogsTab(
     mlhfm: Map3d?,
     onLogsLoaded: () -> Unit
 ) {
-    var logDirName by remember { mutableStateOf("No Directory Selected") }
     var showFilterDialog by remember { mutableStateOf(false) }
+    val loadProgress by ClosedLoopLogParser.progress.collectAsState()
 
     val chartSeries = remember(me7LogMap, mlhfm) {
         if (me7LogMap != null && mlhfm != null) {
@@ -175,14 +176,14 @@ private fun ClosedLoopLogsTab(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = { showFilterDialog = true }) {
+            OutlinedButton(onClick = { showFilterDialog = true }) {
                 Text("Configure Filter")
             }
 
             Spacer(Modifier.width(24.dp))
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = {
+            Button(
+                onClick = {
                     val dialog = FileDialog(Frame(), "Select Log Directory", FileDialog.LOAD)
                     System.setProperty("apple.awt.fileDialogForDirectories", "true")
                     val lastDir = ClosedLoopFuelingLogPreferences.lastDirectory
@@ -194,18 +195,38 @@ private fun ClosedLoopLogsTab(
                     if (dir != null && file != null) {
                         val selectedDir = File(dir, file)
                         ClosedLoopFuelingLogPreferences.lastDirectory = selectedDir.parent ?: dir
-                        logDirName = selectedDir.name
                         ClosedLoopLogParser.loadDirectory(selectedDir)
                         onLogsLoaded()
                     }
-                }) {
-                    Text("Load Logs")
+                },
+                enabled = loadProgress == null
+            ) {
+                Text("Load Logs")
+            }
+
+            if (loadProgress != null) {
+                Spacer(Modifier.width(24.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val progress = loadProgress!!
+                    if (progress.total > 0) {
+                        Text(
+                            text = "Loading log ${progress.loaded} of ${progress.total}...",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        LinearProgressIndicator(
+                            progress = { progress.loaded.toFloat() / progress.total.toFloat() },
+                            modifier = Modifier.width(200.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Preparing...",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        LinearProgressIndicator(modifier = Modifier.width(200.dp))
+                    }
                 }
-                Text(
-                    text = logDirName,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
         }
     }
@@ -366,11 +387,17 @@ private fun AfrCorrectionChart(correction: ClosedLoopFuelingCorrection) {
         }
     }
     val meanLine = remember(correction) {
-        correction.meanAfrMap.map { (voltage, value) -> voltage to value }
+        correction.meanAfrMap.mapNotNull { (voltage, value) ->
+            if (value.isNaN()) null else voltage to value
+        }
     }
     val modeLine = remember(correction) {
-        correction.modeAfrMap.map { (voltage, modes) ->
-            voltage to mean.evaluate(modes, 0, modes.size)
+        correction.modeAfrMap.mapNotNull { (voltage, modes) ->
+            if (modes.isEmpty()) null
+            else {
+                val value = mean.evaluate(modes, 0, modes.size)
+                if (value.isNaN()) null else voltage to value
+            }
         }
     }
     val correctedLine = remember(correction) {

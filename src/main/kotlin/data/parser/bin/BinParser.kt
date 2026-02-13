@@ -8,6 +8,8 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -16,6 +18,7 @@ import javax.script.*
 object BinParser {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val engine: ScriptEngine = ScriptEngineManager().getEngineByName("graal.js")
+    private val parseMutex = Mutex()
 
     private val _mapList = MutableStateFlow<List<Pair<TableDefinition, Map3d>>>(emptyList())
     val mapList: StateFlow<List<Pair<TableDefinition, Map3d>>> = _mapList.asStateFlow()
@@ -28,7 +31,9 @@ object BinParser {
                 binaryFile = file
                 if (binaryFile.exists() && binaryFile.isFile) {
                     try {
-                        parse(BufferedInputStream(FileInputStream(binaryFile)), XdfParser.tableDefinitions.value)
+                        parseMutex.withLock {
+                            parse(BufferedInputStream(FileInputStream(binaryFile)), XdfParser.tableDefinitions.value)
+                        }
                     } catch (e: IOException) { e.printStackTrace() }
                 }
             }
@@ -37,7 +42,9 @@ object BinParser {
             XdfParser.tableDefinitions.collect { tableDefinitions ->
                 if (binaryFile.exists() && binaryFile.isFile) {
                     try {
-                        parse(BufferedInputStream(FileInputStream(binaryFile)), tableDefinitions)
+                        parseMutex.withLock {
+                            parse(BufferedInputStream(FileInputStream(binaryFile)), tableDefinitions)
+                        }
                     } catch (e: IOException) { e.printStackTrace() }
                 }
             }
@@ -46,7 +53,9 @@ object BinParser {
             BinWriter.writeEvents.collect {
                 if (binaryFile.exists() && binaryFile.isFile) {
                     try {
-                        parse(BufferedInputStream(FileInputStream(binaryFile)), XdfParser.tableDefinitions.value)
+                        parseMutex.withLock {
+                            parse(BufferedInputStream(FileInputStream(binaryFile)), XdfParser.tableDefinitions.value)
+                        }
                     } catch (e: IOException) { e.printStackTrace() }
                 }
             }

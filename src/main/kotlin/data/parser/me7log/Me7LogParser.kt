@@ -44,7 +44,7 @@ class Me7LogParser {
 
         for (file in files) {
             parse(file, logType, map)
-            callback.onProgress(count++, numFiles)
+            callback.onProgress(++count, numFiles)
         }
 
         return map

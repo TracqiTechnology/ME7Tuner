@@ -32,7 +32,15 @@ fun ScatterPlot(
         return
     }
 
-    val allPoints = series.flatMap { it.points }
+    val allPoints = series.flatMap { it.points }.filter { it.first.isFinite() && it.second.isFinite() }
+
+    if (allPoints.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text("No data", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+        }
+        return
+    }
+
     val bounds = remember(allPoints) {
         val xMin = allPoints.minOf { it.first }
         val xMax = allPoints.maxOf { it.first }
@@ -115,8 +123,8 @@ fun ScatterPlot(
 
                 // Series
                 for (s in series) {
-                    if (s.points.isEmpty()) continue
-                    val sorted = s.points.sortedBy { it.first }
+                    val sorted = s.points.filter { it.first.isFinite() && it.second.isFinite() }.sortedBy { it.first }
+                    if (sorted.isEmpty()) continue
 
                     // Draw points (scatter)
                     if (s.showPoints) {

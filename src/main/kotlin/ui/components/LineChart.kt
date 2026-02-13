@@ -43,7 +43,15 @@ fun LineChart(
         return
     }
 
-    val allPoints = series.flatMap { it.points }
+    val allPoints = series.flatMap { it.points }.filter { it.first.isFinite() && it.second.isFinite() }
+
+    if (allPoints.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text("No data", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+        }
+        return
+    }
+
     val bounds = remember(allPoints) {
         val xMin = allPoints.minOf { it.first }
         val xMax = allPoints.maxOf { it.first }
@@ -157,8 +165,8 @@ private fun DrawScope.drawChartArea(bounds: ChartBounds, seriesList: List<ChartS
 
     // Series
     for (series in seriesList) {
-        if (series.points.isEmpty()) continue
-        val sorted = series.points.sortedBy { it.first }
+        val sorted = series.points.filter { it.first.isFinite() && it.second.isFinite() }.sortedBy { it.first }
+        if (sorted.isEmpty()) continue
 
         if (series.showLine && sorted.size > 1) {
             val path = Path().apply {
