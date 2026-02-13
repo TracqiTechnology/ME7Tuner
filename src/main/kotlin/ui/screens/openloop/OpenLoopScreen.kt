@@ -3,6 +3,10 @@ package ui.screens.openloop
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -109,29 +113,45 @@ fun OpenLoopScreen() {
     val hasCorrection = correction != null
 
     var selectedTab by remember { mutableStateOf(0) }
-    val tabTitles = listOf("ME7 Logs", "Correction", "MLHFM", "Help")
+    val tabTitles = listOf("ME7 Logs", "MLHFM", "Correction")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTab) {
-            tabTitles.forEachIndexed { index, title ->
-                val enabled = when (index) {
-                    0 -> hasMap
-                    1 -> hasMap && hasMe7Logs && hasAfrLogs && hasCorrection
-                    2 -> hasMap && hasCorrection
-                    3 -> true
-                    else -> true
-                }
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { if (enabled) selectedTab = index },
-                    enabled = enabled,
-                    text = {
-                        Text(
-                            title,
-                            color = if (enabled) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
+                tabTitles.forEachIndexed { index, title ->
+                    val enabled = when (index) {
+                        0 -> hasMap
+                        1 -> hasMap && hasCorrection
+                        2 -> hasMap && hasMe7Logs && hasAfrLogs && hasCorrection
+                        else -> true
                     }
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { if (enabled) selectedTab = index },
+                        enabled = enabled,
+                        text = {
+                            Text(
+                                title,
+                                color = if (enabled) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = {
+                    try {
+                        Desktop.getDesktop().browse(URI("https://github.com/KalebKE/ME7Tuner#open-loop"))
+                    } catch (_: Exception) { }
+                },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Help",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -142,12 +162,11 @@ fun OpenLoopScreen() {
                 afrLogMap = afrLogMap,
                 airflowEstimation = airflowEstimation
             )
-            1 -> OpenLoopCorrectionTab(
+            1 -> OpenLoopMlhfmTab(correction = correction)
+            2 -> OpenLoopCorrectionTab(
                 correction = correction,
                 onCorrectionUpdated = { correction = it }
             )
-            2 -> OpenLoopMlhfmTab(correction = correction)
-            3 -> OpenLoopHelpTab()
         }
     }
 }
@@ -160,8 +179,8 @@ private fun OpenLoopLogsTab(
     afrLogMap: Map<String, List<Double>>?,
     airflowEstimation: AirflowEstimation?
 ) {
-    var me7FileName by remember { mutableStateOf("No File Selected") }
-    var afrFileName by remember { mutableStateOf("No File Selected") }
+    var me7FileName by remember { mutableStateOf<String?>(null) }
+    var afrFileName by remember { mutableStateOf<String?>(null) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var logSubTab by remember { mutableStateOf(0) }
     val logSubTabs = listOf("Fueling", "Airflow")
@@ -186,65 +205,71 @@ private fun OpenLoopLogsTab(
         }
 
         // Action bar
-        Row(
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(8.dp)
         ) {
-            Button(onClick = { showFilterDialog = true }) {
-                Text("Configure Filter")
-            }
-
-            Spacer(Modifier.width(24.dp))
-
-            // ME7 file button
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = {
-                    val dialog = FileDialog(Frame(), "Load ME7 Log", FileDialog.LOAD)
-                    dialog.file = "*.csv"
-                    dialog.isVisible = true
-                    val dir = dialog.directory
-                    val file = dialog.file
-                    if (dir != null && file != null) {
-                        val selected = File(dir, file)
-                        me7FileName = selected.name
-                        OpenLoopLogParser.loadFile(selected)
-                    }
-                }) {
-                    Text("Load ME7 Logs")
-                }
-                Text(
-                    text = me7FileName,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
+            Column(modifier = Modifier.padding(16.dp)) {
+                PrerequisiteRow(
+                    label = "ME7 log",
+                    detail = me7FileName ?: "Not loaded",
+                    met = me7FileName != null
                 )
-            }
 
-            Spacer(Modifier.width(24.dp))
-
-            // AFR file button
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = {
-                    val dialog = FileDialog(Frame(), "Load AFR Log", FileDialog.LOAD)
-                    dialog.file = "*.csv"
-                    dialog.isVisible = true
-                    val dir = dialog.directory
-                    val file = dialog.file
-                    if (dir != null && file != null) {
-                        val selected = File(dir, file)
-                        afrFileName = selected.name
-                        AfrLogParser.load(selected)
-                    }
-                }) {
-                    Text("Load Zeitronix Logs")
-                }
-                Text(
-                    text = afrFileName,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
+                PrerequisiteRow(
+                    label = "Zeitronix log",
+                    detail = afrFileName ?: "Not loaded",
+                    met = afrFileName != null
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = { showFilterDialog = true }) {
+                        Text("Configure Filter")
+                    }
+
+                    Spacer(Modifier.width(24.dp))
+
+                    Button(onClick = {
+                        val dialog = FileDialog(Frame(), "Load ME7 Log", FileDialog.LOAD)
+                        dialog.file = "*.csv"
+                        dialog.isVisible = true
+                        val dir = dialog.directory
+                        val file = dialog.file
+                        if (dir != null && file != null) {
+                            val selected = File(dir, file)
+                            me7FileName = selected.name
+                            OpenLoopLogParser.loadFile(selected)
+                        }
+                    }) {
+                        Text("Load ME7 Logs")
+                    }
+
+                    Spacer(Modifier.width(24.dp))
+
+                    Button(onClick = {
+                        val dialog = FileDialog(Frame(), "Load AFR Log", FileDialog.LOAD)
+                        dialog.file = "*.csv"
+                        dialog.isVisible = true
+                        val dir = dialog.directory
+                        val file = dialog.file
+                        if (dir != null && file != null) {
+                            val selected = File(dir, file)
+                            afrFileName = selected.name
+                            AfrLogParser.load(selected)
+                        }
+                    }) {
+                        Text("Load Zeitronix Logs")
+                    }
+                }
             }
         }
     }
@@ -441,45 +466,47 @@ private fun OpenLoopCorrectionTab(
             }
         }
 
-        // Polynomial fit + write controls
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Polynomial Degree: ", style = MaterialTheme.typography.bodyMedium)
-            var degreeText by remember { mutableStateOf(polynomialDegree.toString()) }
-            OutlinedTextField(
-                value = degreeText,
-                onValueChange = {
-                    degreeText = it
-                    it.toIntOrNull()?.let { v -> polynomialDegree = v }
-                },
-                singleLine = true,
-                modifier = Modifier.width(60.dp).height(48.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Button(onClick = {
-                val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, polynomialDegree)
-                onCorrectionUpdated(
-                    correction.copy(fitMlhfm = fitMlhfm)
+        if (correctionSubTab == 0) {
+            // Polynomial fit + write controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Polynomial Degree: ", style = MaterialTheme.typography.bodyMedium)
+                var degreeText by remember { mutableStateOf(polynomialDegree.toString()) }
+                OutlinedTextField(
+                    value = degreeText,
+                    onValueChange = {
+                        degreeText = it
+                        it.toIntOrNull()?.let { v -> polynomialDegree = v }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.width(60.dp)
                 )
-            }) {
-                Text("Fit MLHFM")
-            }
-            Spacer(Modifier.width(16.dp))
-            Button(onClick = {
-                val pair = MlhfmPreferences.getSelectedMap()
-                if (pair != null) {
-                    val binFile = BinFilePreferences.getStoredFile()
-                    if (binFile.exists()) {
-                        BinWriter.write(binFile, pair.first, correction.fitMlhfm)
-                    }
+                Spacer(Modifier.width(8.dp))
+                Button(onClick = {
+                    val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, polynomialDegree)
+                    onCorrectionUpdated(
+                        correction.copy(fitMlhfm = fitMlhfm)
+                    )
+                }) {
+                    Text("Fit MLHFM")
                 }
-            }) {
-                Text("Write MLHFM")
+                Spacer(Modifier.width(16.dp))
+                Button(onClick = {
+                    val pair = MlhfmPreferences.getSelectedMap()
+                    if (pair != null) {
+                        val binFile = BinFilePreferences.getStoredFile()
+                        if (binFile.exists()) {
+                            BinWriter.write(binFile, pair.first, correction.fitMlhfm)
+                        }
+                    }
+                }) {
+                    Text("Write MLHFM")
+                }
             }
         }
     }
@@ -648,54 +675,37 @@ private fun OpenLoopMlhfmTab(correction: OpenLoopMlhfmCorrection?) {
     }
 }
 
-// -- Help Tab --
+// -- Shared Private Composables --
 
 @Composable
-private fun OpenLoopHelpTab() {
-    val scrollState = rememberScrollState()
-
-    Column(
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState)
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Text(
-            text = "Open Loop MLHFM Correction",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 12.dp)
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(100.dp)
         )
 
         Text(
-            text = """
-                This tool corrects the MAF sensor linearization table (MLHFM) using open loop (wide open throttle) data with an external wideband O2 sensor.
-
-                Steps:
-                1. Ensure MLHFM is configured in the Configuration tab.
-                2. Load an ME7 log file (.csv) with WOT pull data.
-                3. Load a Zeitronix (or similar) AFR log file (.csv) with corresponding wideband O2 data.
-                4. The ME7 Logs tab will show fueling and airflow charts.
-                5. The Correction tab shows the corrected MLHFM and AFR correction scatter plot.
-                6. Use the polynomial fit to smooth the correction curve.
-                7. Write the corrected MLHFM back to the binary.
-
-                Required ME7 log headers: MAF Voltage, STFT, LTFT, Lambda Control, Throttle Angle, RPM, Requested Lambda, Fuel Injector On-Time, MAF g/sec.
-                Required AFR log headers: Time, RPM, AFR, TPS, Boost.
-
-                The correction compares the expected AFR (from ME7 fueling request) with the actual measured AFR
-                from the wideband O2 sensor. The difference indicates MAF sensor error at each voltage point.
-            """.trimIndent(),
-            style = MaterialTheme.typography.bodyMedium
+            text = detail,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(onClick = {
-            try {
-                Desktop.getDesktop().browse(URI("https://github.com/KalebKE/ME7Tuner#open-loop"))
-            } catch (_: Exception) { }
-        }) {
-            Text("Open Loop MLHFM User Guide")
-        }
     }
 }
+

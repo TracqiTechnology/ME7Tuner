@@ -1,18 +1,19 @@
 package ui.screens.closedloop
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import data.contract.Me7LogFileContract
 import data.parser.bin.BinParser
 import data.parser.me7log.ClosedLoopLogParser
-import data.parser.me7log.LogLoadProgress
 import data.parser.xdf.TableDefinition
 import data.preferences.bin.BinFilePreferences
 import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences
@@ -24,7 +25,7 @@ import domain.model.closedloopfueling.ClosedLoopFuelingCorrection
 import domain.model.closedloopfueling.ClosedLoopFuelingCorrectionManager
 import domain.model.mlhfm.MlhfmFitter
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import ui.components.*
@@ -38,7 +39,8 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.net.URI
-import java.text.DecimalFormat
+
+private enum class WriteStatus { Idle, Success, Error }
 
 private fun findMlhfmMap(mapList: List<Pair<TableDefinition, Map3d>>): Pair<TableDefinition, Map3d>? {
     val selected = MlhfmPreferences.getSelectedMap()
@@ -54,8 +56,6 @@ fun ClosedLoopScreen() {
 
     var me7LogMap by remember { mutableStateOf<Map<Me7LogFileContract.Header, List<Double>>?>(null) }
     var correction by remember { mutableStateOf<ClosedLoopFuelingCorrection?>(null) }
-
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         ClosedLoopLogParser.logs.collect { logs ->
@@ -79,30 +79,52 @@ fun ClosedLoopScreen() {
     val hasCorrection = correction != null
     val hasMap = mlhfmPair != null
 
+    // Write prerequisites
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val mlhfmMapConfigured = mlhfmPair != null
+    val mlhfmMapName = mlhfmPair?.first?.tableName
+
     var selectedTab by remember { mutableStateOf(0) }
-    val tabTitles = listOf("ME7 Logs", "Correction", "MLHFM", "Help")
+    val tabTitles = listOf("ME7 Logs", "MLHFM", "Correction")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTab) {
-            tabTitles.forEachIndexed { index, title ->
-                val enabled = when (index) {
-                    0 -> hasMap
-                    1 -> hasMap && hasLogs && hasCorrection
-                    2 -> hasMap && hasCorrection
-                    3 -> true
-                    else -> true
-                }
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { if (enabled) selectedTab = index },
-                    enabled = enabled,
-                    text = {
-                        Text(
-                            title,
-                            color = if (enabled) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
+                tabTitles.forEachIndexed { index, title ->
+                    val enabled = when (index) {
+                        0 -> hasMap
+                        1 -> hasMap && hasCorrection
+                        2 -> hasMap && hasLogs && hasCorrection
+                        else -> true
                     }
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { if (enabled) selectedTab = index },
+                        enabled = enabled,
+                        text = {
+                            Text(
+                                title,
+                                color = if (enabled) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = {
+                    try {
+                        Desktop.getDesktop().browse(URI("https://github.com/KalebKE/ME7Tuner#closed-loop-mlhfm"))
+                    } catch (_: Exception) { }
+                },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Help",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -111,14 +133,25 @@ fun ClosedLoopScreen() {
             0 -> ClosedLoopLogsTab(
                 me7LogMap = me7LogMap,
                 mlhfm = mlhfmPair?.second,
+                mlhfmMapConfigured = mlhfmMapConfigured,
+                mlhfmMapName = mlhfmMapName,
                 onLogsLoaded = { selectedTab = if (correction != null) 1 else 0 }
             )
-            1 -> ClosedLoopCorrectionTab(
+            1 -> ClosedLoopMlhfmTab(
                 correction = correction,
-                onCorrectionUpdated = { correction = it }
+                binLoaded = binLoaded,
+                binFileName = if (binLoaded) binFile.name else null,
+                mlhfmMapConfigured = mlhfmMapConfigured,
+                mlhfmMapName = mlhfmMapName
             )
-            2 -> ClosedLoopMlhfmTab(correction = correction)
-            3 -> ClosedLoopHelpTab()
+            2 -> ClosedLoopCorrectionTab(
+                correction = correction,
+                onCorrectionUpdated = { correction = it },
+                binLoaded = binLoaded,
+                binFileName = if (binLoaded) binFile.name else null,
+                mlhfmMapConfigured = mlhfmMapConfigured,
+                mlhfmMapName = mlhfmMapName
+            )
         }
     }
 }
@@ -129,6 +162,8 @@ fun ClosedLoopScreen() {
 private fun ClosedLoopLogsTab(
     me7LogMap: Map<Me7LogFileContract.Header, List<Double>>?,
     mlhfm: Map3d?,
+    mlhfmMapConfigured: Boolean,
+    mlhfmMapName: String?,
     onLogsLoaded: () -> Unit
 ) {
     var showFilterDialog by remember { mutableStateOf(false) }
@@ -168,64 +203,89 @@ private fun ClosedLoopLogsTab(
             )
         }
 
-        // Action bar
-        Row(
+        // Action bar with prerequisite
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(8.dp)
         ) {
-            OutlinedButton(onClick = { showFilterDialog = true }) {
-                Text("Configure Filter")
-            }
+            Column(modifier = Modifier.padding(16.dp)) {
+                PrerequisiteRow(
+                    label = "MLHFM map",
+                    detail = if (mlhfmMapConfigured) mlhfmMapName!! else "Not configured",
+                    met = mlhfmMapConfigured
+                )
 
-            Spacer(Modifier.width(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
-                onClick = {
-                    val dialog = FileDialog(Frame(), "Select Log Directory", FileDialog.LOAD)
-                    System.setProperty("apple.awt.fileDialogForDirectories", "true")
-                    val lastDir = ClosedLoopFuelingLogPreferences.lastDirectory
-                    if (lastDir.isNotEmpty()) dialog.directory = lastDir
-                    dialog.isVisible = true
-                    System.setProperty("apple.awt.fileDialogForDirectories", "false")
-                    val dir = dialog.directory
-                    val file = dialog.file
-                    if (dir != null && file != null) {
-                        val selectedDir = File(dir, file)
-                        ClosedLoopFuelingLogPreferences.lastDirectory = selectedDir.parent ?: dir
-                        ClosedLoopLogParser.loadDirectory(selectedDir)
-                        onLogsLoaded()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = { showFilterDialog = true }) {
+                        Text("Configure Filter")
                     }
-                },
-                enabled = loadProgress == null
-            ) {
-                Text("Load Logs")
-            }
 
-            if (loadProgress != null) {
-                Spacer(Modifier.width(24.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val progress = loadProgress!!
-                    if (progress.total > 0) {
-                        Text(
-                            text = "Loading log ${progress.loaded} of ${progress.total}...",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        LinearProgressIndicator(
-                            progress = { progress.loaded.toFloat() / progress.total.toFloat() },
-                            modifier = Modifier.width(200.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Preparing...",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        LinearProgressIndicator(modifier = Modifier.width(200.dp))
+                    Spacer(Modifier.width(24.dp))
+
+                    Button(
+                        onClick = {
+                            val dialog = FileDialog(Frame(), "Select Log Directory", FileDialog.LOAD)
+                            System.setProperty("apple.awt.fileDialogForDirectories", "true")
+                            val lastDir = ClosedLoopFuelingLogPreferences.lastDirectory
+                            if (lastDir.isNotEmpty()) dialog.directory = lastDir
+                            dialog.isVisible = true
+                            System.setProperty("apple.awt.fileDialogForDirectories", "false")
+                            val dir = dialog.directory
+                            val file = dialog.file
+                            if (dir != null && file != null) {
+                                val selectedDir = File(dir, file)
+                                ClosedLoopFuelingLogPreferences.lastDirectory = selectedDir.parent ?: dir
+                                ClosedLoopLogParser.loadDirectory(selectedDir)
+                                onLogsLoaded()
+                            }
+                        },
+                        enabled = loadProgress == null && mlhfmMapConfigured
+                    ) {
+                        Text("Load Logs")
                     }
+
+                    if (loadProgress != null) {
+                        Spacer(Modifier.width(24.dp))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val progress = loadProgress!!
+                            if (progress.total > 0) {
+                                Text(
+                                    text = "Loading log ${progress.loaded} of ${progress.total}...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                LinearProgressIndicator(
+                                    progress = { progress.loaded.toFloat() / progress.total.toFloat() },
+                                    modifier = Modifier.width(200.dp)
+                                )
+                            } else {
+                                Text(
+                                    text = "Preparing...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                LinearProgressIndicator(modifier = Modifier.width(200.dp))
+                            }
+                        }
+                    }
+                }
+
+                if (!mlhfmMapConfigured) {
+                    Text(
+                        text = "Configure the MLHFM map definition in the Configuration screen to load logs.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
             }
         }
@@ -300,7 +360,11 @@ private fun ClosedLoopFilterDialog(
 @Composable
 private fun ClosedLoopCorrectionTab(
     correction: ClosedLoopFuelingCorrection?,
-    onCorrectionUpdated: (ClosedLoopFuelingCorrection) -> Unit
+    onCorrectionUpdated: (ClosedLoopFuelingCorrection) -> Unit,
+    binLoaded: Boolean,
+    binFileName: String?,
+    mlhfmMapConfigured: Boolean,
+    mlhfmMapName: String?
 ) {
     if (correction == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -312,6 +376,18 @@ private fun ClosedLoopCorrectionTab(
     var polynomialDegree by remember { mutableStateOf(6) }
     var correctionSubTab by remember { mutableStateOf(0) }
     val correctionSubTabs = listOf("AFR Correction %", "dMAFv/dt", "MLHFM")
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
+
+    val canWrite = binLoaded && mlhfmMapConfigured
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Sub-tab row
@@ -334,46 +410,150 @@ private fun ClosedLoopCorrectionTab(
         }
 
         // Polynomial fit + write controls
-        Row(
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(8.dp)
         ) {
-            Text("Polynomial Degree: ", style = MaterialTheme.typography.bodyMedium)
-            var degreeText by remember { mutableStateOf(polynomialDegree.toString()) }
-            OutlinedTextField(
-                value = degreeText,
-                onValueChange = {
-                    degreeText = it
-                    it.toIntOrNull()?.let { v -> polynomialDegree = v }
-                },
-                singleLine = true,
-                modifier = Modifier.width(60.dp).height(48.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Button(onClick = {
-                val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, polynomialDegree)
-                onCorrectionUpdated(
-                    correction.copy(fitMlhfm = fitMlhfm)
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (correctionSubTab == 2) {
+                    Text(
+                        text = "Polynomial Fit",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Polynomial Degree: ", style = MaterialTheme.typography.bodyMedium)
+                        var degreeText by remember { mutableStateOf(polynomialDegree.toString()) }
+                        OutlinedTextField(
+                            value = degreeText,
+                            onValueChange = {
+                                degreeText = it
+                                it.toIntOrNull()?.let { v -> polynomialDegree = v }
+                            },
+                            singleLine = true,
+                            modifier = Modifier.width(60.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = {
+                            val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, polynomialDegree)
+                            onCorrectionUpdated(
+                                correction.copy(fitMlhfm = fitMlhfm)
+                            )
+                        }) {
+                            Text("Fit MLHFM")
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                }
+
+                Text(
+                    text = "Write to Binary",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-            }) {
-                Text("Fit MLHFM")
-            }
-            Spacer(Modifier.width(16.dp))
-            Button(onClick = {
-                val pair = MlhfmPreferences.getSelectedMap()
-                if (pair != null) {
-                    val binFile = BinFilePreferences.getStoredFile()
-                    if (binFile.exists()) {
-                        BinWriter.write(binFile, pair.first, correction.fitMlhfm)
+
+                PrerequisiteRow(
+                    label = "BIN file",
+                    detail = if (binLoaded) binFileName!! else "Not loaded",
+                    met = binLoaded
+                )
+
+                PrerequisiteRow(
+                    label = "MLHFM map",
+                    detail = if (mlhfmMapConfigured) mlhfmMapName!! else "Not configured",
+                    met = mlhfmMapConfigured
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = { showWriteConfirmation = true },
+                        enabled = canWrite
+                    ) {
+                        Text("Write MLHFM")
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
-            }) {
-                Text("Write MLHFM")
+
+                if (!canWrite) {
+                    val message = when {
+                        !binLoaded && !mlhfmMapConfigured -> "Load a BIN file and configure the MLHFM map in the Configuration screen."
+                        !binLoaded -> "Load a BIN file to write."
+                        else -> "Configure the MLHFM map definition in the Configuration screen."
+                    }
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
+    }
+
+    if (showWriteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write MLHFM") },
+            text = { Text("Are you sure you want to write the corrected MLHFM to the binary?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWriteConfirmation = false
+                        val pair = MlhfmPreferences.getSelectedMap()
+                        if (pair != null) {
+                            try {
+                                val mlhfmToWrite = correction.fitMlhfm.let {
+                                    if (it.yAxis.isNotEmpty()) it else correction.correctedMlhfm
+                                }
+                                BinWriter.write(BinFilePreferences.file.value, pair.first, mlhfmToWrite)
+                                writeStatus = WriteStatus.Success
+                            } catch (e: Exception) {
+                                writeStatus = WriteStatus.Error
+                            }
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 
@@ -486,13 +666,31 @@ private fun CorrectionMlhfmChart(correction: ClosedLoopFuelingCorrection) {
 // -- MLHFM Tab --
 
 @Composable
-private fun ClosedLoopMlhfmTab(correction: ClosedLoopFuelingCorrection?) {
+private fun ClosedLoopMlhfmTab(
+    correction: ClosedLoopFuelingCorrection?,
+    binLoaded: Boolean,
+    binFileName: String?,
+    mlhfmMapConfigured: Boolean,
+    mlhfmMapName: String?
+) {
     if (correction == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No correction data available.")
         }
         return
     }
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
+
+    val canWrite = binLoaded && mlhfmMapConfigured
 
     val inputPoints = remember(correction) {
         correction.inputMlhfm.yAxis.indices.map { i ->
@@ -543,77 +741,147 @@ private fun ClosedLoopMlhfmTab(correction: ClosedLoopFuelingCorrection?) {
             }
         }
 
-        Row(
+        // Write to Binary section
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.Center
+                .padding(8.dp)
         ) {
-            Button(onClick = {
-                val pair = MlhfmPreferences.getSelectedMap()
-                if (pair != null) {
-                    val binFile = BinFilePreferences.getStoredFile()
-                    if (binFile.exists()) {
-                        val mlhfmToWrite = correction.fitMlhfm.let {
-                            if (it.yAxis.isNotEmpty()) it else correction.correctedMlhfm
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Write to Binary",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                PrerequisiteRow(
+                    label = "BIN file",
+                    detail = if (binLoaded) binFileName!! else "Not loaded",
+                    met = binLoaded
+                )
+
+                PrerequisiteRow(
+                    label = "MLHFM map",
+                    detail = if (mlhfmMapConfigured) mlhfmMapName!! else "Not configured",
+                    met = mlhfmMapConfigured
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = { showWriteConfirmation = true },
+                        enabled = canWrite
+                    ) {
+                        Text("Write MLHFM")
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error
+                            )
                         }
-                        BinWriter.write(binFile, pair.first, mlhfmToWrite)
                     }
                 }
-            }) {
-                Text("Write MLHFM")
+
+                if (!canWrite) {
+                    val message = when {
+                        !binLoaded && !mlhfmMapConfigured -> "Load a BIN file and configure the MLHFM map in the Configuration screen."
+                        !binLoaded -> "Load a BIN file to write."
+                        else -> "Configure the MLHFM map definition in the Configuration screen."
+                    }
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
     }
+
+    if (showWriteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write MLHFM") },
+            text = { Text("Are you sure you want to write MLHFM to the binary?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWriteConfirmation = false
+                        val pair = MlhfmPreferences.getSelectedMap()
+                        if (pair != null) {
+                            try {
+                                val mlhfmToWrite = correction.fitMlhfm.let {
+                                    if (it.yAxis.isNotEmpty()) it else correction.correctedMlhfm
+                                }
+                                BinWriter.write(BinFilePreferences.file.value, pair.first, mlhfmToWrite)
+                                writeStatus = WriteStatus.Success
+                            } catch (e: Exception) {
+                                writeStatus = WriteStatus.Error
+                            }
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
 }
 
-// -- Help Tab --
+// -- Shared Private Composables --
 
 @Composable
-private fun ClosedLoopHelpTab() {
-    val scrollState = rememberScrollState()
-
-    Column(
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState)
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Text(
-            text = "Closed Loop MLHFM Correction",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 12.dp)
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(80.dp)
         )
 
         Text(
-            text = """
-                This tool corrects the MAF sensor linearization table (MLHFM) using closed loop fuel trim data.
-
-                Steps:
-                1. Ensure MLHFM is configured in the Configuration tab.
-                2. Load a directory containing ME7 log files (.csv) with closed loop driving data.
-                3. The ME7 Logs tab will show a derivative scatter plot. Use the filter to exclude noisy samples.
-                4. The Correction tab shows the AFR correction percentage, derivative, and corrected MLHFM.
-                5. Use the polynomial fit to smooth the correction curve.
-                6. Write the corrected MLHFM back to the binary.
-
-                Required log headers: MAF Voltage, STFT, LTFT, Lambda Control, Throttle Angle, RPM, Timestamp.
-
-                The correction uses Short Term Fuel Trim (STFT) and Long Term Fuel Trim (LTFT) to determine
-                how much the ECU is adjusting fueling to maintain stoichiometric AFR. These trims indicate
-                the MAF sensor error at each voltage point.
-            """.trimIndent(),
-            style = MaterialTheme.typography.bodyMedium
+            text = detail,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(onClick = {
-            try {
-                Desktop.getDesktop().browse(URI("https://github.com/KalebKE/ME7Tuner#closed-loop-mlhfm"))
-            } catch (_: Exception) { }
-        }) {
-            Text("Closed Loop MLHFM User Guide")
-        }
     }
 }
