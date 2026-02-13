@@ -1,0 +1,119 @@
+{
+    "name": "MBox",
+    "mapDefinitions": {
+        "KRKTE": {
+            "tableName": "KRKTE",
+            "tableDescription": "Conversion of relative fuel mass (rk) to effective injector on time (te)",
+            "unit": "ms/%"
+        },
+        "MLHFM": {
+            "tableName": "MLHFM",
+            "tableDescription": "Linearization of MAF voltage",
+            "unit": "kg/h"
+        },
+        "KFMIOP": {
+            "tableName": "KFMIOP",
+            "tableDescription": "Optimal engine torque map",
+            "unit": "%"
+        },
+        "KFMIRL": {
+            "tableName": "KFMIRL",
+            "tableDescription": "Engine load desired (rlsol)",
+            "unit": "%"
+        },
+        "KFZWOP": {
+            "tableName": "KFZWOP",
+            "tableDescription": "Optimal ignition angle",
+            "unit": "grad KW"
+        },
+        "KFZW": {
+            "tableName": "KFZW (16-bit load)",
+            "tableDescription": "Ignition angle map",
+            "unit": "grad KW"
+        },
+        "KFVPDKSD": {
+            "tableName": "KFVPDKSD",
+            "tableDescription": "Desired pressure ratio DK dynamic",
+            "unit": "-"
+        },
+        "WDKUGDN": {
+            "tableName": "WDKUGDN",
+            "tableDescription": "KL Drosselklappenwinkel, ab der keine Drosselung mehr erfolgt",
+            "unit": "%"
+        },
+        "KFWDKMSN": {
+            "tableName": "KFWDKMSN",
+            "tableDescription": "Map for desired throttle plate angle",
+            "unit": "%"
+        },
+        "KFLDRL": {
+            "tableName": "KFLDRL",
+            "tableDescription": "Map for linearization of boost pressure = f (TV)",
+            "unit": "%"
+        },
+        "KFLDIMX": {
+            "tableName": "KFLDIMX",
+            "tableDescription": "Map: LDR I-Regulator limit",
+            "unit": "%"
+        }
+    },
+    "primaryFueling": {
+        "airDensity": 1.2929,
+        "displacement": 0.4496,
+        "numCylinders": 6,
+        "stoichiometricAfr": 14.7,
+        "gasolineGramsPerCcm": 0.7,
+        "fuelInjectorSize": 349.0
+    },
+    "plsol": {
+        "barometricPressure": 1013.0,
+        "intakeAirTemperature": 20.0,
+        "kfurl": 0.1037,
+        "displacement": 2.7,
+        "rpm": 6000
+    },
+    "kfmiop": {
+        "maxMapPressure": 2550.0,
+        "maxBoostPressure": 2100.0
+    },
+    "kfvpdksd": {
+        "maxWastegateCrackingPressure": 200.0
+    },
+    "wdkugdn": {
+        "displacement": 2.7
+    },
+    "closedLoopFueling": {
+        "minThrottleAngle": 0.0,
+        "minRpm": 0.0,
+        "maxDerivative": 50.0
+    },
+    "openLoopFueling": {
+        "minThrottleAngle": 80.0,
+        "minRpm": 2000.0,
+        "minMe7Points": 75,
+        "minAfrPoints": 150,
+        "maxAfr": 16.0,
+        "fuelInjectorSize": 349.0,
+        "gasolineGramsPerCcm": 0.7,
+        "numFuelInjectors": 6.0
+    },
+    "logHeaders": {
+        "START_TIME_HEADER": "start_time",
+        "TIME_STAMP_COLUMN_HEADER": "TIME",
+        "RPM_COLUMN_HEADER": "nmot",
+        "STFT_COLUMN_HEADER": "fr_w",
+        "LTFT_COLUMN_HEADER": "fra_w",
+        "MAF_VOLTAGE_HEADER": "uhfm_w",
+        "MAF_GRAMS_PER_SECOND_HEADER": "mshfm_w",
+        "THROTTLE_PLATE_ANGLE_HEADER": "wdkba",
+        "LAMBDA_CONTROL_ACTIVE_HEADER": "B_lr",
+        "REQUESTED_LAMBDA_HEADER": "lamsbg_w",
+        "FUEL_INJECTOR_ON_TIME_HEADER": "ti_b1",
+        "ENGINE_LOAD_HEADER": "rl_w",
+        "WASTEGATE_DUTY_CYCLE_HEADER": "ldtvm",
+        "BAROMETRIC_PRESSURE_HEADER": "pus_w",
+        "ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER": "pvdks_w",
+        "SELECTED_GEAR_HEADER": "gangi",
+        "WIDE_BAND_O2_HEADER": "lamsoni_w"
+    }
+}

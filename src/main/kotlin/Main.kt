@@ -12,6 +12,7 @@ import data.preferences.filechooser.BinFileChooserPreferences
 import data.preferences.filechooser.XdfFileChooserPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.xdf.XdfFilePreferences
+import data.profile.ProfileManager
 import ui.navigation.ME7TunerApp
 import ui.theme.ME7TunerTheme
 import java.awt.FileDialog
@@ -58,6 +59,41 @@ fun main() {
                             MapPreferenceManager.clear()
                             XdfFilePreferences.setFile(file)
                             XdfFileChooserPreferences.lastDirectory = file.parent
+                        }
+                    }
+                }
+                Menu("Profiles") {
+                    Item("Load Profile...") {
+                        val file = openFileDialog(window, "Load Profile", "me7profile.json", "")
+                        if (file != null) {
+                            runCatching {
+                                val profile = ProfileManager.loadFromFile(file)
+                                ProfileManager.applyProfile(profile)
+                                ProfileManager.addUserProfile(profile)
+                            }
+                        }
+                    }
+                    Item("Save Profile...") {
+                        javax.swing.SwingUtilities.invokeLater {
+                            val name = javax.swing.JOptionPane.showInputDialog(
+                                window,
+                                "Profile name:",
+                                "Save Profile",
+                                javax.swing.JOptionPane.PLAIN_MESSAGE
+                            )
+                            if (name != null && name.isNotBlank()) {
+                                val dialog = FileDialog(window, "Save Profile", FileDialog.SAVE)
+                                dialog.file = "${name.replace(Regex("[^a-zA-Z0-9_ -]"), "")}.me7profile.json"
+                                dialog.isVisible = true
+                                val dir = dialog.directory
+                                val fileName = dialog.file
+                                if (dir != null && fileName != null) {
+                                    runCatching {
+                                        val profile = ProfileManager.exportCurrentProfile(name)
+                                        ProfileManager.saveToFile(profile, File(dir, fileName))
+                                    }
+                                }
+                            }
                         }
                     }
                 }

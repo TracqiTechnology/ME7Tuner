@@ -43,6 +43,25 @@ fun MapPickerDialog(
                 )
 
                 LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    if (filteredDefinitions.isEmpty()) {
+                        item {
+                            val message = if (tableDefinitions.isEmpty()) {
+                                "No table definitions available. Load an XDF file first (File \u2192 Select XDF...)."
+                            } else {
+                                "No matching definitions."
+                            }
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                     items(filteredDefinitions) { definition ->
                         ListItem(
                             headlineContent = { Text(definition.toString()) },

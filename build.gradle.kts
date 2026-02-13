@@ -2,6 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
 }
@@ -29,6 +30,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.1")
+
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
     // Kept from original project
     implementation("org.apache.commons:commons-math3:3.6.1")
