@@ -1,7 +1,9 @@
 package ui.screens.optimizer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -9,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.Me7LogParser
@@ -16,12 +19,18 @@ import data.parser.xdf.TableDefinition
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
+import data.preferences.kfmiop.KfmiopPreferences
+import data.preferences.kfmirl.KfmirlPreferences
 import data.preferences.kfpbrk.KfpbrkPreferences
 import data.preferences.kfpbrknw.KfpbrknwPreferences
 import data.preferences.optimizer.OptimizerPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
+import domain.model.optimizer.MapDelta
 import domain.model.optimizer.OptimizerCalculator
+import domain.model.optimizer.RpmBreakpointAnalysis
+import domain.model.simulator.Me7Simulator
+import domain.model.simulator.MechanicalLimitDetector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,12 +63,15 @@ fun OptimizerScreen() {
     val kfldimxPair = remember(mapList) { findMap(mapList, KfldimxPreferences) }
     val kfpbrkPair = remember(mapList) { findMap(mapList, KfpbrkPreferences) }
     val kfpbrknwPair = remember(mapList) { findMap(mapList, KfpbrknwPreferences) }
+    val kfmiopPair = remember(mapList) { findMap(mapList, KfmiopPreferences) }
+    val kfmirlPair = remember(mapList) { findMap(mapList, KfmirlPreferences) }
 
     // Preference-backed input state
     var toleranceMbar by remember { mutableStateOf(OptimizerPreferences.mapToleranceMbar.toString()) }
     var ldrxnTarget by remember { mutableStateOf(OptimizerPreferences.ldrxnTarget.toString()) }
     var kfldimxOverhead by remember { mutableStateOf(OptimizerPreferences.kfldimxOverheadPercent.toString()) }
     var minThrottleAngle by remember { mutableStateOf(OptimizerPreferences.minThrottleAngle.toString()) }
+    var kfurl by remember { mutableStateOf(OptimizerPreferences.kfurl.toString()) }
 
     // Result state
     var result by remember { mutableStateOf<OptimizerCalculator.OptimizerResult?>(null) }
@@ -67,7 +79,7 @@ fun OptimizerScreen() {
     var showProgress by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
 
-    val tabTitles = listOf("Boost Control", "VE Model", "Charts", "Warnings")
+    val tabTitles = listOf("Overview", "Per-Link", "Boost Control", "VE Model", "Calibration", "Prediction", "Export")
 
     Column(
         modifier = Modifier
@@ -132,6 +144,18 @@ fun OptimizerScreen() {
                             "Typical value: 80\u00B0. Lower values include partial-throttle data which may skew results.",
                         modifier = Modifier.weight(1f)
                     )
+                    ParameterField(
+                        value = kfurl,
+                        onValueChange = {
+                            kfurl = it
+                            it.toDoubleOrNull()?.let { v -> OptimizerPreferences.kfurl = v }
+                        },
+                        label = "KFURL",
+                        tooltip = "Slope of the rl(ps) characteristic — the VE constant used in the PLSOL/RLSOL " +
+                            "pressure\u2194load conversion. This is the single most important constant for simulation accuracy. " +
+                            "Default: 0.106. Adjust if your engine's volumetric efficiency differs from stock.",
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
@@ -165,10 +189,13 @@ fun OptimizerScreen() {
                                 kfldrlMap = kfldrlPair?.second,
                                 kfldimxMap = kfldimxPair?.second,
                                 kfpbrkMap = kfpbrkPair?.second,
+                                kfmiopMap = kfmiopPair?.second,
+                                kfmirlMap = kfmirlPair?.second,
                                 ldrxnTarget = ldrxnTarget.toDoubleOrNull() ?: 191.0,
                                 toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
                                 minThrottleAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0,
-                                kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0
+                                kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
+                                kfurl = kfurl.toDoubleOrNull() ?: 0.106
                             )
 
                             withContext(Dispatchers.Main) {
@@ -200,20 +227,50 @@ fun OptimizerScreen() {
                     scope.launch {
                         withContext(Dispatchers.IO) {
                             val parser = Me7LogParser()
-                            val values = parser.parseLogDirectory(
+                            val minAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0
+
+                            // Parse each file individually for per-log summaries
+                            val logFiles = selectedDir.listFiles()?.filter { it.isFile && it.name.endsWith(".csv", ignoreCase = true) } ?: emptyList()
+                            val summaries = mutableListOf<domain.model.optimizer.LogSummary>()
+
+                            // Also merge all data for the main analysis
+                            val mergedValues = parser.parseLogDirectory(
                                 Me7LogParser.LogType.OPTIMIZER,
                                 selectedDir
                             ) { _, _ -> }
 
+                            // Build per-log summaries
+                            for (logFile in logFiles) {
+                                try {
+                                    val fileParser = Me7LogParser()
+                                    val fileValues = fileParser.parseLogFile(Me7LogParser.LogType.OPTIMIZER, logFile)
+                                    val wotEntries = OptimizerCalculator.filterWotEntries(fileValues, minAngle)
+                                    if (wotEntries.isNotEmpty()) {
+                                        val rpmRange = "${wotEntries.minOf { it.rpm }.toInt()} – ${wotEntries.maxOf { it.rpm }.toInt()}"
+                                        val avgPressureError = wotEntries.map { it.requestedMap - it.actualMap }.average()
+                                        summaries.add(domain.model.optimizer.LogSummary(
+                                            fileName = logFile.name,
+                                            wotSampleCount = wotEntries.size,
+                                            rpmRange = rpmRange,
+                                            avgPressureError = avgPressureError
+                                        ))
+                                    }
+                                } catch (_: Exception) { /* skip unparseable files */ }
+                            }
+
                             val analysisResult = OptimizerCalculator.analyze(
-                                values = values,
+                                values = mergedValues,
                                 kfldrlMap = kfldrlPair?.second,
                                 kfldimxMap = kfldimxPair?.second,
                                 kfpbrkMap = kfpbrkPair?.second,
+                                kfmiopMap = kfmiopPair?.second,
+                                kfmirlMap = kfmirlPair?.second,
                                 ldrxnTarget = ldrxnTarget.toDoubleOrNull() ?: 191.0,
                                 toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
-                                minThrottleAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0,
-                                kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0
+                                minThrottleAngle = minAngle,
+                                kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
+                                kfurl = kfurl.toDoubleOrNull() ?: 0.106,
+                                logSummaries = summaries
                             )
 
                             withContext(Dispatchers.Main) {
@@ -272,10 +329,13 @@ fun OptimizerScreen() {
             Spacer(Modifier.height(8.dp))
 
             when (selectedTab) {
-                0 -> BoostControlTab(result!!, kfldrlPair, kfldimxPair)
-                1 -> VeModelTab(result!!, kfpbrkPair, kfpbrknwPair)
-                2 -> ChartsTab(result!!)
-                3 -> WarningsTab(result!!)
+                0 -> OverviewTab(result!!)
+                1 -> PerLinkTab(result!!)
+                2 -> BoostControlTab(result!!, kfldrlPair, kfldimxPair)
+                3 -> VeModelTab(result!!, kfpbrkPair, kfpbrknwPair)
+                4 -> CalibrationTab(result!!)
+                5 -> PredictionTab(result!!)
+                6 -> ExportTab(result!!, kfldrlPair, kfldimxPair, kfpbrkPair, kfmiopPair, kfmirlPair)
             }
         }
     }
@@ -491,187 +551,768 @@ private fun VeModelTab(
     }
 }
 
-// ── Tab: Charts ───────────────────────────────────────────────────────
+// ── Tab: Overview (Dashboard) ──────────────────────────────────────────
 
 @Composable
-private fun ChartsTab(result: OptimizerCalculator.OptimizerResult) {
+private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Pressure chart: pssol vs pvdks_w over RPM
-        Text("Pressure: Requested (pssol) vs Actual (pvdks_w)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
-        val requestedPressurePoints = result.wotEntries.map { Pair(it.rpm, it.requestedMap) }
-        val actualPressurePoints = result.wotEntries.map { Pair(it.rpm, it.actualMap) }
+        val diag = result.chainDiagnosis
+        val entries = result.wotEntries
 
+        // ── Calibration Status ──────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val ldrxn = if (result.simulationResults.isNotEmpty()) result.simulationResults[0].ldrxnTarget else 191.0
+                val avgRl = if (entries.isNotEmpty()) entries.map { it.actualLoad }.average() else 0.0
+                val deficit = ldrxn - avgRl
+                val statusOk = deficit < 5.0
+
+                Text("🎯 Calibration Status", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Target: LDRXN = ${String.format("%.1f", ldrxn)}%")
+                    Text("Achieved: avg rl_w = ${String.format("%.1f", avgRl)}%")
+                }
+                Text(
+                    if (statusOk) "✅ ON TARGET" else "❌ NEEDS CALIBRATION — deficit ${String.format("%.1f", deficit)}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+
+        // ── Chain Health ─────────────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Signal Chain Health", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                ChainLinkBar("Link 1: LDRXN → rlsol (Torque)", 100.0 - diag.torqueCappedPercent)
+                ChainLinkBar("Link 2: rlsol → pssol (VE Model)", 100.0 - diag.pssolErrorPercent)
+                ChainLinkBar("Link 3: pssol → pvdks (Boost Control)", 100.0 - diag.boostShortfallPercent)
+                ChainLinkBar("Link 4: pvdks → rl_w (VE Readback)", 100.0 - diag.veMismatchPercent)
+
+                Spacer(Modifier.height(8.dp))
+                val dominantLabel = when (diag.dominantError) {
+                    Me7Simulator.ErrorSource.TORQUE_CAPPED -> "TORQUE_CAPPED — increase KFMIOP/KFMIRL"
+                    Me7Simulator.ErrorSource.PSSOL_WRONG -> "PSSOL_WRONG — check KFURL value"
+                    Me7Simulator.ErrorSource.BOOST_SHORTFALL -> "BOOST_SHORTFALL — apply KFLDRL corrections"
+                    Me7Simulator.ErrorSource.VE_MISMATCH -> "VE_MISMATCH — apply KFPBRK corrections"
+                    Me7Simulator.ErrorSource.ON_TARGET -> "ON_TARGET ✓"
+                }
+                Text("Dominant Issue: $dominantLabel", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // ── Mechanical Limits ────────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Mechanical Limits", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                val limits = result.mechanicalLimits
+                MechLimitRow("MAF Sensor", !limits.mafMaxed, if (limits.mafMaxValue > 0) "${String.format("%.0f", limits.mafMaxValue)} g/s peak" else "N/A")
+                MechLimitRow("Injectors", !limits.injectorMaxed, if (limits.injectorMaxDutyCycle > 0) "${String.format("%.0f", limits.injectorMaxDutyCycle * 100)}% max DC" else "N/A")
+                MechLimitRow("Turbo", !limits.turboMaxed, if (limits.turboMaxWgdc > 0) "${String.format("%.0f", limits.turboMaxWgdc)}% max WGDC" else "N/A")
+                MechLimitRow("MAP Sensor", !limits.mapSensorMaxed, if (limits.mapSensorMaxValue > 0) "${String.format("%.0f", limits.mapSensorMaxValue)} mbar peak" else "N/A")
+            }
+        }
+
+        // ── Recommendations ──────────────────────────────────────
+        if (diag.recommendations.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Recommended Actions", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    diag.recommendations.forEachIndexed { index, rec ->
+                        Text("${index + 1}. $rec", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 6.dp))
+                    }
+                }
+            }
+        }
+
+        // ── Log Summary ──────────────────────────────────────────
+        if (entries.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Log Summary", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    val rpmRange = "${entries.minOf { it.rpm }.toInt()} – ${entries.maxOf { it.rpm }.toInt()}"
+                    val avgPressureError = entries.map { it.requestedMap - it.actualMap }.average()
+                    Text("WOT Samples: ${entries.size}")
+                    Text("RPM Range: $rpmRange")
+                    Text("Avg Pressure Error: ${String.format("%+.0f", avgPressureError)} mbar")
+                    Text("Avg WGDC: ${String.format("%.1f", entries.map { it.wgdc }.average())}%")
+
+                    // Show suggested map summary
+                    val sm = result.suggestedMaps
+                    Spacer(Modifier.height(8.dp))
+                    Text("Suggested Corrections:", style = MaterialTheme.typography.titleSmall)
+                    sm.kfmiop?.let { Text("  KFMIOP: ${it.cellsModified} cells modified (torque cap fix)") }
+                    sm.kfmirl?.let { Text("  KFMIRL: ${it.cellsModified} cells modified (inverse of KFMIOP)") }
+                    sm.kfpbrk?.let { Text("  KFPBRK: ${it.cellsModified} cells modified (avg Δ ${String.format("%+.1f", it.avgAbsoluteDelta)})") }
+                    sm.kfldrl?.let { Text("  KFLDRL: ${it.cellsModified} cells modified (avg Δ ${String.format("%+.1f", it.avgAbsoluteDelta)}% WGDC)") }
+                    sm.kfldimx?.let { Text("  KFLDIMX: ${it.cellsModified} cells modified") }
+
+                    // Per-log summary table (when loading a directory)
+                    if (result.logSummaries.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("Per-Log Breakdown (${result.logSummaries.size} files):", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                            Text("File", fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
+                            Text("WOT", fontWeight = FontWeight.Bold, modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall)
+                            Text("RPM Range", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            Text("Avg ΔP", fontWeight = FontWeight.Bold, modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                        }
+                        HorizontalDivider()
+                        for (ls in result.logSummaries) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Text(ls.fileName, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall)
+                                Text(ls.wotSampleCount.toString(), modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall)
+                                Text(ls.rpmRange, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Text("${String.format("%+.0f", ls.avgPressureError)} mbar", modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Warnings ─────────────────────────────────────────────
+        if (result.warnings.isNotEmpty()) {
+            result.warnings.forEachIndexed { index, warning ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Warning ${index + 1}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Spacer(Modifier.height(4.dp))
+                        Text(warning, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MechLimitRow(name: String, ok: Boolean, detail: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(
+            if (ok) "🟢" else "🔴",
+            modifier = Modifier.width(24.dp)
+        )
+        Text("$name: ", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, modifier = Modifier.width(100.dp))
+        Text(if (ok) "OK" else "MAXED", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(60.dp))
+        Text(detail, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+// ── Tab: Per-Link Analysis ────────────────────────────────────────────
+
+@Composable
+private fun PerLinkTab(result: OptimizerCalculator.OptimizerResult) {
+    var selectedLink by remember { mutableStateOf(0) }
+    val linkNames = listOf("Link 3: Boost", "Link 4: VE", "Link 1: Torque", "Link 2: PLSOL")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+            linkNames.forEachIndexed { index, name ->
+                FilterChip(
+                    selected = selectedLink == index,
+                    onClick = { selectedLink = index },
+                    label = { Text(name) }
+                )
+            }
+        }
+
+        when (selectedLink) {
+            0 -> PerLinkBoostContent(result)
+            1 -> PerLinkVeContent(result)
+            2 -> PerLinkTorqueContent(result)
+            3 -> PerLinkPlsolContent(result)
+        }
+    }
+}
+
+@Composable
+private fun PerLinkBoostContent(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val boostOk = 100.0 - result.chainDiagnosis.boostShortfallPercent
+        Text("Link 3: Boost Control (pssol → pvdks) — ${String.format("%.0f", boostOk)}% OK",
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+
+        // Pressure chart
+        val requestedP = result.wotEntries.map { Pair(it.rpm, it.requestedMap) }
+        val actualP = result.wotEntries.map { Pair(it.rpm, it.actualMap) }
         Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             LineChart(
                 series = listOf(
-                    ChartSeries(
-                        name = "pssol (Requested)",
-                        points = requestedPressurePoints,
-                        color = Primary,
-                        showPoints = true,
-                        showLine = false
-                    ),
-                    ChartSeries(
-                        name = "pvdks_w (Actual)",
-                        points = actualPressurePoints,
-                        color = ChartRed,
-                        showPoints = true,
-                        showLine = false
-                    )
+                    ChartSeries("pssol (Requested)", requestedP, Primary, showPoints = true, showLine = false),
+                    ChartSeries("pvdks_w (Actual)", actualP, ChartRed, showPoints = true, showLine = false)
                 ),
-                title = "Boost Pressure vs RPM",
-                xAxisLabel = "RPM",
-                yAxisLabel = "Pressure (mbar)"
+                title = "Requested vs Actual Pressure",
+                xAxisLabel = "RPM", yAxisLabel = "Pressure (mbar)"
             )
         }
+        Spacer(Modifier.height(12.dp))
 
-        Spacer(Modifier.height(8.dp))
-
-        // Pressure error chart
-        Text("Pressure Error (pssol − pvdks_w)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+        // Boost error chart
         Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
             LineChart(
-                series = listOf(
-                    ChartSeries(
-                        name = "Pressure Error (mbar)",
-                        points = result.pressureErrors,
-                        color = ChartOrange,
-                        showPoints = true,
-                        showLine = false
-                    )
-                ),
-                title = "Pressure Error vs RPM",
-                xAxisLabel = "RPM",
-                yAxisLabel = "Error (mbar)"
+                series = listOf(ChartSeries("Boost Error (mbar)", result.pressureErrors, ChartOrange, showPoints = true, showLine = false)),
+                title = "Boost Error vs RPM", xAxisLabel = "RPM", yAxisLabel = "Error (mbar)"
             )
         }
+        Spacer(Modifier.height(12.dp))
 
-        Spacer(Modifier.height(16.dp))
+        // RPM breakpoint table
+        PerRpmTable(result.perRpmAnalysis["Link 3"], "RPM", "Avg Deficit (mbar)", "Max Deficit", "WGDC Correction", "%")
+    }
+}
 
-        // Load chart: rlsol vs rl over RPM
-        Text("Load: Requested (rlsol) vs Actual (rl_w)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
-        val requestedLoadPoints = result.wotEntries.map { Pair(it.rpm, it.requestedLoad) }
-        val actualLoadPoints = result.wotEntries.map { Pair(it.rpm, it.actualLoad) }
+@Composable
+private fun PerLinkVeContent(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val veOk = 100.0 - result.chainDiagnosis.veMismatchPercent
+        Text("Link 4: VE Model (pvdks → rl_w) — ${String.format("%.0f", veOk)}% OK",
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+
+        // KFPBRK correction factor chart
+        val corrPoints = result.simulationResults
+            .filter { it.kfpbrkCorrectionFactor.isFinite() && it.kfpbrkCorrectionFactor > 0 }
+            .map { Pair(it.rpm, it.kfpbrkCorrectionFactor) }
+        if (corrPoints.isNotEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                LineChart(
+                    series = listOf(ChartSeries("KFPBRK Correction", corrPoints, ChartMagenta, showPoints = true, showLine = false)),
+                    title = "VE Correction Factor by RPM (1.0 = perfect)", xAxisLabel = "RPM", yAxisLabel = "Correction Factor"
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        // Load chart
+        val requestedL = result.wotEntries.map { Pair(it.rpm, it.requestedLoad) }
+        val actualL = result.wotEntries.map { Pair(it.rpm, it.actualLoad) }
+        Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+            LineChart(
+                series = listOf(
+                    ChartSeries("rlsol (Requested)", requestedL, ChartBlue, showPoints = true, showLine = false),
+                    ChartSeries("rl_w (Actual)", actualL, ChartGreen, showPoints = true, showLine = false)
+                ),
+                title = "Load: Requested vs Actual", xAxisLabel = "RPM", yAxisLabel = "Load (%)"
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+
+        PerRpmTable(result.perRpmAnalysis["Link 4"], "RPM", "Avg VE Error (%)", "Max Error", "Correction Factor", "×")
+    }
+}
+
+@Composable
+private fun PerLinkTorqueContent(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val tOk = 100.0 - result.chainDiagnosis.torqueCappedPercent
+        Text("Link 1: Torque Structure (LDRXN → rlsol) — ${String.format("%.0f", tOk)}% OK",
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+
+        val ldrxn = if (result.simulationResults.isNotEmpty()) result.simulationResults[0].ldrxnTarget else 191.0
+        val rlsolPoints = result.wotEntries.map { Pair(it.rpm, it.requestedLoad) }
+        val targetLine = result.wotEntries.map { Pair(it.rpm, ldrxn) }
 
         Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
             LineChart(
                 series = listOf(
-                    ChartSeries(
-                        name = "rlsol (Requested)",
-                        points = requestedLoadPoints,
-                        color = ChartBlue,
-                        showPoints = true,
-                        showLine = false
-                    ),
-                    ChartSeries(
-                        name = "rl_w (Actual)",
-                        points = actualLoadPoints,
-                        color = ChartGreen,
-                        showPoints = true,
-                        showLine = false
-                    )
+                    ChartSeries("LDRXN Target", targetLine, ChartOrange, showPoints = false, showLine = true, strokeWidth = 2f),
+                    ChartSeries("rlsol (Actual Request)", rlsolPoints, ChartBlue, showPoints = true, showLine = false)
                 ),
-                title = "Engine Load vs RPM",
-                xAxisLabel = "RPM",
-                yAxisLabel = "Load (%)"
+                title = "Load Request vs LDRXN Target", xAxisLabel = "RPM", yAxisLabel = "Load (%)"
             )
         }
+        Spacer(Modifier.height(12.dp))
 
-        Spacer(Modifier.height(8.dp))
+        PerRpmTable(result.perRpmAnalysis["Link 1"], "RPM", "Avg Headroom (%)", "Max Headroom", "% Capped", "%")
+    }
+}
 
-        // Load ratio chart
-        if (result.loadErrors.isNotEmpty()) {
-            Text("Load Ratio (rlsol / rl_w)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
+@Composable
+private fun PerLinkPlsolContent(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val pOk = 100.0 - result.chainDiagnosis.pssolErrorPercent
+        Text("Link 2: PLSOL Model (rlsol → pssol) — ${String.format("%.0f", pOk)}% OK",
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+
+        if (result.simulatedPressureSeries.isNotEmpty()) {
+            val requestedP = result.wotEntries.map { Pair(it.rpm, it.requestedMap) }
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 LineChart(
                     series = listOf(
-                        ChartSeries(
-                            name = "Load Ratio (1.0 = perfect)",
-                            points = result.loadErrors,
-                            color = ChartMagenta,
-                            showPoints = true,
-                            showLine = false
-                        )
+                        ChartSeries("pssol (Logged)", requestedP, Primary, showPoints = true, showLine = false),
+                        ChartSeries("Simulated pssol (PLSOL)", result.simulatedPressureSeries, ChartCyan, showPoints = true, showLine = false)
                     ),
-                    title = "Load Ratio vs RPM",
-                    xAxisLabel = "RPM",
-                    yAxisLabel = "Ratio"
+                    title = "Logged pssol vs Simulated pssol (KFURL model)", xAxisLabel = "RPM", yAxisLabel = "Pressure (mbar)"
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        PerRpmTable(result.perRpmAnalysis["Link 2"], "RPM", "Avg pssol Error (mbar)", "Max Error", "Correction (mbar)", "mbar")
+    }
+}
+
+@Composable
+private fun PerRpmTable(
+    analysis: List<RpmBreakpointAnalysis>?,
+    col1: String, col2: String, col3: String, col4: String, unit: String
+) {
+    if (analysis.isNullOrEmpty()) {
+        Text("No per-RPM data available.", style = MaterialTheme.typography.bodySmall)
+        return
+    }
+
+    Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("Per-RPM Breakpoint Analysis", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(8.dp))
+
+            // Header row
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Text(col1, fontWeight = FontWeight.Bold, modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                Text("Samples", fontWeight = FontWeight.Bold, modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                Text(col2, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                Text(col3, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                Text(col4, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                Text("Conf.", fontWeight = FontWeight.Bold, modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall)
+            }
+            HorizontalDivider()
+
+            for (row in analysis) {
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                    Text(row.rpm.toInt().toString(), modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(row.sampleCount.toString(), modifier = Modifier.width(70.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(String.format("%.1f", row.avgError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Text(String.format("%.1f", row.maxError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Text(String.format("%.2f", row.correction), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        when (row.confidence) {
+                            MapDelta.Confidence.HIGH -> "🟢"
+                            MapDelta.Confidence.MEDIUM -> "🟡"
+                            MapDelta.Confidence.LOW -> "🟠"
+                            MapDelta.Confidence.NONE -> "⚪"
+                        },
+                        modifier = Modifier.width(50.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── Tab: Calibration (Before / After / Delta) ─────────────────────────
+
+@Composable
+private fun CalibrationTab(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val sm = result.suggestedMaps
+
+        if (sm.kfldrl == null && sm.kfpbrk == null && sm.kfldimx == null && sm.kfmiop == null) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("No map corrections available.", style = MaterialTheme.typography.titleMedium)
+                    Text("Ensure KFLDRL and KFPBRK are configured in the Configuration tab.", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            return
+        }
+
+        sm.kfmiop?.let { MapDeltaCard(it, "Link 1: Torque Structure") }
+        sm.kfmiop?.let { Spacer(Modifier.height(16.dp)) }
+        sm.kfmirl?.let { MapDeltaCard(it, "Link 1: Torque Structure (Inverse)") }
+        sm.kfmirl?.let { Spacer(Modifier.height(16.dp)) }
+        sm.kfpbrk?.let { MapDeltaCard(it, "Link 2+4: VE Correction") }
+        Spacer(Modifier.height(16.dp))
+        sm.kfldrl?.let { MapDeltaCard(it, "Link 3: Boost Feedforward") }
+        Spacer(Modifier.height(16.dp))
+        sm.kfldimx?.let { MapDeltaCard(it, "Link 3: PID I-Term Limiter") }
+    }
+}
+
+@Composable
+private fun MapDeltaCard(delta: MapDelta, chainLink: String) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("${delta.mapName} — $chainLink", style = MaterialTheme.typography.titleMedium)
+
+            // Confidence summary
+            Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Cells modified: ${delta.cellsModified}/${delta.totalCells}", style = MaterialTheme.typography.bodySmall)
+                Text("Coverage: ${String.format("%.0f", delta.coverage * 100)}%", style = MaterialTheme.typography.bodySmall)
+                Text("Avg samples/cell: ${String.format("%.1f", delta.avgSamplesPerModifiedCell)}", style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Current map
+            Text("Current ${delta.mapName}", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+            Box(modifier = Modifier.heightIn(max = 350.dp)) {
+                MapTable(map = delta.current, editable = false)
+            }
+
+            // Suggested map
+            Text("Suggested ${delta.mapName}", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+            Box(modifier = Modifier.heightIn(max = 350.dp)) {
+                MapTable(map = delta.suggested, editable = false)
+            }
+
+            // Delta map
+            Text("Delta (Suggested − Current)", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+            Box(modifier = Modifier.heightIn(max = 350.dp)) {
+                MapTable(map = delta.delta, editable = false)
+            }
+
+            // Delta percent map
+            Text("Delta % Change", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+            Box(modifier = Modifier.heightIn(max = 350.dp)) {
+                MapTable(map = delta.deltaPercent, editable = false)
+            }
+        }
+    }
+}
+
+// ── Tab: Prediction ───────────────────────────────────────────────────
+
+@Composable
+private fun PredictionTab(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val pred = result.prediction
+
+        if (pred == null) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("No prediction data available.", style = MaterialTheme.typography.titleMedium)
+                    Text("Ensure map corrections have been computed (KFLDRL and/or KFPBRK configured).", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            return
+        }
+
+        // ── Convergence Summary ─────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📈 Predicted Convergence", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Estimated ${String.format("%.0f", pred.convergenceImprovement)}% improvement in overall error",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Comparison table
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Text("", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
+                    Text("Current", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Text("Predicted", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Text("Change", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                }
+                HorizontalDivider()
+                PredictionRow("Avg Load Deficit", pred.currentAvgLoadDeficit, pred.predictedAvgLoadDeficit, "%")
+                PredictionRow("Avg Pressure Error", pred.currentAvgPressureError, pred.predictedAvgPressureError, " mbar")
+            }
+        }
+
+        // ── Predicted Chain Health ───────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Predicted Chain Health (after corrections)", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                val predDiag = pred.predictedChainHealth
+                ChainLinkBar("Link 1: LDRXN → rlsol", 100.0 - predDiag.torqueCappedPercent)
+                ChainLinkBar("Link 2: rlsol → pssol", 100.0 - predDiag.pssolErrorPercent)
+                ChainLinkBar("Link 3: pssol → pvdks", 100.0 - predDiag.boostShortfallPercent)
+                ChainLinkBar("Link 4: pvdks → rl_w", 100.0 - predDiag.veMismatchPercent)
+            }
+        }
+
+        // ── Pressure overlay chart ──────────────────────────────
+        if (pred.predictedPressureSeries.isNotEmpty()) {
+            Text("Pressure: Current vs Predicted vs Target", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+            val requestedP = result.wotEntries.map { Pair(it.rpm, it.requestedMap) }
+            val actualP = result.wotEntries.map { Pair(it.rpm, it.actualMap) }
+
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                LineChart(
+                    series = listOf(
+                        ChartSeries("pssol Target", requestedP, Primary, showPoints = false, showLine = true, strokeWidth = 1.5f),
+                        ChartSeries("Current pvdks", actualP, ChartRed, showPoints = true, showLine = false),
+                        ChartSeries("Predicted pvdks", pred.predictedPressureSeries, ChartCyan, showPoints = true, showLine = false)
+                    ),
+                    title = "Boost Pressure: Current → Predicted",
+                    xAxisLabel = "RPM", yAxisLabel = "Pressure (mbar)"
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // ── Load overlay chart ──────────────────────────────────
+        if (pred.predictedLoadSeries.isNotEmpty()) {
+            Text("Load: Current vs Predicted vs LDRXN", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+            val ldrxn = if (result.simulationResults.isNotEmpty()) result.simulationResults[0].ldrxnTarget else 191.0
+            val ldrxnLine = result.wotEntries.map { Pair(it.rpm, ldrxn) }
+            val actualL = result.wotEntries.map { Pair(it.rpm, it.actualLoad) }
+
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                LineChart(
+                    series = listOf(
+                        ChartSeries("LDRXN Target", ldrxnLine, ChartOrange, showPoints = false, showLine = true, strokeWidth = 1.5f),
+                        ChartSeries("Current rl_w", actualL, ChartRed, showPoints = true, showLine = false),
+                        ChartSeries("Predicted rl_w", pred.predictedLoadSeries, ChartCyan, showPoints = true, showLine = false)
+                    ),
+                    title = "Engine Load: Current → Predicted",
+                    xAxisLabel = "RPM", yAxisLabel = "Load (%)"
                 )
             }
         }
     }
 }
 
-// ── Tab: Warnings ─────────────────────────────────────────────────────
+@Composable
+private fun PredictionRow(label: String, current: Double, predicted: Double, unit: String) {
+    val change = predicted - current
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+        Text(label, modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
+        Text("${String.format("%.1f", current)}$unit", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+        Text("${String.format("%.1f", predicted)}$unit", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+        Text(
+            "${String.format("%+.1f", change)}$unit",
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+// ── Tab: Export ────────────────────────────────────────────────────────
 
 @Composable
-private fun WarningsTab(result: OptimizerCalculator.OptimizerResult) {
+private fun ExportTab(
+    result: OptimizerCalculator.OptimizerResult,
+    kfldrlPair: Pair<TableDefinition, Map3d>?,
+    kfldimxPair: Pair<TableDefinition, Map3d>?,
+    kfpbrkPair: Pair<TableDefinition, Map3d>?,
+    kfmiopPair: Pair<TableDefinition, Map3d>? = null,
+    kfmirlPair: Pair<TableDefinition, Map3d>? = null
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        if (result.warnings.isEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("✓ No warnings", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "No torque interventions or significant boost shortfalls were detected in the WOT data.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        } else {
-            result.warnings.forEachIndexed { index, warning ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Warning ${index + 1}",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            warning,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-        }
+        val sm = result.suggestedMaps
 
-        Spacer(Modifier.height(16.dp))
-
-        // Summary statistics
-        Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Summary Statistics", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
+                Text("📦 Write Corrections to BIN", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(12.dp))
 
-                val entries = result.wotEntries
-                if (entries.isNotEmpty()) {
-                    val avgPressureError = entries.map { it.requestedMap - it.actualMap }.average()
-                    val maxPressureError = entries.maxOf { kotlin.math.abs(it.requestedMap - it.actualMap) }
-                    val avgLoadRatio = entries.filter { it.actualLoad > 0 }
-                        .map { it.requestedLoad / it.actualLoad }.average()
-                    val rpmRange = "${entries.minOf { it.rpm }.toInt()} – ${entries.maxOf { it.rpm }.toInt()}"
+                var writeKfmiop by remember { mutableStateOf(true) }
+                var writeKfmirl by remember { mutableStateOf(true) }
+                var writeKfpbrk by remember { mutableStateOf(true) }
+                var writeKfldrl by remember { mutableStateOf(true) }
+                var writeKfldimx by remember { mutableStateOf(true) }
+                var writeStatus by remember { mutableStateOf("") }
+                var showConfirm by remember { mutableStateOf(false) }
 
-                    Text("WOT Data Points: ${entries.size}")
-                    Text("RPM Range: $rpmRange")
-                    Text("Avg Pressure Error: ${String.format("%.1f", avgPressureError)} mbar")
-                    Text("Max |Pressure Error|: ${String.format("%.1f", maxPressureError)} mbar")
-                    if (avgLoadRatio.isFinite()) {
-                        Text("Avg Load Ratio (rlsol/rl): ${String.format("%.4f", avgLoadRatio)}")
+                // KFMIOP (Link 1 — highest priority)
+                if (sm.kfmiop != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = writeKfmiop, onCheckedChange = { writeKfmiop = it })
+                        Text("KFMIOP — ${sm.kfmiop.cellsModified} cells modified (torque cap fix)")
                     }
-                    Text("Avg WGDC: ${String.format("%.1f", entries.map { it.wgdc }.average())}%")
                 }
+
+                // KFMIRL (Link 1 — inverse of KFMIOP)
+                if (sm.kfmirl != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = writeKfmirl, onCheckedChange = { writeKfmirl = it })
+                        Text("KFMIRL — ${sm.kfmirl.cellsModified} cells modified (inverse of KFMIOP)")
+                    }
+                }
+
+                // KFPBRK (Link 2+4)
+                if (sm.kfpbrk != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = writeKfpbrk, onCheckedChange = { writeKfpbrk = it })
+                        Text("KFPBRK — ${sm.kfpbrk.cellsModified} cells modified (avg correction ${String.format("%.3f", sm.kfpbrk.avgAbsoluteDelta)})")
+                    }
+                }
+
+                // KFLDRL (Link 3)
+                if (sm.kfldrl != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = writeKfldrl, onCheckedChange = { writeKfldrl = it })
+                        Text("KFLDRL — ${sm.kfldrl.cellsModified} cells modified (avg Δ ${String.format("%+.1f", sm.kfldrl.avgAbsoluteDelta)}% WGDC)")
+                    }
+                }
+
+                // KFLDIMX (Link 3 — derived)
+                if (sm.kfldimx != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = writeKfldimx, onCheckedChange = { writeKfldimx = it })
+                        Text("KFLDIMX — ${sm.kfldimx.cellsModified} cells modified (derived from KFLDRL)")
+                    }
+                }
+
+                val anyAvailable = sm.kfmiop != null || sm.kfmirl != null || sm.kfpbrk != null ||
+                    sm.kfldrl != null || sm.kfldimx != null
+                if (!anyAvailable) {
+                    Text("No corrections to write. Ensure maps are configured in Configuration tab.", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Count how many maps will be written
+                val writeCount = listOf(
+                    writeKfmiop && sm.kfmiop != null,
+                    writeKfmirl && sm.kfmirl != null,
+                    writeKfpbrk && sm.kfpbrk != null,
+                    writeKfldrl && sm.kfldrl != null,
+                    writeKfldimx && sm.kfldimx != null
+                ).count { it }
+
+                val totalCellsModified = listOfNotNull(
+                    if (writeKfmiop) sm.kfmiop?.cellsModified else null,
+                    if (writeKfmirl) sm.kfmirl?.cellsModified else null,
+                    if (writeKfpbrk) sm.kfpbrk?.cellsModified else null,
+                    if (writeKfldrl) sm.kfldrl?.cellsModified else null,
+                    if (writeKfldimx) sm.kfldimx?.cellsModified else null
+                ).sum()
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { showConfirm = true },
+                        enabled = writeCount > 0
+                    ) {
+                        Text("Write Selected to BIN ($writeCount maps)")
+                    }
+                }
+
+                // ── Confirmation dialog ───────────────────────────
+                if (showConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirm = false },
+                        title = { Text("Confirm BIN Write") },
+                        text = {
+                            Column {
+                                Text("About to write $writeCount map(s) to BIN.")
+                                Text("$totalCellsModified total cells will be modified.")
+                                Spacer(Modifier.height(8.dp))
+                                if (writeKfmiop && sm.kfmiop != null) Text("• KFMIOP: ${sm.kfmiop.cellsModified} cells")
+                                if (writeKfmirl && sm.kfmirl != null) Text("• KFMIRL: ${sm.kfmirl.cellsModified} cells")
+                                if (writeKfpbrk && sm.kfpbrk != null) Text("• KFPBRK: ${sm.kfpbrk.cellsModified} cells")
+                                if (writeKfldrl && sm.kfldrl != null) Text("• KFLDRL: ${sm.kfldrl.cellsModified} cells")
+                                if (writeKfldimx && sm.kfldimx != null) Text("• KFLDIMX: ${sm.kfldimx.cellsModified} cells")
+                                Spacer(Modifier.height(8.dp))
+                                Text("⚠️ Ensure you have a backup of your original BIN!", fontWeight = FontWeight.Bold)
+                            }
+                        },
+                        confirmButton = {
+                            Button(onClick = {
+                                showConfirm = false
+                                val binFile = BinFilePreferences.getStoredFile()
+                                if (!binFile.exists()) {
+                                    writeStatus = "❌ BIN file not found"
+                                    return@Button
+                                }
+
+                                var written = 0
+                                // Write in dependency order: KFMIOP → KFMIRL → KFPBRK → KFLDRL → KFLDIMX
+                                if (writeKfmiop && sm.kfmiop != null) {
+                                    val def = KfmiopPreferences.getSelectedMap()
+                                    if (def != null) { BinWriter.write(binFile, def.first, sm.kfmiop.suggested); written++ }
+                                }
+                                if (writeKfmirl && sm.kfmirl != null) {
+                                    val def = KfmirlPreferences.getSelectedMap()
+                                    if (def != null) { BinWriter.write(binFile, def.first, sm.kfmirl.suggested); written++ }
+                                }
+                                if (writeKfpbrk && sm.kfpbrk != null) {
+                                    val def = KfpbrkPreferences.getSelectedMap()
+                                    if (def != null) { BinWriter.write(binFile, def.first, sm.kfpbrk.suggested); written++ }
+                                }
+                                if (writeKfldrl && sm.kfldrl != null) {
+                                    val def = KfldrlPreferences.getSelectedMap()
+                                    if (def != null) { BinWriter.write(binFile, def.first, sm.kfldrl.suggested); written++ }
+                                }
+                                if (writeKfldimx && sm.kfldimx != null) {
+                                    val def = KfldimxPreferences.getSelectedMap()
+                                    if (def != null) { BinWriter.write(binFile, def.first, sm.kfldimx.suggested); written++ }
+                                }
+                                writeStatus = "✅ $written map(s) written to BIN successfully"
+                            }) {
+                                Text("Confirm Write")
+                            }
+                        },
+                        dismissButton = {
+                            OutlinedButton(onClick = { showConfirm = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (writeStatus.isNotEmpty()) {
+                    Text(writeStatus, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                }
+
+                Text(
+                    "⚠️ Always keep a backup of your original BIN file before writing!",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }
 }
+
+// ── Chain Health Bar ──────────────────────────────────────────────────
+
+@Composable
+private fun ChainLinkBar(label: String, okPercent: Double) {
+    val clamped = okPercent.coerceIn(0.0, 100.0)
+    val barColor = when {
+        clamped >= 90 -> ChartGreen
+        clamped >= 70 -> ChartOrange
+        else -> ChartRed
+    }
+    val needsFix = clamped < 80
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.width(260.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(16.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(4.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction = (clamped / 100.0).toFloat())
+                    .background(barColor, shape = RoundedCornerShape(4.dp))
+            )
+        }
+        Text(
+            "${String.format("%.0f", clamped)}% OK${if (needsFix) " ← FIX" else ""}",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.width(90.dp).padding(start = 8.dp),
+            fontWeight = if (needsFix) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
 
 // ── Reusable parameter field with info tooltip ────────────────────────
 

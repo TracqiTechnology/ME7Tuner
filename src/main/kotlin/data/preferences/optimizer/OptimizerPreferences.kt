@@ -10,6 +10,7 @@ object OptimizerPreferences {
     private const val KFLDIMX_OVERHEAD_KEY = "optimizer_kfldimx_overhead_pct"
     private const val MIN_THROTTLE_ANGLE_KEY = "optimizer_min_throttle_angle"
     private const val LAST_DIRECTORY_KEY = "optimizer_last_directory"
+    private const val KFURL_KEY = "optimizer_kfurl"
 
     var mapToleranceMbar: Double
         get() = prefs.getDouble(MAP_TOLERANCE_KEY, 30.0)
@@ -30,5 +31,8 @@ object OptimizerPreferences {
     var lastDirectory: String
         get() = prefs.get(LAST_DIRECTORY_KEY, "")
         set(value) = prefs.put(LAST_DIRECTORY_KEY, value)
-}
 
+    var kfurl: Double
+        get() = prefs.getDouble(KFURL_KEY, 0.106)
+        set(value) = prefs.putDouble(KFURL_KEY, value)
+}

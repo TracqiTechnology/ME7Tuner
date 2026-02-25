@@ -2,7 +2,6 @@ package data.parser.me7log
 
 import data.contract.Me7LogFileContract
 import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVRecord
 import java.io.File
 import java.io.FileReader
 
@@ -200,6 +199,14 @@ class Me7LogParser {
                                     val actLoad = if (actualLoadIndex != -1) {
                                         try { record.get(actualLoadIndex).toDouble() } catch (_: NumberFormatException) { null }
                                     } else null
+                                    // Optional: MAF g/s for mechanical limit detection
+                                    val mafGs = if (mafGramsPerSecondIndex != -1) {
+                                        try { record.get(mafGramsPerSecondIndex).toDouble() } catch (_: NumberFormatException) { null }
+                                    } else null
+                                    // Optional: Fuel injector on-time for mechanical limit detection
+                                    val injOnTime = if (fuelInjectorOnTimeIndex != -1) {
+                                        try { record.get(fuelInjectorOnTimeIndex).toDouble() } catch (_: NumberFormatException) { null }
+                                    } else null
 
                                     // Add all at once after successful parsing
                                     map[Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER]!!.add(time)
@@ -213,6 +220,12 @@ class Me7LogParser {
                                     map[Me7LogFileContract.Header.ENGINE_LOAD_HEADER]!!.add(engLoad)
                                     if (actLoad != null) {
                                         map[Me7LogFileContract.Header.ACTUAL_LOAD_HEADER]!!.add(actLoad)
+                                    }
+                                    if (mafGs != null) {
+                                        map[Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER]!!.add(mafGs)
+                                    }
+                                    if (injOnTime != null) {
+                                        map[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER]!!.add(injOnTime)
                                     }
                                 }
                             }
@@ -233,8 +246,11 @@ class Me7LogParser {
                 size = value.size
             }
             if (key != Me7LogFileContract.Header.START_TIME_HEADER && value.size != size) {
-                // Wideband and actual load (rl) are optional
-                if (key != Me7LogFileContract.Header.WIDE_BAND_O2_HEADER && key != Me7LogFileContract.Header.ACTUAL_LOAD_HEADER) {
+                // Wideband, actual load (rl), MAF, and injector on-time are optional
+                if (key != Me7LogFileContract.Header.WIDE_BAND_O2_HEADER &&
+                    key != Me7LogFileContract.Header.ACTUAL_LOAD_HEADER &&
+                    key != Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER &&
+                    key != Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER) {
                     throw RuntimeException("Data is not square! Got: ${value.size} Expected: $size")
                 }
             }
@@ -320,6 +336,9 @@ class Me7LogParser {
                 map[Me7LogFileContract.Header.REQUESTED_LOAD_HEADER] = mutableListOf()
                 map[Me7LogFileContract.Header.ENGINE_LOAD_HEADER] = mutableListOf()
                 map[Me7LogFileContract.Header.ACTUAL_LOAD_HEADER] = mutableListOf()
+                // Optional headers for mechanical limit detection
+                map[Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER] = mutableListOf()
             }
         }
 
