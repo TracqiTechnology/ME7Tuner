@@ -19,6 +19,9 @@ import data.parser.xdf.TableDefinition
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
+import data.preferences.kfldrq0.Kfldrq0Preferences
+import data.preferences.kfldrq1.Kfldrq1Preferences
+import data.preferences.kfldrq2.Kfldrq2Preferences
 import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
 import data.preferences.kfpbrk.KfpbrkPreferences
@@ -26,11 +29,11 @@ import data.preferences.kfpbrknw.KfpbrknwPreferences
 import data.preferences.optimizer.OptimizerPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
-import domain.model.optimizer.MapDelta
-import domain.model.optimizer.OptimizerCalculator
-import domain.model.optimizer.RpmBreakpointAnalysis
+import domain.model.optimizer.*
 import domain.model.simulator.Me7Simulator
 import domain.model.simulator.MechanicalLimitDetector
+import data.writer.XdfPatchWriter
+import data.writer.ReportExporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,6 +68,13 @@ fun OptimizerScreen() {
     val kfpbrknwPair = remember(mapList) { findMap(mapList, KfpbrknwPreferences) }
     val kfmiopPair = remember(mapList) { findMap(mapList, KfmiopPreferences) }
     val kfmirlPair = remember(mapList) { findMap(mapList, KfmirlPreferences) }
+    // v4: PID gain maps
+    val kfldrq0Pair = remember(mapList) { findMap(mapList, Kfldrq0Preferences) }
+    val kfldrq1Pair = remember(mapList) { findMap(mapList, Kfldrq1Preferences) }
+    val kfldrq2Pair = remember(mapList) { findMap(mapList, Kfldrq2Preferences) }
+
+    // Phase 22: Auto-read KFURL from BIN if available
+    val autoKfurl = remember(mapList) { KfurlSolver.findKfurlFromBin(mapList) }
 
     // Preference-backed input state
     var toleranceMbar by remember { mutableStateOf(OptimizerPreferences.mapToleranceMbar.toString()) }
@@ -73,13 +83,21 @@ fun OptimizerScreen() {
     var minThrottleAngle by remember { mutableStateOf(OptimizerPreferences.minThrottleAngle.toString()) }
     var kfurl by remember { mutableStateOf(OptimizerPreferences.kfurl.toString()) }
 
+    // Auto-populate KFURL from BIN on first load
+    LaunchedEffect(autoKfurl) {
+        if (autoKfurl != null && kfurl == "0.106") {
+            kfurl = String.format("%.4f", autoKfurl)
+            OptimizerPreferences.kfurl = autoKfurl
+        }
+    }
+
     // Result state
     var result by remember { mutableStateOf<OptimizerCalculator.OptimizerResult?>(null) }
     var logFileName by remember { mutableStateOf("No Log Selected") }
     var showProgress by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
 
-    val tabTitles = listOf("Overview", "Per-Link", "Boost Control", "VE Model", "Calibration", "Prediction", "Export")
+    val tabTitles = listOf("Overview", "Per-Link", "Boost Control", "VE Model", "Calibration", "Prediction", "Pulls", "Export")
 
     Column(
         modifier = Modifier
@@ -150,10 +168,11 @@ fun OptimizerScreen() {
                             kfurl = it
                             it.toDoubleOrNull()?.let { v -> OptimizerPreferences.kfurl = v }
                         },
-                        label = "KFURL",
+                        label = if (autoKfurl != null) "KFURL (Auto)" else "KFURL",
                         tooltip = "Slope of the rl(ps) characteristic — the VE constant used in the PLSOL/RLSOL " +
                             "pressure\u2194load conversion. This is the single most important constant for simulation accuracy. " +
-                            "Default: 0.106. Adjust if your engine's volumetric efficiency differs from stock.",
+                            if (autoKfurl != null) "Auto-read from BIN: ${String.format("%.4f", autoKfurl)}. " else "" +
+                            "Default: 0.106. The KFURL Solver can find the optimal value from your log data.",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -195,7 +214,10 @@ fun OptimizerScreen() {
                                 toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
                                 minThrottleAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0,
                                 kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
-                                kfurl = kfurl.toDoubleOrNull() ?: 0.106
+                                kfurl = kfurl.toDoubleOrNull() ?: 0.106,
+                                kfldrq0Map = kfldrq0Pair?.second,
+                                kfldrq1Map = kfldrq1Pair?.second,
+                                kfldrq2Map = kfldrq2Pair?.second
                             )
 
                             withContext(Dispatchers.Main) {
@@ -270,7 +292,10 @@ fun OptimizerScreen() {
                                 minThrottleAngle = minAngle,
                                 kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
                                 kfurl = kfurl.toDoubleOrNull() ?: 0.106,
-                                logSummaries = summaries
+                                logSummaries = summaries,
+                                kfldrq0Map = kfldrq0Pair?.second,
+                                kfldrq1Map = kfldrq1Pair?.second,
+                                kfldrq2Map = kfldrq2Pair?.second
                             )
 
                             withContext(Dispatchers.Main) {
@@ -335,7 +360,8 @@ fun OptimizerScreen() {
                 3 -> VeModelTab(result!!, kfpbrkPair, kfpbrknwPair)
                 4 -> CalibrationTab(result!!)
                 5 -> PredictionTab(result!!)
-                6 -> ExportTab(result!!, kfldrlPair, kfldimxPair, kfpbrkPair, kfmiopPair, kfmirlPair)
+                6 -> PullsTab(result!!)
+                7 -> ExportTab(result!!, kfldrlPair, kfldimxPair, kfpbrkPair, kfmiopPair, kfmirlPair)
             }
         }
     }
@@ -614,6 +640,100 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                 MechLimitRow("Injectors", !limits.injectorMaxed, if (limits.injectorMaxDutyCycle > 0) "${String.format("%.0f", limits.injectorMaxDutyCycle * 100)}% max DC" else "N/A")
                 MechLimitRow("Turbo", !limits.turboMaxed, if (limits.turboMaxWgdc > 0) "${String.format("%.0f", limits.turboMaxWgdc)}% max WGDC" else "N/A")
                 MechLimitRow("MAP Sensor", !limits.mapSensorMaxed, if (limits.mapSensorMaxValue > 0) "${String.format("%.0f", limits.mapSensorMaxValue)} mbar peak" else "N/A")
+                // v4: Throttle body check
+                result.throttleCheck?.let { tc ->
+                    MechLimitRow("Throttle Body", !tc.restricted,
+                        if (tc.restricted) "${String.format("%.0f", tc.avgPressureDeficit)} mbar deficit" else "OK")
+                }
+            }
+        }
+
+        // ── v4: Environmental Conditions ─────────────────────────
+        result.environmental?.let { env ->
+            if (env.altitudeDeviation || env.tempDeviation) {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("🌍 Environmental Conditions", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Avg Barometric Pressure: ${String.format("%.0f", env.avgBaroPressure)} mbar")
+                        Text("Estimated Altitude: ${String.format("%.0f", env.estimatedAltitudeM)}m / ${String.format("%.0f", env.estimatedAltitudeM * 3.281)}ft")
+                    }
+                }
+            }
+        }
+
+        // ── v4: Transient Events ─────────────────────────────────
+        result.transients?.let { trans ->
+            if (trans.events.isNotEmpty()) {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("⚡ Transient Events", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        if (trans.overboostEvents > 0) {
+                            Text("Overboost: ${trans.overboostEvents} event(s), ${trans.overboostSampleCount} samples")
+                        }
+                        if (trans.knockEvents > 0) {
+                            Text("Knock Reduction: ${trans.knockEvents} event(s), ${trans.knockSampleCount} samples",
+                                color = MaterialTheme.colorScheme.error)
+                        }
+                        for (rec in trans.recommendations) {
+                            Spacer(Modifier.height(4.dp))
+                            Text("💡 $rec", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── v4: Safety Mode Summary ──────────────────────────────
+        result.safetyModes?.let { safety ->
+            if (safety.excludedSamples.isNotEmpty()) {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("🛡️ Safety Mode Events", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text("${safety.excludedSamples.size} samples excluded from calibration:")
+                        if (safety.overloadCount > 0) Text("  • Overload (DPUPS): ${safety.overloadCount} samples")
+                        if (safety.fallbackCount > 0) Text("  • Fallback (B_lds): ${safety.fallbackCount} samples")
+                        if (safety.regulationErrorCount > 0) Text("  • Regulation Error: ${safety.regulationErrorCount} samples")
+                    }
+                }
+            }
+        }
+
+        // ── v4: KFURL Solver ─────────────────────────────────────
+        result.kfurlSolverResult?.let { solver ->
+            if (solver.errorReductionPercent > 5) {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("🔧 KFURL Solver", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Optimal KFURL: ${String.format("%.4f", solver.optimalKfurl)}")
+                        Text("pssol RMSE: ${String.format("%.1f", solver.rmse)} mbar")
+                        Text("Error reduction vs current: ${String.format("%.0f", solver.errorReductionPercent)}%")
+                    }
+                }
+            }
+        }
+
+        // ── v4: Convergence Summary ──────────────────────────────
+        result.convergenceHistory?.let { conv ->
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("🔄 Iterative Convergence", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    val status = when {
+                        conv.converged -> "✅ Converged in ${conv.iterationsToConverge} iterations"
+                        conv.diverged -> "❌ Diverged after ${conv.iterationsToConverge} iterations"
+                        else -> "⚠️ Did not converge (${conv.steps.size} iterations)"
+                    }
+                    Text(status, fontWeight = FontWeight.Bold)
+                    Text("Final error: ${String.format("%.2f", conv.finalError)}")
+                    if (conv.steps.size >= 2) {
+                        val improvement = conv.steps.first().totalError - conv.steps.last().totalError
+                        Text("Total improvement: ${String.format("%.2f", improvement)} (${String.format("%.0f", improvement / conv.steps.first().totalError * 100)}%)")
+                    }
+                }
             }
         }
 
@@ -709,6 +829,19 @@ private fun MechLimitRow(name: String, ok: Boolean, detail: String) {
     }
 }
 
+@Composable
+private fun PidIndicator(label: String, triggered: Boolean, detail: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            if (triggered) "🔴" else "🟢",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(label, style = MaterialTheme.typography.labelSmall)
+        Text(detail, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 // ── Tab: Per-Link Analysis ────────────────────────────────────────────
 
 @Composable
@@ -769,6 +902,83 @@ private fun PerLinkBoostContent(result: OptimizerCalculator.OptimizerResult) {
 
         // RPM breakpoint table
         PerRpmTable(result.perRpmAnalysis["Link 3"], "RPM", "Avg Deficit (mbar)", "Max Deficit", "WGDC Correction", "%")
+
+        // ── v4: PID Dynamics ──────────────────────────────────
+        result.pidSimulation?.let { pidSim ->
+            Spacer(Modifier.height(16.dp))
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("🎛️ PID Dynamics Analysis", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    val diag = pidSim.diagnosis
+                    // Status indicators
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        PidIndicator("Oscillation", diag.oscillationDetected, "${diag.oscillationCount} reversals")
+                        PidIndicator("I-Term Windup", diag.windupDetected, "${String.format("%.0f", diag.windupDurationMs)}ms")
+                        PidIndicator("Slow Convergence", diag.slowConvergence, "${String.format("%.0f", diag.convergenceTimeMs)}ms")
+                        PidIndicator("Overshoot", diag.overshootDetected, "${String.format("%.0f", diag.overshootMagnitude)} mbar")
+                    }
+
+                    Text("Avg |lde|: ${String.format("%.0f", diag.avgAbsLde)} mbar",
+                        style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+
+                    // PID recommendations
+                    if (diag.recommendations.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Recommendations:", style = MaterialTheme.typography.titleSmall)
+                        for (rec in diag.recommendations) {
+                            Text("• $rec", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp, top = 2.dp))
+                        }
+                    }
+
+                    // P/I/D contribution chart
+                    if (pidSim.states.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        val pSeries = pidSim.states.map { Pair(it.timeMs, it.ldptv) }
+                        val iSeries = pidSim.states.map { Pair(it.timeMs, it.lditv) }
+                        val dSeries = pidSim.states.map { Pair(it.timeMs, it.ldrdtv) }
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                            LineChart(
+                                series = listOf(
+                                    ChartSeries("P-Term", pSeries, ChartRed),
+                                    ChartSeries("I-Term", iSeries, ChartGreen),
+                                    ChartSeries("D-Term", dSeries, ChartBlue)
+                                ),
+                                title = "PID Contributions (% duty)",
+                                xAxisLabel = "Time (ms)", yAxisLabel = "Duty %"
+                            )
+                        }
+
+                        // Control deviation chart
+                        Spacer(Modifier.height(12.dp))
+                        val ldeSeries = pidSim.states.map { Pair(it.timeMs, it.lde) }
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                            LineChart(
+                                series = listOf(ChartSeries("Control Deviation (lde)", ldeSeries, ChartOrange)),
+                                title = "Control Deviation (plsol − pvdks)",
+                                xAxisLabel = "Time (ms)", yAxisLabel = "lde (mbar)"
+                            )
+                        }
+
+                        // Actual vs PID WGDC chart
+                        Spacer(Modifier.height(12.dp))
+                        val pidWgdc = pidSim.states.map { Pair(it.timeMs, it.ldtv) }
+                        val actualWgdc = pidSim.states.map { Pair(it.timeMs, it.actualWgdc) }
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                            LineChart(
+                                series = listOf(
+                                    ChartSeries("PID Simulated", pidWgdc, ChartBlue),
+                                    ChartSeries("Actual WGDC", actualWgdc, ChartRed, showPoints = true, showLine = false)
+                                ),
+                                title = "Simulated vs Actual WGDC",
+                                xAxisLabel = "Time (ms)", yAxisLabel = "WGDC %"
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1094,6 +1304,166 @@ private fun PredictionRow(label: String, current: Double, predicted: Double, uni
 
 // ── Tab: Export ────────────────────────────────────────────────────────
 
+// ── Tab: Pulls (v4) ───────────────────────────────────────────────────
+
+@Composable
+private fun PullsTab(result: OptimizerCalculator.OptimizerResult) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        val pulls = result.pulls
+        val consistency = result.pullConsistency
+
+        if (pulls.isEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("No WOT pulls detected.", style = MaterialTheme.typography.titleMedium)
+                    Text("WOT pulls require ≥10 samples with RPM span >800.", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            return
+        }
+
+        // ── Pull summary ──────────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("${pulls.size} WOT Pull(s) Detected", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+
+                val good = pulls.count { it.quality == PullSegmenter.PullQuality.GOOD }
+                val noisy = pulls.count { it.quality == PullSegmenter.PullQuality.NOISY }
+                val short = pulls.count { it.quality == PullSegmenter.PullQuality.SHORT }
+                val incomplete = pulls.count { it.quality == PullSegmenter.PullQuality.INCOMPLETE }
+                Text("🟢 Good: $good  🟡 Noisy: $noisy  🟠 Short: $short  🔴 Incomplete: $incomplete")
+            }
+        }
+
+        // ── Per-pull cards ────────────────────────────────────
+        for (pull in pulls) {
+            val qualityEmoji = when (pull.quality) {
+                PullSegmenter.PullQuality.GOOD -> "🟢"
+                PullSegmenter.PullQuality.NOISY -> "🟡"
+                PullSegmenter.PullQuality.SHORT -> "🟠"
+                PullSegmenter.PullQuality.INCOMPLETE -> "🔴"
+            }
+
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Pull ${pull.pullIndex + 1} $qualityEmoji",
+                            style = MaterialTheme.typography.titleSmall)
+                        Text("${pull.sampleCount} samples",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        Column {
+                            Text("RPM: ${String.format("%.0f", pull.rpmStart)} → ${String.format("%.0f", pull.rpmEnd)}",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                        Column {
+                            Text("Avg ΔP: ${String.format("%+.0f", pull.avgPressureError)} mbar",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                        Column {
+                            Text("Avg Load Deficit: ${String.format("%+.1f", pull.avgLoadDeficit)}%",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
+                    // Dominant error breakdown
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        pull.dominantErrors.forEach { (source, pct) ->
+                            if (pct > 5.0) {
+                                Text("${source.take(12)}: ${String.format("%.0f", pct)}%",
+                                    style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+
+                    // Consistency warning if any
+                    consistency[pull.pullIndex]?.let { note ->
+                        Spacer(Modifier.height(4.dp))
+                        Text("⚠️ $note", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        }
+
+        // ── Convergence chart ─────────────────────────────────
+        result.convergenceHistory?.let { conv ->
+            Spacer(Modifier.height(16.dp))
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Iterative Convergence History", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    if (conv.steps.isNotEmpty()) {
+                        val convergenceSeries = conv.steps.map { Pair(it.iteration.toDouble(), it.totalError) }
+                        LineChart(
+                            series = listOf(ChartSeries("Total Error", convergenceSeries, ChartRed)),
+                            xAxisLabel = "Iteration",
+                            yAxisLabel = "Error",
+                            modifier = Modifier.fillMaxWidth().height(200.dp)
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+                        // Convergence table
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                            Text("Iter", fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                            Text("Total Error", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            Text("ΔP Error", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            Text("Load Deficit", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            Text("Cells", fontWeight = FontWeight.Bold, modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall)
+                        }
+                        HorizontalDivider()
+                        for (step in conv.steps) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Text("${step.iteration}", modifier = Modifier.width(40.dp), style = MaterialTheme.typography.bodySmall)
+                                Text(String.format("%.2f", step.totalError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Text(String.format("%.1f", step.avgPressureError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Text(String.format("%.1f", step.avgLoadDeficit), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Text("${step.cellsModified}", modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── KFURL Sensitivity ─────────────────────────────────
+        result.kfurlSolverResult?.let { solver ->
+            if (solver.sensitivityCurve.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("KFURL Sensitivity", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Optimal: ${String.format("%.4f", solver.optimalKfurl)} (RMSE: ${String.format("%.1f", solver.rmse)} mbar)")
+                        Spacer(Modifier.height(8.dp))
+                        LineChart(
+                            series = listOf(ChartSeries("RMSE vs KFURL", solver.sensitivityCurve, ChartBlue)),
+                            xAxisLabel = "KFURL",
+                            yAxisLabel = "RMSE (mbar)",
+                            modifier = Modifier.fillMaxWidth().height(200.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Tab: Export ───────────────────────────────────────────────────────
+
 @Composable
 private fun ExportTab(
     result: OptimizerCalculator.OptimizerResult,
@@ -1265,6 +1635,74 @@ private fun ExportTab(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+            }
+        }
+
+        // ── v4: Export Options ────────────────────────────────
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📄 Export Reports", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(12.dp))
+
+                var exportStatus by remember { mutableStateOf("") }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // XDF Patch Export
+                    Button(onClick = {
+                        val dialog = FileDialog(Frame(), "Save XDF Patch", FileDialog.SAVE)
+                        dialog.file = "ME7Tuner_corrections.xdf"
+                        dialog.isVisible = true
+                        val dir = dialog.directory
+                        val file = dialog.file
+                        if (dir != null && file != null) {
+                            try {
+                                val corrections = mutableListOf<Pair<TableDefinition, MapDelta>>()
+                                sm.kfmiop?.let { d -> kfmiopPair?.first?.let { corrections.add(it to d) } }
+                                sm.kfmirl?.let { d -> kfmirlPair?.first?.let { corrections.add(it to d) } }
+                                sm.kfpbrk?.let { d -> kfpbrkPair?.first?.let { corrections.add(it to d) } }
+                                sm.kfldrl?.let { d -> kfldrlPair?.first?.let { corrections.add(it to d) } }
+                                sm.kfldimx?.let { d -> kfldimxPair?.first?.let { corrections.add(it to d) } }
+                                XdfPatchWriter.write(File(dir, file), corrections)
+                                exportStatus = "✅ XDF patch exported (${corrections.size} maps)"
+                            } catch (e: Exception) {
+                                exportStatus = "❌ XDF export failed: ${e.message}"
+                            }
+                        }
+                    }) {
+                        Text("Export XDF Patch")
+                    }
+
+                    // HTML Report Export
+                    Button(onClick = {
+                        val dialog = FileDialog(Frame(), "Save HTML Report", FileDialog.SAVE)
+                        dialog.file = "ME7Tuner_report.html"
+                        dialog.isVisible = true
+                        val dir = dialog.directory
+                        val file = dialog.file
+                        if (dir != null && file != null) {
+                            try {
+                                ReportExporter.export(
+                                    outputFile = File(dir, file),
+                                    result = result,
+                                    pulls = result.pulls,
+                                    transients = result.transients,
+                                    safetyModes = result.safetyModes,
+                                    convergence = result.convergenceHistory,
+                                    kfurlResult = result.kfurlSolverResult
+                                )
+                                exportStatus = "✅ HTML report exported"
+                            } catch (e: Exception) {
+                                exportStatus = "❌ Report export failed: ${e.message}"
+                            }
+                        }
+                    }) {
+                        Text("Export HTML Report")
+                    }
+                }
+
+                if (exportStatus.isNotEmpty()) {
+                    Text(exportStatus, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                }
             }
         }
     }

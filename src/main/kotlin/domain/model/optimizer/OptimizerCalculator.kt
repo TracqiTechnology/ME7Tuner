@@ -5,6 +5,11 @@ import domain.math.Index
 import domain.math.map.Map3d
 import domain.model.simulator.Me7Simulator
 import domain.model.simulator.MechanicalLimitDetector
+import domain.model.simulator.PidSimulator
+import domain.model.simulator.SafetyModeDetector
+import domain.model.simulator.TransientDetector
+import domain.model.simulator.EnvironmentalCorrector
+import domain.model.simulator.ThrottleBodyChecker
 import kotlin.math.abs
 
 /**
@@ -57,7 +62,17 @@ object OptimizerCalculator {
         val suggestedMaps: SuggestedMaps = SuggestedMaps(),
         val perRpmAnalysis: Map<String, List<RpmBreakpointAnalysis>> = emptyMap(),
         val prediction: PredictionResult? = null,
-        val logSummaries: List<LogSummary> = emptyList()
+        val logSummaries: List<LogSummary> = emptyList(),
+        // v4: Advanced analysis
+        val pulls: List<PullSegmenter.WotPull> = emptyList(),
+        val pullConsistency: Map<Int, String> = emptyMap(),
+        val safetyModes: SafetyModeDetector.SafetyModeResult? = null,
+        val transients: TransientDetector.TransientResult? = null,
+        val environmental: EnvironmentalCorrector.EnvironmentalSummary? = null,
+        val throttleCheck: ThrottleBodyChecker.ThrottleCheckResult? = null,
+        val convergenceHistory: IterativeConvergence.ConvergenceHistory? = null,
+        val kfurlSolverResult: KfurlSolver.SolverResult? = null,
+        val pidSimulation: PidSimulator.PidSimulationResult? = null
     )
 
     // ── Helpers ────────────────────────────────────────────────────────
@@ -790,7 +805,12 @@ object OptimizerCalculator {
         minThrottleAngle: Double = 80.0,
         kfldimxOverheadPercent: Double = 8.0,
         kfurl: Double = 0.106,
-        logSummaries: List<LogSummary> = emptyList()
+        logSummaries: List<LogSummary> = emptyList(),
+        // v4: PID gain maps (optional)
+        kfldrq0Map: Map3d? = null,
+        kfldrq1Map: Map3d? = null,
+        kfldrq2Map: Map3d? = null,
+        ldrq0dy: Double = 1.0
     ): OptimizerResult {
         val filteredData = filterWotEntriesWithOptionalData(values, minThrottleAngle)
         val wotEntries = filteredData.wotEntries
@@ -874,13 +894,99 @@ object OptimizerCalculator {
             predictOutcome(wotEntries, simulationResults, suggestedMaps, calibration, kfurl)
         } else null
 
+        // ── v4: Advanced analysis ─────────────────────────────
+        // Phase 21: Per-pull segmentation
+        val pulls = PullSegmenter.segmentPulls(wotEntries, ldrxnTarget = ldrxnTarget)
+        val pullConsistency = PullSegmenter.checkConsistency(pulls)
+
+        // Phase 17: Safety mode detection
+        val safetyModes = SafetyModeDetector.detect(wotEntries)
+
+        // Phase 16: Transient event detection
+        val transients = TransientDetector.detect(wotEntries, ldrxnTarget)
+
+        // Phase 18: Environmental conditions
+        val environmental = EnvironmentalCorrector.analyzeSummary(wotEntries)
+
+        // Phase 19: Throttle body check
+        val throttleCheck = ThrottleBodyChecker.check(wotEntries, mechanicalLimits.turboMaxed)
+
+        // Phase 22: KFURL solver
+        val kfurlSolverResult = if (wotEntries.size >= 10) {
+            KfurlSolver.solve(wotEntries)
+        } else null
+
+        // Phase 20: Iterative convergence (only if we have enough data and maps)
+        val convergenceHistory = if (wotEntries.size >= 20 &&
+            (kfldrlMap != null || kfpbrkMap != null)) {
+            IterativeConvergence.converge(
+                wotEntries = wotEntries,
+                initialCalibration = calibration,
+                kfldrlMap = kfldrlMap,
+                kfldimxMap = kfldimxMap,
+                kfpbrkMap = kfpbrkMap,
+                kfmiopMap = kfmiopMap,
+                kfmirlMap = kfmirlMap,
+                ldrxnTarget = ldrxnTarget,
+                toleranceMbar = toleranceMbar,
+                kfldimxOverheadPercent = kfldimxOverheadPercent
+            )
+        } else null
+
+        // Phase 15: PID dynamics simulation (on the longest good pull)
+        val pidSimulation = if (kfldrq0Map != null || kfldrq1Map != null || kfldrq2Map != null) {
+            val bestPull = pulls.filter { it.quality == PullSegmenter.PullQuality.GOOD }
+                .maxByOrNull { it.sampleCount }
+                ?: pulls.maxByOrNull { it.sampleCount }
+
+            if (bestPull != null && bestPull.sampleCount >= 10) {
+                val pullEntries = wotEntries.subList(
+                    bestPull.startIdx,
+                    (bestPull.endIdx + 1).coerceAtMost(wotEntries.size)
+                )
+                PidSimulator.simulate(
+                    pullEntries = pullEntries,
+                    kfldrq0 = kfldrq0Map,
+                    kfldrq1 = kfldrq1Map,
+                    kfldrq2 = kfldrq2Map,
+                    kfldrl = kfldrlMap,
+                    kfldimx = kfldimxMap,
+                    ldrq0dy = ldrq0dy
+                )
+            } else null
+        } else null
+
+        // ── Collect v4 warnings ───────────────────────────────
+        val v4Warnings = mutableListOf<String>()
+        v4Warnings.addAll(safetyModes.warnings)
+        v4Warnings.addAll(transients.warnings)
+        v4Warnings.addAll(environmental.warnings)
+        if (throttleCheck.restricted) {
+            v4Warnings.add("⚠️ Throttle restriction: ${throttleCheck.detail}")
+        }
+        if (kfurlSolverResult != null && kfurlSolverResult.errorReductionPercent > 10) {
+            v4Warnings.add("💡 KFURL solver suggests ${String.format("%.4f", kfurlSolverResult.optimalKfurl)} " +
+                "(current: $kfurl) — would reduce pssol RMSE by ${String.format("%.0f", kfurlSolverResult.errorReductionPercent)}%")
+        }
+        if (convergenceHistory != null && convergenceHistory.diverged) {
+            v4Warnings.add("⚠️ Iterative convergence diverged — corrections may be oscillating. Consider reducing LDRXN target.")
+        }
+        pullConsistency.forEach { (pullIdx, note) ->
+            v4Warnings.add("🔍 Pull ${pullIdx + 1}: $note")
+        }
+        pidSimulation?.diagnosis?.recommendations?.forEach { rec ->
+            v4Warnings.add("🎛️ PID: $rec")
+        }
+
+        val allWarningsV4 = allWarnings + v4Warnings
+
         return OptimizerResult(
             suggestedKfldrl = suggestedKfldrl,
             suggestedKfldimx = suggestedKfldimx,
             kfpbrkMultipliers = kfpbrkMultipliers,
             pressureErrors = pressureErrors,
             loadErrors = loadErrors,
-            warnings = allWarnings,
+            warnings = allWarningsV4,
             wotEntries = wotEntries,
             simulationResults = simulationResults,
             mechanicalLimits = mechanicalLimits,
@@ -890,7 +996,17 @@ object OptimizerCalculator {
             suggestedMaps = suggestedMaps,
             perRpmAnalysis = perRpmAnalysis,
             prediction = prediction,
-            logSummaries = logSummaries
+            logSummaries = logSummaries,
+            // v4
+            pulls = pulls,
+            pullConsistency = pullConsistency,
+            safetyModes = safetyModes,
+            transients = transients,
+            environmental = environmental,
+            throttleCheck = throttleCheck,
+            convergenceHistory = convergenceHistory,
+            kfurlSolverResult = kfurlSolverResult,
+            pidSimulation = pidSimulation
         )
     }
 

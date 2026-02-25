@@ -25,7 +25,12 @@ import data.preferences.filechooser.BinFileChooserPreferences
 import data.preferences.filechooser.XdfFileChooserPreferences
 import data.preferences.xdf.XdfFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
+import data.preferences.kfldiopu.KfldioPuPreferences
 import data.preferences.kfldrl.KfldrlPreferences
+import data.preferences.kfldrq0.Kfldrq0Preferences
+import data.preferences.kfldrq1.Kfldrq1Preferences
+import data.preferences.kfldrq2.Kfldrq2Preferences
+import data.preferences.kffwtbr.KffwtbrPreferences
 import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
 import data.preferences.kfpbrk.KfpbrkPreferences
@@ -65,6 +70,13 @@ private val mapDefinitions = listOf(
     MapDefinitionEntry("KFLDIMX", KfldimxPreferences),
     MapDefinitionEntry("KFPBRK", KfpbrkPreferences),
     MapDefinitionEntry("KFPBRKNW", KfpbrknwPreferences),
+    // v4: Environmental correction maps
+    MapDefinitionEntry("KFLDIOPU", KfldioPuPreferences),
+    MapDefinitionEntry("KFFWTBR", KffwtbrPreferences),
+    // v4: PID gain maps
+    MapDefinitionEntry("KFLDRQ0", Kfldrq0Preferences),
+    MapDefinitionEntry("KFLDRQ1", Kfldrq1Preferences),
+    MapDefinitionEntry("KFLDRQ2", Kfldrq2Preferences),
 )
 
 private val defaultHeaderValues = mapOf(
