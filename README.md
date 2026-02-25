@@ -44,6 +44,7 @@ Note that ME7Tuner built against Java 17, so you will need to have Java 17+ inst
 13. [KFVPDKSD (Throttle Transition)](#kfvpdksd-throttle-transition)
 14. [WDKUGDN (Alpha-N Fueling)](#wdkugdn-alpha-n-fueling)
 15. [LDRPID (Feed-Forward PID)](#ldrpid-feed-forward-pid)
+16. [Optimizer (Pressure/Load Optimizer)](#optimizer-pressureload-optimizer)
 
 # Tuning Philosophy
 
@@ -616,4 +617,169 @@ The algorithm is mostly based on [elRey's algorithm](http://nefariousmotorsports
 
 * I would advise requesting 95% duty cycle at any RPM ranges that can't produce the minimum boost required for cracking the wastegates (because you might as well be spooling as hard as you can here).
 
+# Optimizer (Pressure/Load Optimizer)
 
+The Optimizer is a suggestion engine that analyzes WOT (Wide Open Throttle) logs and recommends corrections to the boost control and volumetric efficiency maps so that **actual pressure tracks pssol** (requested pressure) and **actual load tracks LDRXN** (maximum specified load).
+
+The core philosophy is that ME7's internal physical model — converting between pressure and load via KFURL and KFPBRK — is mathematically sound. If the base maps are calibrated correctly, the ECU's requested values should match reality (barring mechanical limitations such as turbo overspooling, knock limiting, boost leaks, etc.). When there is a discrepancy, the Optimizer identifies exactly *where* the error is and suggests specific map changes to fix it.
+
+## Prerequisites
+
+Before using the Optimizer, you should have already:
+
+1. **Calibrated KRKTE** (primary fueling) so the ECU knows the correct fuel injector constant
+2. **Scaled MLHFM** (MAF sensor) using the Closed Loop and Open Loop tabs so that fuel trims are near 0% and actual AFR matches requested AFR
+3. **Defined KFMIRL/KFMIOP** (load and torque tables) scaled for your MAP sensor limits
+4. **Calibrated LDRPID** (feed-forward PID / KFLDRL) with at least a rough baseline
+
+The Optimizer refines the boost control and VE model *after* these foundations are in place.
+
+## Configuration
+
+### Map Definitions
+
+In the **Configuration** tab, you must select map definitions for the following maps. The Optimizer uses these to read the current map values from the BIN and to write corrections back:
+
+| Map | Purpose | Required? |
+|-----|---------|-----------|
+| **KFLDRL** | Wastegate base duty cycle (pre-control) | Yes, for boost corrections |
+| **KFLDIMX** | PID I-limiter (feed-forward cap) | Yes, for boost corrections |
+| **KFPBRK** | Volumetric efficiency multiplier (cams off) | Yes, for VE corrections |
+| **KFPBRKNW** | Volumetric efficiency multiplier (cams on) | Optional (displayed for reference) |
+
+ME7Tuner makes the following assumptions about units for these maps:
+
+* KFLDRL - %
+* KFLDIMX - %
+* KFPBRK - unitless (multiplier)
+* KFPBRKNW - unitless (multiplier)
+
+### Log Headers
+
+In the **Configuration** tab under Log Headers, ensure the following headers are defined correctly. These must match the column names in your ME7Logger CSV files:
+
+| Parameter | Default Header | Description |
+|-----------|---------------|-------------|
+| RPM | `nmot` | Engine RPM |
+| Throttle Plate Angle | `wdkba` | Throttle position (degrees) |
+| Wastegate Duty Cycle | `ldtvm` | Total wastegate duty cycle (%) |
+| Barometric Pressure | `pus_w` | Ambient barometric pressure (mbar) |
+| Absolute Pressure | `pvdks_w` | Actual absolute manifold pressure (mbar) |
+| Requested Pressure | `pssol_w` | ECU's requested manifold pressure (mbar) |
+| Requested Load | `rlsol_w` | ECU's requested load (%) |
+| Engine Load | `rl_w` | Actual measured engine load (%) |
+| Actual Load | `rl` | Actual load (optional, alternative to rl_w) |
+
+## How It Works
+
+The Optimizer operates in three phases:
+
+### Phase 1: Boost Control (pssol vs. pvdks_w → KFLDRL / KFLDIMX)
+
+Before load can be accurate, the turbo must hit the pressure the ECU is requesting. If `pvdks_w` (actual pressure) does not equal `pssol_w` (requested pressure), the wastegate pre-control (KFLDRL / KFLDIMX) needs adjustment.
+
+**Algorithm:**
+
+1. Filter WOT data (throttle angle ≥ minimum threshold, default 80°)
+2. For each RPM breakpoint in KFLDRL, find log rows where the PID successfully matched actual boost to requested boost (within the MAP tolerance, default ±30 mbar)
+3. At those stable-boost data points, capture the average WGDC (`ldtvm`) the ECU was actually outputting
+4. Suggest replacing each KFLDRL cell with that observed WGDC
+5. Derive KFLDIMX by multiplying the suggested KFLDRL values by (1 + overhead%), default 108%, giving the PID room to operate
+
+**Interpretation:** "At 4000 RPM, you requested 2200 mbar. To hit that, the ECU ultimately used 65% WGDC. The suggested KFLDRL at 4000 RPM is 65%."
+
+### Phase 2: VE Model (rl vs. rlsol → KFPBRK corrections)
+
+Once Phase 1 is complete (actual pressure tracks pssol), the Optimizer evaluates whether the load is correct. If your MAF is properly scaled but actual load (`rl_w`) consistently misses requested load (`rlsol_w`), the ECU's mathematical conversion between pressure and load needs adjustment via KFPBRK.
+
+**Algorithm:**
+
+1. Prerequisite: Only analyze data points where boost is on-target (`|pvdks_w − pssol_w| ≤ tolerance`)
+2. At each RPM breakpoint, compute the load ratio: `requestedLoad / actualLoad`
+3. Multiply the current KFPBRK cell values by this ratio to produce the suggested KFPBRK
+
+**Interpretation:** A ratio of 1.05 means the ECU needs to request 5% more pressure to achieve the target load — KFPBRK is scaled up by 5% at that RPM.
+
+### Phase 3: Intervention Check (Torque Limiters)
+
+Sometimes LDRXN won't be reached because a torque monitor or intervention is secretly capping the request before it ever reaches the boost controller.
+
+**Algorithm:**
+
+1. Compare `rlsol_w` (the final load request) against the configured LDRXN target
+2. If `rlsol_w < LDRXN × 0.95` during WOT, flag a **Torque Intervention Warning**
+3. If `pvdks_w` consistently falls more than 50 mbar below `pssol_w`, flag a **Boost Target Not Reached** warning
+
+## Usage
+
+### Step 1: Configure Maps and Parameters
+
+1. Go to the **Configuration** tab
+2. Select map definitions for KFLDRL, KFLDIMX, KFPBRK (and optionally KFPBRKNW)
+3. Ensure the log header definitions include `pssol_w`, `rlsol_w`, and `rl_w`
+
+### Step 2: Collect WOT Logs
+
+Log the following parameters with ME7Logger during WOT pulls:
+
+* `nmot` (RPM)
+* `wdkba` (Throttle Plate Angle)
+* `ldtvm` (Wastegate Duty Cycle)
+* `pus_w` (Barometric Pressure)
+* `pvdks_w` (Actual Absolute Manifold Pressure)
+* `pssol_w` (Requested Pressure)
+* `rlsol_w` (Requested Load)
+* `rl_w` (Actual Engine Load)
+
+Get WOT pulls across the full RPM range. More data points produce better suggestions.
+
+### Step 3: Load and Analyze
+
+1. Go to the **Optimizer** tab
+2. Adjust the parameters if needed:
+   * **MAP Tolerance (mbar):** How close actual boost must be to requested boost for a data point to count as "on-target" (default: 30 mbar)
+   * **LDRXN Target (%):** Your maximum specified load target for the intervention check (default: 191%)
+   * **KFLDIMX Overhead (%):** How much headroom above KFLDRL to give the PID I-limiter (default: 8%)
+   * **Min Throttle Angle:** Minimum throttle angle to qualify as WOT data (default: 80°)
+3. Click **"Load ME7 Log File"** for a single log, or **"Load ME7 Log Directory"** to process multiple logs at once
+4. Review the results across the four tabs:
+
+### Step 4: Review Results
+
+#### Boost Control Tab
+
+Shows the current KFLDRL and KFLDIMX maps side-by-side with the suggested corrections. If the suggestions look reasonable, click **"Write KFLDRL"** or **"Write KFLDIMX"** to write directly to the BIN file.
+
+#### VE Model Tab
+
+Shows the current KFPBRK map alongside the suggested KFPBRK with load ratio corrections applied. Click **"Write KFPBRK"** to write to the BIN.
+
+KFPBRKNW (variable cam timing active) is displayed for reference. The Optimizer currently applies corrections to KFPBRK only because cam state (`nw_w`) is not typically logged. If your vehicle has active variable cam timing, the same ratio approach can be applied manually to KFPBRKNW.
+
+#### Charts Tab
+
+Visual comparison of requested vs. actual values:
+
+* **Pressure vs RPM:** Scatter plot of pssol (requested) and pvdks_w (actual) over RPM — shows how well the boost controller is tracking
+* **Pressure Error vs RPM:** Shows `pssol − pvdks_w` at each data point — positive values mean the ECU is requesting more boost than is being delivered
+* **Load vs RPM:** Scatter plot of rlsol (requested) and rl_w (actual) over RPM — shows how well the VE model is tracking
+* **Load Ratio vs RPM:** Shows `rlsol / rl_w` at each data point — 1.0 is perfect, values above 1.0 mean the ECU expected more load than was achieved
+
+#### Warnings Tab
+
+Displays any detected issues:
+
+* **Torque Intervention Detected:** `rlsol_w` is significantly below the LDRXN target, meaning a torque limiter (KFMIOP, KFMIZUFIL, etc.) is capping the load request before it reaches the boost controller. You need to scale your torque maps higher.
+* **Boost Target Not Reached:** Actual pressure is consistently below requested pressure. This may indicate a mechanical limitation (turbo spool, wastegate, boost leak) or an incorrect KFLDRL base duty cycle.
+
+A summary statistics panel shows data point counts, RPM range, average/max pressure error, average load ratio, and average WGDC.
+
+### Step 5: Iterate
+
+The Optimizer is designed for iterative use:
+
+1. **First pass:** Fix boost control (Phase 1). Write the suggested KFLDRL and KFLDIMX, then take new logs.
+2. **Second pass:** With boost on-target, fix the VE model (Phase 2). Write the suggested KFPBRK, then take new logs.
+3. **Verify:** On the final pass, both pressure and load charts should show tight tracking between requested and actual values. Warnings should be clear.
+
+If the maps are calibrated correctly, `pssol` should match `pvdks_w` and `rlsol` should match `rl_w` — the ECU's physical model "just works."

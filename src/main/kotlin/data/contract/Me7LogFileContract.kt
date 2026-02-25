@@ -18,6 +18,9 @@ object Me7LogFileContract {
     const val ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL = "pvdks_w"
     const val SELECTED_GEAR_LABEL = "gangi"
     const val WIDE_BAND_O2_LABEL = "lamsoni_w"
+    const val REQUESTED_PRESSURE_LABEL = "pssol_w"
+    const val REQUESTED_LOAD_LABEL = "rlsol_w"
+    const val ACTUAL_LOAD_LABEL = "rl"
 
     enum class Header(var header: String, val title: String) {
         START_TIME_HEADER(START_TIME_LABEL, "Start Time"),
@@ -36,6 +39,9 @@ object Me7LogFileContract {
         BAROMETRIC_PRESSURE_HEADER(BAROMETRIC_PRESSURE_LABEL, "Barometric Pressure"),
         ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER(ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL, "Absolute Pressure"),
         SELECTED_GEAR_HEADER(SELECTED_GEAR_LABEL, "Selected Gear"),
-        WIDE_BAND_O2_HEADER(WIDE_BAND_O2_LABEL, "Wide Band O2")
+        WIDE_BAND_O2_HEADER(WIDE_BAND_O2_LABEL, "Wide Band O2"),
+        REQUESTED_PRESSURE_HEADER(REQUESTED_PRESSURE_LABEL, "Requested Pressure"),
+        REQUESTED_LOAD_HEADER(REQUESTED_LOAD_LABEL, "Requested Load"),
+        ACTUAL_LOAD_HEADER(ACTUAL_LOAD_LABEL, "Actual Load")
     }
 }

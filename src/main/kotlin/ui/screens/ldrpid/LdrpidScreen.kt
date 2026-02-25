@@ -1,18 +1,19 @@
 package ui.screens.ldrpid
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import data.contract.Me7LogFileContract
 import data.parser.bin.BinParser
-import data.parser.me7log.KfvpdksdLogParser
 import data.parser.me7log.Me7LogParser
 import data.parser.xdf.TableDefinition
+import data.preferences.MapPreference
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
@@ -21,6 +22,7 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.ldrpid.LdrpidCalculator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ui.components.MapAxis
@@ -29,9 +31,11 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 
+private enum class WriteStatus { Idle, Success, Error }
+
 private fun findMap(
     mapList: List<Pair<TableDefinition, Map3d>>,
-    pref: data.preferences.MapPreference
+    pref: MapPreference
 ): Pair<TableDefinition, Map3d>? {
     val selected = pref.getSelectedMap()
     return if (selected != null) {
@@ -43,7 +47,6 @@ private fun findMap(
 fun LdrpidScreen() {
     val mapList by BinParser.mapList.collectAsState()
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
 
     val kfldrlPair = remember(mapList) { findMap(mapList, KfldrlPreferences) }
     val kfldimxPair = remember(mapList) { findMap(mapList, KfldimxPreferences) }
@@ -60,13 +63,10 @@ fun LdrpidScreen() {
         if (kfldrlPair != null) {
             val kfldrl = kfldrlPair.second
             kfldrlMap = kfldrl
-
-            // Initialize non-linear map with same structure but zeroed z-axis
             val emptyZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
             if (nonLinearMap == null) {
                 nonLinearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyZ)
             }
-            // Initialize linear map similarly
             val emptyLZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
             if (linearMap == null) {
                 linearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyLZ)
@@ -78,11 +78,9 @@ fun LdrpidScreen() {
         }
     }
 
-    // Recompute dependent maps when non-linear table is edited
     fun recomputeFromNonLinear(editedNonLinear: Map3d) {
         val kfldrlDef = kfldrlPair ?: return
         val kfldimxDef = kfldimxPair ?: return
-
         nonLinearMap = editedNonLinear
         val linear = LdrpidCalculator.calculateLinearTable(editedNonLinear.zAxis, kfldrlDef.second)
         linearMap = linear
@@ -93,157 +91,94 @@ fun LdrpidScreen() {
         kfldimxXAxis = arrayOf(newKfldimx.xAxis)
     }
 
-    // Progress bar state
+    // Progress & log state
     var progressValue by remember { mutableStateOf(0) }
     var progressMax by remember { mutableStateOf(1) }
     var showProgress by remember { mutableStateOf(false) }
     var logDirName by remember { mutableStateOf("No Directory Selected") }
 
+    // Write state
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val kfldrlConfigured = kfldrlPair != null
+    val kfldimxConfigured = kfldimxPair != null
+
+    var writeKfldrlStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    var writeKfldimxStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    var showWriteKfldrlConfirm by remember { mutableStateOf(false) }
+    var showWriteKfldimxConfirm by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(writeKfldrlStatus) {
+        if (writeKfldrlStatus != WriteStatus.Idle) { delay(3000); writeKfldrlStatus = WriteStatus.Idle }
+    }
+    LaunchedEffect(writeKfldimxStatus) {
+        if (writeKfldimxStatus != WriteStatus.Idle) { delay(3000); writeKfldimxStatus = WriteStatus.Idle }
+    }
+
+    // Write confirmation dialogs
+    if (showWriteKfldrlConfirm) {
+        AlertDialog(
+            onDismissRequest = { showWriteKfldrlConfirm = false },
+            title = { Text("Write KFLDRL") },
+            text = { Text("Are you sure you want to write KFLDRL to the binary?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showWriteKfldrlConfirm = false
+                    val tableDef = kfldrlPair?.first
+                    if (tableDef != null && kfldrlMap != null) {
+                        try {
+                            BinWriter.write(BinFilePreferences.file.value, tableDef, kfldrlMap!!)
+                            writeKfldrlStatus = WriteStatus.Success
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            writeKfldrlStatus = WriteStatus.Error
+                        }
+                    }
+                }) { Text("Yes") }
+            },
+            dismissButton = { TextButton(onClick = { showWriteKfldrlConfirm = false }) { Text("No") } }
+        )
+    }
+
+    if (showWriteKfldimxConfirm) {
+        AlertDialog(
+            onDismissRequest = { showWriteKfldimxConfirm = false },
+            title = { Text("Write KFLDIMX") },
+            text = { Text("Are you sure you want to write KFLDIMX to the binary?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showWriteKfldimxConfirm = false
+                    val tableDef = kfldimxPair?.first
+                    if (tableDef != null && kfldimxMap != null) {
+                        try {
+                            BinWriter.write(BinFilePreferences.file.value, tableDef, kfldimxMap!!)
+                            writeKfldimxStatus = WriteStatus.Success
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            writeKfldimxStatus = WriteStatus.Error
+                        }
+                    }
+                }) { Text("Yes") }
+            },
+            dismissButton = { TextButton(onClick = { showWriteKfldimxConfirm = false }) { Text("No") } }
+        )
+    }
+
+    // ── Main layout ───────────────────────────────────────────────────
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Top section: 4 MapTables in a 2x2 grid
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Non-Linear Boost (editable)
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Non Linear Boost",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (nonLinearMap != null && nonLinearMap!!.zAxis.isNotEmpty()) {
-                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                        MapTable(
-                            map = nonLinearMap!!,
-                            editable = true,
-                            onMapChanged = { edited -> recomputeFromNonLinear(edited) }
-                        )
-                    }
-                } else {
-                    Text("No map data", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            // Linear Boost (read-only)
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Linear Boost",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (linearMap != null && linearMap!!.zAxis.isNotEmpty()) {
-                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                        MapTable(map = linearMap!!, editable = false)
-                    }
-                } else {
-                    Text("No map data", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // KFLDRL
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "KFLDRL",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (kfldrlMap != null && kfldrlMap!!.zAxis.isNotEmpty()) {
-                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                        MapTable(map = kfldrlMap!!, editable = false)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = {
-                        val kfldrlDef = KfldrlPreferences.getSelectedMap()
-                        if (kfldrlDef != null && kfldrlMap != null) {
-                            val binFile = BinFilePreferences.getStoredFile()
-                            if (binFile.exists()) {
-                                BinWriter.write(binFile, kfldrlDef.first, kfldrlMap!!)
-                            }
-                        }
-                    }) {
-                        Text("Write KFLDRL")
-                    }
-                } else {
-                    Text("No map data", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            // KFLDIMX
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "KFLDIMX X-Axis",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (kfldimxXAxis != null) {
-                    Box(modifier = Modifier.heightIn(max = 40.dp)) {
-                        MapAxis(data = kfldimxXAxis!!, editable = false)
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    "KFLDIMX",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                if (kfldimxMap != null && kfldimxMap!!.zAxis.isNotEmpty()) {
-                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                        MapTable(map = kfldimxMap!!, editable = false)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = {
-                        val kfldimxDef = KfldimxPreferences.getSelectedMap()
-                        if (kfldimxDef != null && kfldimxMap != null) {
-                            val binFile = BinFilePreferences.getStoredFile()
-                            if (binFile.exists()) {
-                                BinWriter.write(binFile, kfldimxDef.first, kfldimxMap!!)
-                            }
-                        }
-                    }) {
-                        Text("Write KFLDIMX")
-                    }
-                } else {
-                    Text("No map data", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Bottom section: Load log directory + progress
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(onClick = {
+        // ── Configuration Card ────────────────────────────────────────
+        LdrpidConfigCard(
+            kfldrlName = kfldrlPair?.first?.tableName,
+            kfldimxName = kfldimxPair?.first?.tableName,
+            logDirName = logDirName,
+            showProgress = showProgress,
+            progressValue = progressValue,
+            progressMax = progressMax,
+            onLoadLogs = {
                 val dialog = FileDialog(Frame(), "Select Log Directory", FileDialog.LOAD)
                 System.setProperty("apple.awt.fileDialogForDirectories", "true")
                 val lastDir = LdrpidPreferences.lastDirectory
@@ -256,32 +191,22 @@ fun LdrpidScreen() {
                     val selectedDir = File(dir, file)
                     LdrpidPreferences.lastDirectory = selectedDir.parent ?: dir
                     logDirName = selectedDir.path
-
                     showProgress = true
                     progressValue = 0
-
                     scope.launch {
                         withContext(Dispatchers.IO) {
                             val parser = Me7LogParser()
                             val values = parser.parseLogDirectory(
-                                Me7LogParser.LogType.LDRPID,
-                                selectedDir
+                                Me7LogParser.LogType.LDRPID, selectedDir
                             ) { value, max ->
                                 progressValue = value
                                 progressMax = max
                                 showProgress = value < max - 1
                             }
-
                             val kfldimxDef = KfldimxPreferences.getSelectedMap()
                             val kfldrlDef = KfldrlPreferences.getSelectedMap()
-
                             if (kfldimxDef != null && kfldrlDef != null) {
-                                val result = LdrpidCalculator.calculateLdrpid(
-                                    values,
-                                    kfldrlDef.second,
-                                    kfldimxDef.second
-                                )
-
+                                val result = LdrpidCalculator.calculateLdrpid(values, kfldrlDef.second, kfldimxDef.second)
                                 withContext(Dispatchers.Main) {
                                     nonLinearMap = result.nonLinearOutput
                                     linearMap = result.linearOutput
@@ -294,26 +219,343 @@ fun LdrpidScreen() {
                         }
                     }
                 }
-            }) {
-                Text("Load ME7 Logs")
             }
+        )
 
-            Spacer(Modifier.height(8.dp))
+        // ── Tabbed Comparison Area ────────────────────────────────────
+        LdrpidComparisonArea(
+            modifier = Modifier.weight(1f),
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            nonLinearMap = nonLinearMap,
+            linearMap = linearMap,
+            kfldrlMap = kfldrlMap,
+            kfldimxMap = kfldimxMap,
+            kfldimxXAxis = kfldimxXAxis,
+            onNonLinearChanged = { recomputeFromNonLinear(it) }
+        )
 
-            if (showProgress) {
-                LinearProgressIndicator(
-                    progress = { if (progressMax > 0) progressValue.toFloat() / progressMax.toFloat() else 0f },
-                    modifier = Modifier.width(300.dp).height(8.dp)
-                )
-                Spacer(Modifier.height(4.dp))
-            }
+        // ── Write to Binary Section ───────────────────────────────────
+        LdrpidWriteSection(
+            binLoaded = binLoaded,
+            binFileName = if (binLoaded) binFile.name else null,
+            kfldrlConfigured = kfldrlConfigured,
+            kfldrlName = kfldrlPair?.first?.tableName,
+            kfldimxConfigured = kfldimxConfigured,
+            kfldimxName = kfldimxPair?.first?.tableName,
+            canWriteKfldrl = binLoaded && kfldrlConfigured && kfldrlMap != null,
+            canWriteKfldimx = binLoaded && kfldimxConfigured && kfldimxMap != null,
+            writeKfldrlStatus = writeKfldrlStatus,
+            writeKfldimxStatus = writeKfldimxStatus,
+            onWriteKfldrl = { showWriteKfldrlConfirm = true },
+            onWriteKfldimx = { showWriteKfldimxConfirm = true }
+        )
+    }
+}
 
+// ── Configuration Card ────────────────────────────────────────────────
+
+@Composable
+private fun LdrpidConfigCard(
+    kfldrlName: String?,
+    kfldimxName: String?,
+    logDirName: String,
+    showProgress: Boolean,
+    progressValue: Int,
+    progressMax: Int,
+    onLoadLogs: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = logDirName,
-                style = MaterialTheme.typography.bodySmall
+                text = "LDRPID \u2014 Feed-Forward PID Linearization",
+                style = MaterialTheme.typography.titleMedium
             )
+            Text(
+                text = "Linearize boost pressure control for wastegate pre-control (KFLDRL) and PID I-limiter (KFLDIMX)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    PrerequisiteRow(
+                        label = "KFLDRL",
+                        detail = kfldrlName ?: "Not configured",
+                        met = kfldrlName != null
+                    )
+                    PrerequisiteRow(
+                        label = "KFLDIMX",
+                        detail = kfldimxName ?: "Not configured",
+                        met = kfldimxName != null
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Button(onClick = onLoadLogs) {
+                        Text("Load ME7 Logs")
+                    }
+                    if (showProgress) {
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = { if (progressMax > 0) progressValue.toFloat() / progressMax.toFloat() else 0f },
+                            modifier = Modifier.width(200.dp).height(6.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = logDirName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── Tabbed Comparison Area ────────────────────────────────────────────
+
+@Composable
+private fun LdrpidComparisonArea(
+    modifier: Modifier = Modifier,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    nonLinearMap: Map3d?,
+    linearMap: Map3d?,
+    kfldrlMap: Map3d?,
+    kfldimxMap: Map3d?,
+    kfldimxXAxis: Array<Array<Double>>?,
+    onNonLinearChanged: (Map3d) -> Unit
+) {
+    Column(modifier = modifier) {
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            Tab(selected = selectedTab == 0, onClick = { onTabSelected(0) }, text = { Text("Boost Tables") })
+            Tab(selected = selectedTab == 1, onClick = { onTabSelected(1) }, text = { Text("KFLDRL") })
+            Tab(selected = selectedTab == 2, onClick = { onTabSelected(2) }, text = { Text("KFLDIMX") })
         }
 
-        Spacer(Modifier.height(16.dp))
+        when (selectedTab) {
+            0 -> BoostTablesTab(nonLinearMap, linearMap, onNonLinearChanged, Modifier.fillMaxWidth().weight(1f))
+            1 -> KfldrlTab(kfldrlMap, Modifier.fillMaxWidth().weight(1f))
+            2 -> KfldimxTab(kfldimxMap, kfldimxXAxis, Modifier.fillMaxWidth().weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun BoostTablesTab(
+    nonLinearMap: Map3d?,
+    linearMap: Map3d?,
+    onNonLinearChanged: (Map3d) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Non-Linear Boost (editable)
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = "Non-Linear Boost (editable)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (nonLinearMap != null && nonLinearMap.zAxis.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = nonLinearMap, editable = true, onMapChanged = { onNonLinearChanged(it) })
+                }
+            } else {
+                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        // Linear Boost (read-only)
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = "Linear Boost",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (linearMap != null && linearMap.zAxis.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = linearMap, editable = false)
+                }
+            } else {
+                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun KfldrlTab(kfldrlMap: Map3d?, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = "KFLDRL \u2014 Linearized Wastegate Duty Cycle",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        if (kfldrlMap != null && kfldrlMap.zAxis.isNotEmpty()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                MapTable(map = kfldrlMap, editable = false)
+            }
+        } else {
+            Text("No map data", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun KfldimxTab(
+    kfldimxMap: Map3d?,
+    kfldimxXAxis: Array<Array<Double>>?,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        if (kfldimxXAxis != null) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Text(
+                        text = "KFLDIMX X-Axis (Boost Pressure)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    MapAxis(data = kfldimxXAxis, editable = false)
+                }
+            }
+        }
+
+        Text(
+            text = "KFLDIMX \u2014 PID I-Regulator Limit",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        if (kfldimxMap != null && kfldimxMap.zAxis.isNotEmpty()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                MapTable(map = kfldimxMap, editable = false)
+            }
+        } else {
+            Text("No map data", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+// ── Write to Binary Section ───────────────────────────────────────────
+
+@Composable
+private fun LdrpidWriteSection(
+    binLoaded: Boolean,
+    binFileName: String?,
+    kfldrlConfigured: Boolean,
+    kfldrlName: String?,
+    kfldimxConfigured: Boolean,
+    kfldimxName: String?,
+    canWriteKfldrl: Boolean,
+    canWriteKfldimx: Boolean,
+    writeKfldrlStatus: WriteStatus,
+    writeKfldimxStatus: WriteStatus,
+    onWriteKfldrl: () -> Unit,
+    onWriteKfldimx: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Write to Binary",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            PrerequisiteRow(label = "BIN file", detail = if (binLoaded) binFileName!! else "Not loaded", met = binLoaded)
+            PrerequisiteRow(label = "KFLDRL map", detail = if (kfldrlConfigured) kfldrlName!! else "Not configured", met = kfldrlConfigured)
+            PrerequisiteRow(label = "KFLDIMX map", detail = if (kfldimxConfigured) kfldimxName!! else "Not configured", met = kfldimxConfigured)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(onClick = onWriteKfldrl, enabled = canWriteKfldrl) { Text("Write KFLDRL") }
+                WriteStatusIndicator(writeKfldrlStatus)
+                Button(onClick = onWriteKfldimx, enabled = canWriteKfldimx) { Text("Write KFLDIMX") }
+                WriteStatusIndicator(writeKfldimxStatus)
+            }
+
+            if (!canWriteKfldrl || !canWriteKfldimx) {
+                val message = when {
+                    !binLoaded -> "Load a BIN file to write."
+                    !kfldrlConfigured && !kfldimxConfigured -> "Select KFLDRL and KFLDIMX map definitions in Configuration."
+                    !kfldrlConfigured -> "Select the KFLDRL map definition in Configuration."
+                    !kfldimxConfigured -> "Select the KFLDIMX map definition in Configuration."
+                    else -> "Load log data to generate maps."
+                }
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WriteStatusIndicator(status: WriteStatus) {
+    AnimatedVisibility(visible = status != WriteStatus.Idle) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (status == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                contentDescription = null,
+                tint = if (status == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                else MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = if (status == WriteStatus.Success) "Written" else "Failed",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (status == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                else MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = "$label:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(100.dp))
+        Text(text = detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

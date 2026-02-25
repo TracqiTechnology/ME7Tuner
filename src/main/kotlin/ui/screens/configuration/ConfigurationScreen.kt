@@ -28,6 +28,8 @@ import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
 import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
+import data.preferences.kfpbrk.KfpbrkPreferences
+import data.preferences.kfpbrknw.KfpbrknwPreferences
 import data.preferences.kfvpdksd.KfvpdksdPreferences
 import data.preferences.kfwdkmsn.KfwdkmsnPreferences
 import data.preferences.kfzw.KfzwPreferences
@@ -61,6 +63,8 @@ private val mapDefinitions = listOf(
     MapDefinitionEntry("KFWDKMSN", KfwdkmsnPreferences),
     MapDefinitionEntry("KFLDRL", KfldrlPreferences),
     MapDefinitionEntry("KFLDIMX", KfldimxPreferences),
+    MapDefinitionEntry("KFPBRK", KfpbrkPreferences),
+    MapDefinitionEntry("KFPBRKNW", KfpbrknwPreferences),
 )
 
 private val defaultHeaderValues = mapOf(
@@ -81,6 +85,9 @@ private val defaultHeaderValues = mapOf(
     Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER to Me7LogFileContract.ABSOLUTE_BOOST_PRESSURE_ACTUAL_LABEL,
     Me7LogFileContract.Header.SELECTED_GEAR_HEADER to Me7LogFileContract.SELECTED_GEAR_LABEL,
     Me7LogFileContract.Header.WIDE_BAND_O2_HEADER to Me7LogFileContract.WIDE_BAND_O2_LABEL,
+    Me7LogFileContract.Header.REQUESTED_PRESSURE_HEADER to Me7LogFileContract.REQUESTED_PRESSURE_LABEL,
+    Me7LogFileContract.Header.REQUESTED_LOAD_HEADER to Me7LogFileContract.REQUESTED_LOAD_LABEL,
+    Me7LogFileContract.Header.ACTUAL_LOAD_HEADER to Me7LogFileContract.ACTUAL_LOAD_LABEL,
 )
 
 @Composable

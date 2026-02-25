@@ -55,6 +55,16 @@
             "tableName": "KFLDIMX",
             "tableDescription": "Map: LDR I-Regulator limit",
             "unit": "%"
+        },
+        "KFPBRK": {
+            "tableName": "KFPBRK",
+            "tableDescription": "Correction factor for combustion chamber pressure",
+            "unit": "-"
+        },
+        "KFPBRKNW": {
+            "tableName": "KFPBRKNW",
+            "tableDescription": "Correction factor for combustion chamber pressure at NWS active",
+            "unit": "-"
         }
     },
     "primaryFueling": {
@@ -114,6 +124,9 @@
         "BAROMETRIC_PRESSURE_HEADER": "pus_w",
         "ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER": "pvdks_w",
         "SELECTED_GEAR_HEADER": "gangi",
-        "WIDE_BAND_O2_HEADER": "lamsoni_w"
+        "WIDE_BAND_O2_HEADER": "lamsoni_w",
+        "REQUESTED_PRESSURE_HEADER": "pssol_w",
+        "REQUESTED_LOAD_HEADER": "rlsol_w",
+        "ACTUAL_LOAD_HEADER": "rl"
     }
 }

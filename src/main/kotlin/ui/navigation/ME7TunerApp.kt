@@ -15,6 +15,7 @@ import ui.screens.krkte.KrkteScreen
 import ui.screens.ldrpid.LdrpidScreen
 import ui.screens.mlhfm.MlhfmScreen
 import ui.screens.openloop.OpenLoopScreen
+import ui.screens.optimizer.OptimizerScreen
 import ui.screens.plsol.PlsolScreen
 import ui.screens.wdkugdn.WdkugdnScreen
 
@@ -30,7 +31,8 @@ enum class Tab(val title: String, val tooltip: String) {
     KFZW("KFZW", "KFZW Calculator"),
     KFVPDKSD("KFVPDKSD/E", "KFVPDKSD/E Calculator"),
     WDKUGDN("WDKUGDN", "KFURL"),
-    LDRPID("LDRPID", "LDRPID")
+    LDRPID("LDRPID", "LDRPID"),
+    OPTIMIZER("Optimizer", "Pressure/Load Optimizer")
 }
 
 @Composable
@@ -65,6 +67,7 @@ fun ME7TunerApp() {
                     Tab.KFVPDKSD -> KfvpdksdScreen()
                     Tab.WDKUGDN -> WdkugdnScreen()
                     Tab.LDRPID -> LdrpidScreen()
+                    Tab.OPTIMIZER -> OptimizerScreen()
                 }
             }
         }

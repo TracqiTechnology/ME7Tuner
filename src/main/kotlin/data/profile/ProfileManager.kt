@@ -7,6 +7,8 @@ import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
 import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
+import data.preferences.kfpbrk.KfpbrkPreferences
+import data.preferences.kfpbrknw.KfpbrknwPreferences
 import data.preferences.kfvpdksd.KfvpdksdPreferences
 import data.preferences.kfwdkmsn.KfwdkmsnPreferences
 import data.preferences.kfzw.KfzwPreferences
@@ -51,6 +53,8 @@ object ProfileManager {
         "KFWDKMSN" to KfwdkmsnPreferences,
         "KFLDRL" to KfldrlPreferences,
         "KFLDIMX" to KfldimxPreferences,
+        "KFPBRK" to KfpbrkPreferences,
+        "KFPBRKNW" to KfpbrknwPreferences,
     )
 
     init {
