@@ -1,8 +1,10 @@
 package ui.screens.wdkugdn
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,7 +17,10 @@ import data.preferences.wdkugdn.WdkugdnPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.wdkugdn.Wdkugdn
+import kotlinx.coroutines.delay
 import ui.components.MapTable
+
+private enum class WriteStatus { Idle, Success, Error }
 
 @Composable
 fun WdkugdnScreen() {
@@ -58,27 +63,109 @@ fun WdkugdnScreen() {
     val definitionTitle = wdkugdnResult.first
     val outputMap = wdkugdnResult.second
 
-    var showWriteConfirmation by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    // Write state
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val wdkugdnConfigured = WdkugdnPreferences.getSelectedMap() != null
+    val kfwdkmsnConfigured = KfwdkmsnPreferences.getSelectedMap() != null
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Engine Displacement panel
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
+
+    // Write confirmation dialog
+    if (showWriteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write WDKUGDN") },
+            text = { Text("Are you sure you want to write WDKUGDN to the binary?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWriteConfirmation = false
+                        val wdkugdnPair = WdkugdnPreferences.getSelectedMap()
+                        if (wdkugdnPair != null && outputMap != null) {
+                            try {
+                                BinWriter.write(
+                                    BinFilePreferences.file.value,
+                                    wdkugdnPair.first,
+                                    outputMap
+                                )
+                                writeStatus = WriteStatus.Success
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                writeStatus = WriteStatus.Error
+                            }
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    // ── Main layout ───────────────────────────────────────────────────
+    Column(modifier = Modifier.fillMaxSize()) {
+        // ── WDKUGDN table fills available space ───────────────────────
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "WDKUGDN (Output)",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            if (outputMap != null && outputMap.zAxis.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    MapTable(map = outputMap, editable = false)
+                }
+            } else {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Text(
+                            text = "No data available. Ensure WDKUGDN and KFWDKMSN map definitions are configured.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Action bar ────────────────────────────────────────────────
         Surface(
             shape = MaterialTheme.shapes.medium,
-            tonalElevation = 1.dp
+            tonalElevation = 1.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Engine Displacement",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                // Engine displacement input
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -103,90 +190,112 @@ fun WdkugdnScreen() {
                     Text(
                         text = "Liters",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
-            }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-        // WDKUGDN Output label
-        Text(
-            text = "WDKUGDN (Output)",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        // Map table
-        if (outputMap != null && outputMap.zAxis.isNotEmpty()) {
-            Box(modifier = Modifier.heightIn(max = 200.dp).fillMaxWidth()) {
-                MapTable(
-                    map = outputMap,
-                    editable = false
+                // Prerequisites
+                PrerequisiteRow(
+                    label = "WDKUGDN map",
+                    detail = if (wdkugdnConfigured) definitionTitle ?: "Configured" else "Not configured",
+                    met = wdkugdnConfigured
                 )
-            }
-        } else {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 1.dp,
-                modifier = Modifier.fillMaxWidth().height(80.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+
+                PrerequisiteRow(
+                    label = "KFWDKMSN map",
+                    detail = if (kfwdkmsnConfigured) "Configured" else "Not configured",
+                    met = kfwdkmsnConfigured
+                )
+
+                PrerequisiteRow(
+                    label = "BIN file",
+                    detail = if (binLoaded) binFile.name else "Not loaded",
+                    met = binLoaded
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Write action
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { showWriteConfirmation = true },
+                        enabled = binLoaded && wdkugdnConfigured && kfwdkmsnConfigured && outputMap != null
+                    ) {
+                        Text("Write WDKUGDN")
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                if (!wdkugdnConfigured || !kfwdkmsnConfigured) {
                     Text(
-                        text = "No data available. Ensure WDKUGDN and KFWDKMSN map definitions are configured.",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Configure the WDKUGDN and KFWDKMSN map definitions in the Configuration screen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
+// ── Shared Composables ────────────────────────────────────────────────
 
-        // Status label
-        Text(
-            text = definitionTitle ?: "No Table Defined",
-            style = MaterialTheme.typography.bodyMedium
+@Composable
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
-        // Write button
-        Button(
-            onClick = { showWriteConfirmation = true },
-            enabled = outputMap != null
-        ) {
-            Text("Write WDKUGDN")
-        }
-    }
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(110.dp)
+        )
 
-    if (showWriteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showWriteConfirmation = false },
-            title = { Text("Write WDKUGDN") },
-            text = { Text("Are you sure you want to write WDKUGDN to the binary?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showWriteConfirmation = false
-                        val wdkugdnPair = WdkugdnPreferences.getSelectedMap()
-                        if (wdkugdnPair != null && outputMap != null) {
-                            BinWriter.write(
-                                BinFilePreferences.file.value,
-                                wdkugdnPair.first,
-                                outputMap
-                            )
-                        }
-                    }
-                ) {
-                    Text("Yes")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showWriteConfirmation = false }) {
-                    Text("No")
-                }
-            }
+        Text(
+            text = detail,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

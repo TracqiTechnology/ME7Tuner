@@ -3,6 +3,8 @@ package ui.screens.optimizer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -82,45 +84,53 @@ fun OptimizerScreen() {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    OutlinedTextField(
+                    ParameterField(
                         value = toleranceMbar,
                         onValueChange = {
                             toleranceMbar = it
                             it.toDoubleOrNull()?.let { v -> OptimizerPreferences.mapToleranceMbar = v }
                         },
-                        label = { Text("MAP Tolerance (mbar)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        label = "MAP Tolerance (mbar)",
+                        tooltip = "Maximum allowed deviation between requested boost pressure (pssol) and actual boost pressure (pvdks_w). " +
+                            "Log entries within this tolerance are considered \"on-target\" and used for KFLDRL/KFPBRK suggestions. " +
+                            "Typical values: 20\u201350 mbar. Lower = stricter matching, fewer data points.",
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = ldrxnTarget,
                         onValueChange = {
                             ldrxnTarget = it
                             it.toDoubleOrNull()?.let { v -> OptimizerPreferences.ldrxnTarget = v }
                         },
-                        label = { Text("LDRXN Target (%)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        label = "LDRXN Target (%)",
+                        tooltip = "The maximum specified engine load (LDRXN) your tune is targeting. " +
+                            "Used by the Intervention Watchdog to detect if rlsol is being capped below this value by torque limiters (KFMIOP/KFMIZUFIL). " +
+                            "Set this to match your KFMIRL maximum load axis value.",
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = kfldimxOverhead,
                         onValueChange = {
                             kfldimxOverhead = it
                             it.toDoubleOrNull()?.let { v -> OptimizerPreferences.kfldimxOverheadPercent = v }
                         },
-                        label = { Text("KFLDIMX Overhead (%)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        label = "KFLDIMX Overhead (%)",
+                        tooltip = "Percentage headroom added on top of the suggested KFLDRL values to derive KFLDIMX (the PID I-regulator limit). " +
+                            "This gives the PID controller room to make corrections without winding up. " +
+                            "Typical values: 5\u201310%. Higher = more PID authority, but risk of overshoot.",
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = minThrottleAngle,
                         onValueChange = {
                             minThrottleAngle = it
                             it.toDoubleOrNull()?.let { v -> OptimizerPreferences.minThrottleAngle = v }
                         },
-                        label = { Text("Min Throttle Angle") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        label = "Min Throttle Angle",
+                        tooltip = "Minimum throttle plate angle (wdkba) to qualify a log entry as Wide-Open Throttle (WOT). " +
+                            "Only log rows above this threshold are used for analysis. " +
+                            "Typical value: 80\u00B0. Lower values include partial-throttle data which may skew results.",
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -663,3 +673,43 @@ private fun WarningsTab(result: OptimizerCalculator.OptimizerResult) {
     }
 }
 
+// ── Reusable parameter field with info tooltip ────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ParameterField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    tooltip: String,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier,
+        singleLine = true,
+        trailingIcon = {
+            @Suppress("DEPRECATION")
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                tooltip = {
+                    RichTooltip(
+                        title = { Text(label) }
+                    ) {
+                        Text(tooltip, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                state = rememberTooltipState(isPersistent = true)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "$label info",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    )
+}

@@ -97,22 +97,18 @@ private val ME7Typography = Typography(
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = 13.sp,
-        color = OnBackground
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = 11.sp,
-        color = OnBackground
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = 16.sp,
-        color = OnBackground
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = 12.sp,
-        color = OnBackground
     )
 )
 
