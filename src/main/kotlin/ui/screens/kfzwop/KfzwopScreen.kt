@@ -1,10 +1,13 @@
 package ui.screens.kfzwop
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
@@ -16,9 +19,16 @@ import data.preferences.kfzwop.KfzwopPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.kfzw.Kfzw
+import kotlinx.coroutines.delay
+import ui.components.ChartSeries
+import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
+import ui.theme.ChartRed
+import ui.theme.Primary
+
+private enum class WriteStatus { Idle, Success, Error }
 
 private fun findMap(
     mapList: List<Pair<TableDefinition, Map3d>>,
@@ -35,13 +45,17 @@ fun KfzwopScreen() {
     val mapList by BinParser.mapList.collectAsState()
     val tableDefinitions by XdfParser.tableDefinitions.collectAsState()
 
-    var showMapPicker by remember { mutableStateOf(false) }
+    var showKfzwopPicker by remember { mutableStateOf(false) }
 
-    // Find the KFZWOP map based on preference
-    val kfzwopPair = remember(mapList) { findMap(mapList, KfzwopPreferences) }
+    // Reactive map selection — recompose when user picks a new map
+    var mapVersion by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { KfzwopPreferences.mapChanged.collect { mapVersion++ } }
+
+    val kfzwopPair = remember(mapList, mapVersion) { findMap(mapList, KfzwopPreferences) }
+
     val inputKfzwop = kfzwopPair?.second
 
-    // Editable X-axis (KFMIOP/KFZWOP load axis)
+    // Editable X-axis (KFZWOP load axis)
     var editedXAxis by remember(inputKfzwop) {
         mutableStateOf(
             if (inputKfzwop != null) arrayOf(inputKfzwop.xAxis.copyOf())
@@ -57,23 +71,57 @@ fun KfzwopScreen() {
     // Calculate the rescaled KFZWOP output
     val outputKfzwop = remember(editedInputMap, editedXAxis) {
         val input = editedInputMap
-        if (input != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty() && editedXAxis[0][0] != null) {
+        if (input != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
             val newXAxis = editedXAxis[0]
             val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, newXAxis)
             Map3d(newXAxis, input.yAxis, newZAxis)
         } else null
     }
 
-    // Write confirmation dialog
-    var showWriteConfirmation by remember { mutableStateOf(false) }
+    // Timing comparison chart data — peak timing per RPM
+    val timingChartData = remember(outputKfzwop, kfzwopPair) {
+        val originalKfzwop = kfzwopPair?.second
+        val calculatedKfzwop = outputKfzwop
+        if (originalKfzwop == null || calculatedKfzwop == null) {
+            return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
+        }
 
-    if (showMapPicker) {
+        val originalPeaks = originalKfzwop.yAxis.mapIndexed { i, rpm ->
+            val peakTiming = originalKfzwop.zAxis[i].maxOrNull() ?: 0.0
+            Pair(rpm, peakTiming)
+        }
+        val calculatedPeaks = calculatedKfzwop.yAxis.mapIndexed { i, rpm ->
+            val peakTiming = calculatedKfzwop.zAxis[i].maxOrNull() ?: 0.0
+            Pair(rpm, peakTiming)
+        }
+        Pair(originalPeaks, calculatedPeaks)
+    }
+
+    // Write prerequisites
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val kfzwopMapConfigured = kfzwopPair != null
+    val canWrite = binLoaded && kfzwopMapConfigured && outputKfzwop != null
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
+
+    // Dialogs
+    if (showKfzwopPicker) {
         MapPickerDialog(
             title = "Select KFZWOP Map",
             tableDefinitions = tableDefinitions,
             initialValue = kfzwopPair?.first,
             onSelected = { KfzwopPreferences.setSelectedMap(it) },
-            onDismiss = { showMapPicker = false }
+            onDismiss = { showKfzwopPicker = false }
         )
     }
 
@@ -88,9 +136,11 @@ fun KfzwopScreen() {
                     val tableDef = kfzwopPair?.first
                     if (outputKfzwop != null && tableDef != null) {
                         try {
-                            BinWriter.write(BinFilePreferences.getStoredFile(), tableDef, outputKfzwop)
+                            BinWriter.write(BinFilePreferences.file.value, tableDef, outputKfzwop)
+                            writeStatus = WriteStatus.Success
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            writeStatus = WriteStatus.Error
                         }
                     }
                 }) { Text("Yes") }
@@ -101,80 +151,405 @@ fun KfzwopScreen() {
         )
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    // Main layout: Configure -> Compare -> Write
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Left side: KFZWOP Input
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("KFMIOP/KFZWOP X-Axis (Input)", style = MaterialTheme.typography.titleMedium)
+        ConfigurationCard(
+            kfzwopMapName = kfzwopPair?.first?.tableName,
+            onSelectKfzwop = { showKfzwopPicker = true },
+            editedXAxis = editedXAxis,
+            onXAxisChanged = { newData ->
+                editedXAxis = newData
+                editedInputMap?.let { currentMap ->
+                    editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
+                }
+            }
+        )
+
+        ComparisonArea(
+            modifier = Modifier.weight(1f),
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            editedInputMap = editedInputMap,
+            onInputMapChanged = { editedInputMap = it },
+            originalKfzwop = kfzwopPair?.second,
+            outputKfzwop = outputKfzwop,
+            originalPeakTiming = timingChartData.first,
+            calculatedPeakTiming = timingChartData.second
+        )
+
+        WriteToBinarySection(
+            binLoaded = binLoaded,
+            binFileName = if (binLoaded) binFile.name else null,
+            kfzwopMapConfigured = kfzwopMapConfigured,
+            kfzwopMapName = kfzwopPair?.first?.tableName,
+            canWrite = canWrite,
+            writeStatus = writeStatus,
+            onWriteClick = { showWriteConfirmation = true }
+        )
+    }
+}
+
+@Composable
+private fun ConfigurationCard(
+    kfzwopMapName: String?,
+    onSelectKfzwop: () -> Unit,
+    editedXAxis: Array<Array<Double>>,
+    onXAxisChanged: (Array<Array<Double>>) -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "KFZWOP Calculator",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Rescale optimal ignition timing for new load axis",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            MapSelectorRow(
+                label = "KFZWOP:",
+                mapName = kfzwopMapName,
+                onSelectMap = onSelectKfzwop
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
             if (editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                ) {
+                    Text(
+                        text = "KFZWOP Load Axis (Editable)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "(defines the output load breakpoints)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 MapAxis(
                     data = editedXAxis,
                     editable = true,
-                    onDataChanged = { newData ->
-                        editedXAxis = newData
-                    }
+                    onDataChanged = onXAxisChanged
                 )
             }
+        }
+    }
+}
 
-            Spacer(Modifier.height(8.dp))
+@Composable
+private fun MapSelectorRow(
+    label: String,
+    mapName: String?,
+    onSelectMap: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = mapName ?: "No Definition Selected",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        OutlinedButton(onClick = onSelectMap) {
+            Text("Select Map")
+        }
+    }
+}
 
-            Text("KFZWOP (Input)", style = MaterialTheme.typography.titleMedium)
-            if (editedInputMap != null) {
-                Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                    MapTable(
-                        map = editedInputMap!!,
-                        editable = true,
-                        onMapChanged = { newMap ->
-                            editedInputMap = newMap
-                        }
-                    )
+@Composable
+private fun ComparisonArea(
+    modifier: Modifier = Modifier,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    editedInputMap: Map3d?,
+    onInputMapChanged: (Map3d) -> Unit,
+    originalKfzwop: Map3d?,
+    outputKfzwop: Map3d?,
+    originalPeakTiming: List<Pair<Double, Double>>,
+    calculatedPeakTiming: List<Pair<Double, Double>>
+) {
+    Column(modifier = modifier) {
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { onTabSelected(0) },
+                text = { Text("KFZWOP (Input)") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { onTabSelected(1) },
+                text = { Text("KFZWOP (Comparison)") }
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = { onTabSelected(2) },
+                text = { Text("Timing Comparison") }
+            )
+        }
+
+        when (selectedTab) {
+            0 -> EditableInputSection(
+                editedInputMap = editedInputMap,
+                onInputMapChanged = onInputMapChanged,
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            )
+            1 -> SideBySideTables(
+                originalKfzwop = originalKfzwop,
+                calculatedKfzwop = outputKfzwop,
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            )
+            2 -> TimingComparisonChart(
+                originalPeakTiming = originalPeakTiming,
+                calculatedPeakTiming = calculatedPeakTiming,
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditableInputSection(
+    editedInputMap: Map3d?,
+    onInputMapChanged: (Map3d) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            Text(
+                text = "KFZWOP Values",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Edit values to adjust the interpolation.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (editedInputMap != null) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                MapTable(
+                    map = editedInputMap,
+                    editable = true,
+                    onMapChanged = onInputMapChanged
+                )
+            }
+        } else {
+            Text("No map loaded", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun SideBySideTables(
+    originalKfzwop: Map3d?,
+    calculatedKfzwop: Map3d?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = "KFZWOP (Original)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (originalKfzwop != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = originalKfzwop, editable = false)
                 }
             } else {
                 Text("No map loaded", style = MaterialTheme.typography.bodyMedium)
             }
-
-            Text(
-                text = kfzwopPair?.first?.tableName ?: "No Map Selected",
-                style = MaterialTheme.typography.bodySmall
-            )
-            TextButton(onClick = { showMapPicker = true }) {
-                Text("Select KFZWOP Map")
-            }
         }
 
-        // Right side: KFZWOP Output
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("KFZWOP (Output)", style = MaterialTheme.typography.titleMedium)
-            if (outputKfzwop != null) {
-                Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                    MapTable(map = outputKfzwop, editable = false)
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = "KFZWOP (Calculated)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (calculatedKfzwop != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = calculatedKfzwop, editable = false)
                 }
             } else {
                 Text("No data", style = MaterialTheme.typography.bodyMedium)
             }
+        }
+    }
+}
 
-            Spacer(Modifier.height(8.dp))
+@Composable
+private fun TimingComparisonChart(
+    originalPeakTiming: List<Pair<Double, Double>>,
+    calculatedPeakTiming: List<Pair<Double, Double>>,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        LineChart(
+            series = listOf(
+                ChartSeries(
+                    name = "Original Peak Timing",
+                    points = originalPeakTiming,
+                    color = Primary
+                ),
+                ChartSeries(
+                    name = "Calculated Peak Timing",
+                    points = calculatedPeakTiming,
+                    color = ChartRed
+                )
+            ),
+            title = "Peak Timing Comparison",
+            xAxisLabel = "RPM",
+            yAxisLabel = "Timing (grad KW)"
+        )
+    }
+}
 
-            Button(
-                onClick = { showWriteConfirmation = true },
-                enabled = outputKfzwop != null && kfzwopPair != null
-            ) {
-                Text("Write KFZWOP")
+@Composable
+private fun WriteToBinarySection(
+    binLoaded: Boolean,
+    binFileName: String?,
+    kfzwopMapConfigured: Boolean,
+    kfzwopMapName: String?,
+    canWrite: Boolean,
+    writeStatus: WriteStatus,
+    onWriteClick: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Write to Binary",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            PrerequisiteRow(
+                label = "BIN file",
+                detail = if (binLoaded) binFileName!! else "Not loaded",
+                met = binLoaded
+            )
+
+            PrerequisiteRow(
+                label = "KFZWOP map",
+                detail = if (kfzwopMapConfigured) kfzwopMapName!! else "Not configured",
+                met = kfzwopMapConfigured
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onWriteClick,
+                    enabled = canWrite
+                ) {
+                    Text("Write KFZWOP")
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            if (!canWrite) {
+                val message = when {
+                    !binLoaded && !kfzwopMapConfigured ->
+                        "Load a BIN file and select the KFZWOP map definition."
+                    !binLoaded -> "Load a BIN file to write."
+                    !kfzwopMapConfigured -> "Select the KFZWOP map definition above."
+                    else -> "Configure all prerequisites above."
+                }
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(100.dp)
+        )
+
+        Text(
+            text = detail,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
