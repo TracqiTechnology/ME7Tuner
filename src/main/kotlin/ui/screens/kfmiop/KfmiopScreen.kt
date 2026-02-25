@@ -1,8 +1,11 @@
 package ui.screens.kfmiop
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +21,16 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.kfmiop.Kfmiop
 import domain.model.rlsol.Rlsol
+import kotlinx.coroutines.delay
+import ui.components.ChartSeries
+import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
+import ui.theme.ChartRed
+import ui.theme.Primary
+
+private enum class WriteStatus { Idle, Success, Error }
 
 private fun findMap(
     mapList: List<Pair<TableDefinition, Map3d>>,
@@ -39,8 +49,10 @@ fun KfmiopScreen() {
 
     var showMapPicker by remember { mutableStateOf(false) }
 
-    // Find the KFMIOP map based on preference
-    val kfmiopPair = remember(mapList) { findMap(mapList, KfmiopPreferences) }
+    // Reactive map selection — recompose when user picks a new map
+    var mapVersion by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { KfmiopPreferences.mapChanged.collect { mapVersion++ } }
+    val kfmiopPair = remember(mapList, mapVersion) { findMap(mapList, KfmiopPreferences) }
     val inputKfmiop = kfmiopPair?.second
 
     // Desired pressure inputs (editable)
@@ -63,13 +75,41 @@ fun KfmiopScreen() {
         } else null
     }
 
-    // Confirmation dialog for writing
+    // Boost comparison chart data — peak boost per RPM
+    val boostChartData = remember(kfmiopResult) {
+        val result = kfmiopResult ?: return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
+        val inputBoost = result.inputBoost
+        val outputBoost = result.outputBoost
+
+        val currentPeaks = inputBoost.yAxis.mapIndexed { i, rpm ->
+            val peakBoost = inputBoost.zAxis[i].maxOrNull() ?: 0.0
+            Pair(rpm, peakBoost)
+        }
+        val targetPeaks = outputBoost.yAxis.mapIndexed { i, rpm ->
+            val peakBoost = outputBoost.zAxis[i].maxOrNull() ?: 0.0
+            Pair(rpm, peakBoost)
+        }
+        Pair(currentPeaks, targetPeaks)
+    }
+
+    // Write prerequisites
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val kfmiopMapConfigured = kfmiopPair != null
+    val canWrite = binLoaded && kfmiopMapConfigured && kfmiopResult?.outputKfmiop != null
+
     var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    var selectedTab by remember { mutableStateOf(0) }
 
-    // Tabbed pane state
-    var inputTabIndex by remember { mutableStateOf(0) }
-    var outputTabIndex by remember { mutableStateOf(0) }
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
 
+    // Dialogs
     if (showMapPicker) {
         MapPickerDialog(
             title = "Select KFMIOP Map",
@@ -92,9 +132,11 @@ fun KfmiopScreen() {
                     val tableDef = kfmiopPair?.first
                     if (outputMap != null && tableDef != null) {
                         try {
-                            BinWriter.write(BinFilePreferences.getStoredFile(), tableDef, outputMap)
+                            BinWriter.write(BinFilePreferences.file.value, tableDef, outputMap)
+                            writeStatus = WriteStatus.Success
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            writeStatus = WriteStatus.Error
                         }
                     }
                 }) { Text("Yes") }
@@ -105,218 +147,472 @@ fun KfmiopScreen() {
         )
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    // Main layout: Configure -> Compare -> Write
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Left side: Input
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Calculated Maximum MAP Pressure panel (read-only)
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        "Calculated Maximum Boost",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("MAP Sensor Maximum:", style = MaterialTheme.typography.bodyMedium)
-                        OutlinedTextField(
-                            value = kfmiopResult?.maxMapSensorPressure?.toInt()?.toString() ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            singleLine = true,
-                            modifier = Modifier.width(100.dp),
-                            label = { Text("mbar") }
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Boost Pressure Maximum:", style = MaterialTheme.typography.bodyMedium)
-                        OutlinedTextField(
-                            value = kfmiopResult?.maxBoostPressure?.toInt()?.toString() ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            singleLine = true,
-                            modifier = Modifier.width(100.dp),
-                            label = { Text("mbar") }
-                        )
-                    }
-                }
-            }
+        ConfigurationCard(
+            analyzedMaxMapPressure = kfmiopResult?.maxMapSensorPressure,
+            analyzedMaxBoostPressure = kfmiopResult?.maxBoostPressure,
+            desiredMaxMapPressure = desiredMaxMapPressure,
+            desiredMaxBoostPressure = desiredMaxBoostPressure,
+            onDesiredMaxMapPressureChange = {
+                desiredMaxMapPressure = it
+                it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxMapPressure = v }
+            },
+            onDesiredMaxBoostPressureChange = {
+                desiredMaxBoostPressure = it
+                it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxBoostPressure = v }
+            },
+            mapDefinitionName = kfmiopPair?.first?.tableName,
+            onSelectMap = { showMapPicker = true }
+        )
 
-            // Input tabbed pane: Torque / Boost
-            PrimaryTabRow(selectedTabIndex = inputTabIndex) {
-                Tab(
-                    selected = inputTabIndex == 0,
-                    onClick = { inputTabIndex = 0 },
-                    text = { Text("Torque") }
-                )
-                Tab(
-                    selected = inputTabIndex == 1,
-                    onClick = { inputTabIndex = 1 },
-                    text = { Text("Boost") }
-                )
-            }
+        ComparisonArea(
+            modifier = Modifier.weight(1f),
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            inputKfmiop = inputKfmiop,
+            kfmiopResult = kfmiopResult,
+            currentPeakBoost = boostChartData.first,
+            targetPeakBoost = boostChartData.second
+        )
 
-            when (inputTabIndex) {
-                0 -> {
-                    Text("KFMIOP (Input)", style = MaterialTheme.typography.titleMedium)
-                    if (inputKfmiop != null) {
-                        Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                            MapTable(map = inputKfmiop, editable = false)
-                        }
-                    } else {
-                        Text("No map loaded", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-                1 -> {
-                    Text("Boost (Input)", style = MaterialTheme.typography.titleMedium)
-                    val inputBoost = kfmiopResult?.inputBoost
-                    if (inputBoost != null) {
-                        Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                            MapTable(map = inputBoost, editable = false)
-                        }
-                    } else {
-                        Text("No data", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
+        WriteToBinarySection(
+            binLoaded = binLoaded,
+            binFileName = if (binLoaded) binFile.name else null,
+            kfmiopMapConfigured = kfmiopMapConfigured,
+            kfmiopMapName = kfmiopPair?.first?.tableName,
+            canWrite = canWrite,
+            writeStatus = writeStatus,
+            onWriteClick = { showWriteConfirmation = true }
+        )
+    }
+}
 
-            // Definition label
+@Composable
+private fun ConfigurationCard(
+    analyzedMaxMapPressure: Double?,
+    analyzedMaxBoostPressure: Double?,
+    desiredMaxMapPressure: String,
+    desiredMaxBoostPressure: String,
+    onDesiredMaxMapPressureChange: (String) -> Unit,
+    onDesiredMaxBoostPressureChange: (String) -> Unit,
+    mapDefinitionName: String?,
+    onSelectMap: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = kfmiopPair?.first?.tableName ?: "No Definition Selected",
-                style = MaterialTheme.typography.bodySmall
+                text = "KFMIOP Calculator",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Rescale optimal torque table for upgraded MAP sensor",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            TextButton(onClick = { showMapPicker = true }) {
-                Text("Select KFMIOP Map")
-            }
-        }
-
-        // Right side: Output
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Desired Maximum MAP Pressure panel (editable)
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        "Desired Maximum Boost",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("MAP Sensor Maximum:", style = MaterialTheme.typography.bodyMedium)
-                        OutlinedTextField(
-                            value = desiredMaxMapPressure,
-                            onValueChange = {
-                                desiredMaxMapPressure = it
-                                it.toDoubleOrNull()?.let { v ->
-                                    KfmiopPreferences.maxMapPressure = v
-                                }
-                            },
-                            singleLine = true,
-                            modifier = Modifier.width(100.dp),
-                            label = { Text("mbar") }
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Boost Pressure Maximum:", style = MaterialTheme.typography.bodyMedium)
-                        OutlinedTextField(
-                            value = desiredMaxBoostPressure,
-                            onValueChange = {
-                                desiredMaxBoostPressure = it
-                                it.toDoubleOrNull()?.let { v ->
-                                    KfmiopPreferences.maxBoostPressure = v
-                                }
-                            },
-                            singleLine = true,
-                            modifier = Modifier.width(100.dp),
-                            label = { Text("mbar") }
-                        )
-                    }
-                }
-            }
-
-            // Output X-Axis
-            Text("KFMIOP X-Axis (Output)", style = MaterialTheme.typography.titleMedium)
-            val outputKfmiop = kfmiopResult?.outputKfmiop
-            if (outputKfmiop != null) {
-                val xAxisData = remember(outputKfmiop) {
-                    arrayOf(outputKfmiop.xAxis.copyOf())
-                }
-                MapAxis(data = xAxisData, editable = true)
-            }
-
-            // Output tabbed pane: Torque / Boost
-            PrimaryTabRow(selectedTabIndex = outputTabIndex) {
-                Tab(
-                    selected = outputTabIndex == 0,
-                    onClick = { outputTabIndex = 0 },
-                    text = { Text("Torque") }
-                )
-                Tab(
-                    selected = outputTabIndex == 1,
-                    onClick = { outputTabIndex = 1 },
-                    text = { Text("Boost") }
-                )
-            }
-
-            when (outputTabIndex) {
-                0 -> {
-                    Text("KFMIOP (Output)", style = MaterialTheme.typography.titleMedium)
-                    if (outputKfmiop != null) {
-                        Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                            MapTable(map = outputKfmiop, editable = false)
-                        }
-                    } else {
-                        Text("No data", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-                1 -> {
-                    Text("Boost (Output)", style = MaterialTheme.typography.titleMedium)
-                    val outputBoost = kfmiopResult?.outputBoost
-                    if (outputBoost != null) {
-                        Box(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 500.dp)) {
-                            MapTable(map = outputBoost, editable = false)
-                        }
-                    } else {
-                        Text("No data", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-
-            // Write button
-            Button(
-                onClick = { showWriteConfirmation = true },
-                enabled = outputKfmiop != null && kfmiopPair != null
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Write KFMIOP")
+                PressureColumn(
+                    title = "Current (Analyzed)",
+                    titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    mapPressure = analyzedMaxMapPressure?.toInt()?.toString() ?: "",
+                    boostPressure = analyzedMaxBoostPressure?.toInt()?.toString() ?: "",
+                    editable = false,
+                    onMapPressureChange = {},
+                    onBoostPressureChange = {},
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "transforms to",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                PressureColumn(
+                    title = "Target (Desired)",
+                    titleColor = MaterialTheme.colorScheme.primary,
+                    mapPressure = desiredMaxMapPressure,
+                    boostPressure = desiredMaxBoostPressure,
+                    editable = true,
+                    onMapPressureChange = onDesiredMaxMapPressureChange,
+                    onBoostPressureChange = onDesiredMaxBoostPressureChange,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Map Definition:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = mapDefinitionName ?: "No Definition Selected",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(onClick = onSelectMap) {
+                    Text("Select Map")
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun PressureColumn(
+    title: String,
+    titleColor: androidx.compose.ui.graphics.Color,
+    mapPressure: String,
+    boostPressure: String,
+    editable: Boolean,
+    onMapPressureChange: (String) -> Unit,
+    onBoostPressureChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = titleColor
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("MAP Sensor Max:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            OutlinedTextField(
+                value = mapPressure,
+                onValueChange = onMapPressureChange,
+                readOnly = !editable,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.width(100.dp).height(48.dp)
+            )
+            Text("mbar", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Boost Pressure Max:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            OutlinedTextField(
+                value = boostPressure,
+                onValueChange = onBoostPressureChange,
+                readOnly = !editable,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.width(100.dp).height(48.dp)
+            )
+            Text("mbar", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ComparisonArea(
+    modifier: Modifier = Modifier,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    inputKfmiop: Map3d?,
+    kfmiopResult: Kfmiop?,
+    currentPeakBoost: List<Pair<Double, Double>>,
+    targetPeakBoost: List<Pair<Double, Double>>
+) {
+    Column(modifier = modifier) {
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { onTabSelected(0) },
+                text = { Text("Torque") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { onTabSelected(1) },
+                text = { Text("Boost") }
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = { onTabSelected(2) },
+                text = { Text("Boost Comparison") }
+            )
+        }
+
+        when (selectedTab) {
+            0 -> {
+                val outputKfmiop = kfmiopResult?.outputKfmiop
+                if (outputKfmiop != null) {
+                    OutputAxisBanner(outputKfmiop = outputKfmiop)
+                }
+                SideBySideTables(
+                    inputLabel = "KFMIOP (Current)",
+                    inputMap = inputKfmiop,
+                    outputLabel = "KFMIOP (Rescaled)",
+                    outputMap = kfmiopResult?.outputKfmiop,
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                )
+            }
+            1 -> {
+                SideBySideTables(
+                    inputLabel = "Boost (Current)",
+                    inputMap = kfmiopResult?.inputBoost,
+                    outputLabel = "Boost (Rescaled)",
+                    outputMap = kfmiopResult?.outputBoost,
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                )
+            }
+            2 -> {
+                BoostComparisonChart(
+                    currentPeakBoost = currentPeakBoost,
+                    targetPeakBoost = targetPeakBoost,
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OutputAxisBanner(outputKfmiop: Map3d) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Rescaled Load Axis",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "(shared with KFZWOP, KFZW)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            val xAxisData = remember(outputKfmiop) {
+                arrayOf(outputKfmiop.xAxis.copyOf())
+            }
+            MapAxis(data = xAxisData, editable = true)
+        }
+    }
+}
+
+@Composable
+private fun SideBySideTables(
+    inputLabel: String,
+    inputMap: Map3d?,
+    outputLabel: String,
+    outputMap: Map3d?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Input (current)
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = inputLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (inputMap != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = inputMap, editable = false)
+                }
+            } else {
+                Text("No map loaded", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        // Output (rescaled)
+        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(
+                text = outputLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            if (outputMap != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MapTable(map = outputMap, editable = false)
+                }
+            } else {
+                Text("No data", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoostComparisonChart(
+    currentPeakBoost: List<Pair<Double, Double>>,
+    targetPeakBoost: List<Pair<Double, Double>>,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        LineChart(
+            series = listOf(
+                ChartSeries(
+                    name = "Current Peak Boost",
+                    points = currentPeakBoost,
+                    color = Primary
+                ),
+                ChartSeries(
+                    name = "Target Peak Boost",
+                    points = targetPeakBoost,
+                    color = ChartRed
+                )
+            ),
+            title = "Peak Boost Comparison",
+            xAxisLabel = "RPM",
+            yAxisLabel = "PSI"
+        )
+    }
+}
+
+@Composable
+private fun WriteToBinarySection(
+    binLoaded: Boolean,
+    binFileName: String?,
+    kfmiopMapConfigured: Boolean,
+    kfmiopMapName: String?,
+    canWrite: Boolean,
+    writeStatus: WriteStatus,
+    onWriteClick: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Write to Binary",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            PrerequisiteRow(
+                label = "BIN file",
+                detail = if (binLoaded) binFileName!! else "Not loaded",
+                met = binLoaded
+            )
+
+            PrerequisiteRow(
+                label = "KFMIOP map",
+                detail = if (kfmiopMapConfigured) kfmiopMapName!! else "Not configured",
+                met = kfmiopMapConfigured
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onWriteClick,
+                    enabled = canWrite
+                ) {
+                    Text("Write KFMIOP")
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            if (!canWrite) {
+                val message = when {
+                    !binLoaded && !kfmiopMapConfigured -> "Load a BIN file and select the KFMIOP map definition."
+                    !binLoaded -> "Load a BIN file to write."
+                    else -> "Select the KFMIOP map definition above."
+                }
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(100.dp)
+        )
+
+        Text(
+            text = detail,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
