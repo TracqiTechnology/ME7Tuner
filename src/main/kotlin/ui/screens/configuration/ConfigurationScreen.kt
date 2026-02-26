@@ -46,6 +46,7 @@ import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
 import data.profile.ProfileManager
 import ui.components.MapPickerDialog
+import ui.components.InfoTooltip
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -623,17 +624,47 @@ private fun LogHeaderRow(header: Me7LogFileContract.Header, onChanged: () -> Uni
         mutableStateOf(LogHeaderPreference.getHeader(header))
     }
 
+    val headerTooltip = when (header) {
+        Me7LogFileContract.Header.START_TIME_HEADER -> "The CSV column header for the log start timestamp. Must match the exact string in your ME7Logger CSV file."
+        Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER -> "The CSV column header for the per-row timestamp (elapsed time). Used to compute derivatives and filter transients."
+        Me7LogFileContract.Header.RPM_COLUMN_HEADER -> "The CSV column header for engine RPM (nmot_w or similar). Required for all RPM-binned calculations."
+        Me7LogFileContract.Header.STFT_COLUMN_HEADER -> "Short-Term Fuel Trim column header. Logged as fr_w in ME7Logger. Used in closed-loop MLHFM correction."
+        Me7LogFileContract.Header.LTFT_COLUMN_HEADER -> "Long-Term Fuel Trim column header (frgob_w). Represents the learned O2 adaptation. Used in closed-loop correction."
+        Me7LogFileContract.Header.MAF_VOLTAGE_HEADER -> "MAF sensor voltage column header (uhfm_w). Used for MLHFM open/closed-loop correction binning."
+        Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER -> "MAF mass airflow in g/s (mshfm_w). Used in alpha-n diagnostics to compare against speed-density estimate."
+        Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER -> "Throttle position / pedal angle column header (wdkba or similar). Used to filter WOT vs part-throttle samples."
+        Me7LogFileContract.Header.LAMBDA_CONTROL_ACTIVE_HEADER -> "Lambda (O2) control active flag column header (b_lr). When 0 the ECU is in open-loop; when 1 it is in closed-loop fuel control."
+        Me7LogFileContract.Header.REQUESTED_LAMBDA_HEADER -> "Requested lambda target column header (rl_w or lamsbg_w). Used to identify open-loop enrichment conditions."
+        Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER -> "Injector pulse width column header (ti_b1). Used in injector duty-cycle calculations."
+        Me7LogFileContract.Header.ENGINE_LOAD_HEADER -> "Engine load column header (rl_w). The primary load signal — compared against LDRXN target in the Optimizer."
+        Me7LogFileContract.Header.WASTEGATE_DUTY_CYCLE_HEADER -> "Wastegate duty cycle column header (ldtvm or pvdks_w). Used to detect turbo limits and boost control diagnostics."
+        Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER -> "Barometric (ambient) pressure column header (pus_w). Used as the atmospheric reference in boost and VE calculations."
+        Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER -> "Actual absolute manifold pressure column header (pvdks_w). The measured boost used in KFURL/KFPBRK diagnostics."
+        Me7LogFileContract.Header.SELECTED_GEAR_HEADER -> "Selected gear column header. Used to filter log samples to specific gears for more consistent pull analysis."
+        Me7LogFileContract.Header.WIDE_BAND_O2_HEADER -> "Wideband O2 / AFR sensor column header. The actual measured air-fuel ratio — required for open-loop MLHFM correction."
+        Me7LogFileContract.Header.REQUESTED_PRESSURE_HEADER -> "Requested boost pressure column header (pssol_w). The ECU's boost target — compared against actual pressure in the Optimizer."
+        Me7LogFileContract.Header.REQUESTED_LOAD_HEADER -> "Requested engine load column header (ldrxn_w). The ECU's load target — the primary setpoint for the Optimizer calibration loop."
+        Me7LogFileContract.Header.ACTUAL_LOAD_HEADER -> "Actual measured engine load column header (rl_w). Compared against LDRXN target to assess calibration accuracy."
+        Me7LogFileContract.Header.THROTTLE_MODEL_AIRFLOW_HEADER -> "Throttle model (alpha-n / speed-density) estimated airflow column header (msdk_w). Compared against mshfm_w to assess alpha-n calibration accuracy."
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "${header.title}:",
-            style = MaterialTheme.typography.bodyMedium,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.width(180.dp)
-        )
+        ) {
+            Text(
+                text = "${header.title}:",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.width(4.dp))
+            InfoTooltip(title = header.title, text = headerTooltip)
+        }
         OutlinedTextField(
             value = headerValue,
             onValueChange = { newValue ->

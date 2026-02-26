@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import ui.components.ChartSeries
 import ui.components.LineChart
 import ui.components.MapTable
+import ui.components.ParameterField
 import ui.theme.*
 import java.awt.FileDialog
 import java.awt.Frame
@@ -2004,43 +2005,4 @@ private fun ChainLinkBar(label: String, okPercent: Double) {
 }
 
 
-// ── Reusable parameter field with info tooltip ────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ParameterField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    tooltip: String,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = modifier,
-        singleLine = true,
-        trailingIcon = {
-            @Suppress("DEPRECATION")
-            TooltipBox(
-                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
-                tooltip = {
-                    RichTooltip(
-                        title = { Text(label) }
-                    ) {
-                        Text(tooltip, style = MaterialTheme.typography.bodySmall)
-                    }
-                },
-                state = rememberTooltipState(isPersistent = true)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Info,
-                    contentDescription = "$label info",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    )
-}
+// ParameterField lives in ui.components.InfoTooltip — imported above.

@@ -12,6 +12,7 @@ import domain.model.plsol.Airflow
 import domain.model.plsol.Horsepower
 import domain.model.plsol.Plsol
 import ui.components.ChartSeries
+import ui.components.ColumnParameterField
 import ui.components.LineChart
 import ui.theme.ChartRed
 import ui.theme.Primary
@@ -133,50 +134,55 @@ fun PlsolScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PlsolConstantField(
+                ColumnParameterField(
                     label = "Barometric Pressure",
                     value = barometricPressure,
                     unit = "mbar",
+                    tooltip = "Ambient atmospheric pressure. Standard sea level = 1013 mbar. Used as the base reference for all boost/load calculations.",
                     onValueChange = {
                         barometricPressure = it
                         it.toDoubleOrNull()?.let { v -> PlsolPreferences.barometricPressure = v }
                     },
                     modifier = Modifier.weight(1f)
                 )
-                PlsolConstantField(
+                ColumnParameterField(
                     label = "Intake Air Temperature",
                     value = intakeAirTemp,
                     unit = "C",
+                    tooltip = "Charge air temperature entering the manifold (°C). Affects air density and VE calculations. Typical ambient = 20°C.",
                     onValueChange = {
                         intakeAirTemp = it
                         it.toDoubleOrNull()?.let { v -> PlsolPreferences.intakeAirTemperature = v }
                     },
                     modifier = Modifier.weight(1f)
                 )
-                PlsolConstantField(
+                ColumnParameterField(
                     label = "KFURL",
                     value = kfurl,
                     unit = "%",
+                    tooltip = "Volumetric Efficiency slope constant from the KFURL map. Scales how much load (%) the ECU calculates per hPa of manifold pressure. Derived from engine displacement and measured VE.",
                     onValueChange = {
                         kfurl = it
                         it.toDoubleOrNull()?.let { v -> PlsolPreferences.kfurl = v }
                     },
                     modifier = Modifier.weight(1f)
                 )
-                PlsolConstantField(
+                ColumnParameterField(
                     label = "Displacement",
                     value = displacement,
                     unit = "L",
+                    tooltip = "Engine total swept displacement in litres. Used to compute theoretical airflow and horsepower estimates.",
                     onValueChange = {
                         displacement = it
                         it.toDoubleOrNull()?.let { v -> PlsolPreferences.displacement = v }
                     },
                     modifier = Modifier.weight(1f)
                 )
-                PlsolConstantField(
+                ColumnParameterField(
                     label = "RPM",
                     value = maxRpm,
                     unit = "",
+                    tooltip = "Maximum RPM used as the upper limit for the airflow and horsepower chart simulations.",
                     onValueChange = {
                         maxRpm = it
                         it.toIntOrNull()?.let { v -> PlsolPreferences.rpm = v }
@@ -188,38 +194,7 @@ fun PlsolScreen() {
     }
 }
 
-@Composable
-private fun PlsolConstantField(
-    label: String,
-    value: String,
-    unit: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 2.dp)
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f).height(48.dp)
-            )
-            if (unit.isNotEmpty()) {
-                Text(
-                    text = unit,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
-        }
-    }
-}
+// ColumnParameterField used here is defined in ui.components.InfoTooltip
 
 private data class PlsolChartData(
     val absolutePoints: List<Pair<Double, Double>>,

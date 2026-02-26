@@ -27,6 +27,7 @@ import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
+import ui.components.ParameterField
 import ui.theme.ChartRed
 import ui.theme.Primary
 
@@ -304,30 +305,30 @@ private fun PressureColumn(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text("MAP Sensor Max:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-            OutlinedTextField(
+            ParameterField(
                 value = mapPressure,
                 onValueChange = onMapPressureChange,
+                label = "mbar",
+                tooltip = "Maximum pressure the MAP sensor can measure (mbar absolute). Sets the upper axis limit for the KFMIOP table. A 4-bar sensor = 4000 mbar, 3.5-bar = 3500 mbar.",
                 readOnly = !editable,
-                singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.width(100.dp).height(48.dp)
+                modifier = Modifier.width(130.dp).height(56.dp)
             )
-            Text("mbar", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text("Boost Pressure Max:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-            OutlinedTextField(
+            ParameterField(
                 value = boostPressure,
                 onValueChange = onBoostPressureChange,
+                label = "mbar",
+                tooltip = "Maximum boost pressure target (mbar absolute). Sets the top of the KFMIOP suggested correction range. Should be ≤ MAP sensor max and within turbo limits.",
                 readOnly = !editable,
-                singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.width(100.dp).height(48.dp)
+                modifier = Modifier.width(130.dp).height(56.dp)
             )
-            Text("mbar", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }

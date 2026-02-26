@@ -393,22 +393,38 @@ private fun OpenLoopFilterDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                OutlinedTextField(value = minTps, onValueChange = { minTps = it },
-                    label = { Text("Minimum Throttle Angle") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = minRpm, onValueChange = { minRpm = it },
-                    label = { Text("Minimum RPM") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = minMe7Pts, onValueChange = { minMe7Pts = it },
-                    label = { Text("Minimum ME7 Points") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = minAfrPts, onValueChange = { minAfrPts = it },
-                    label = { Text("Minimum AFR Points") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = maxAfr, onValueChange = { maxAfr = it },
-                    label = { Text("Maximum AFR") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = fuelInjSize, onValueChange = { fuelInjSize = it },
-                    label = { Text("Fuel Injector Size (cc/m)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = fuelDensity, onValueChange = { fuelDensity = it },
-                    label = { Text("Fuel Density (g/cc)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = numInjectors, onValueChange = { numInjectors = it },
-                    label = { Text("Fuel Injectors") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                ParameterField(value = minTps, onValueChange = { minTps = it },
+                    label = "Minimum Throttle Angle",
+                    tooltip = "Minimum throttle plate opening angle (%) to include a sample. Use your WOT threshold (e.g. 80%) to isolate full-load data.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = minRpm, onValueChange = { minRpm = it },
+                    label = "Minimum RPM",
+                    tooltip = "Minimum engine speed (RPM) to include a sample. Excludes idle and low-speed data that would skew the MLHFM correction.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = minMe7Pts, onValueChange = { minMe7Pts = it },
+                    label = "Minimum ME7 Points",
+                    tooltip = "Minimum number of ME7 log samples required per MLHFM voltage bin before a correction is computed. Increase to reduce noise from sparse bins.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = minAfrPts, onValueChange = { minAfrPts = it },
+                    label = "Minimum AFR Points",
+                    tooltip = "Minimum number of wideband AFR samples required per bin. Bins with fewer points are excluded to avoid corrections based on sparse data.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = maxAfr, onValueChange = { maxAfr = it },
+                    label = "Maximum AFR",
+                    tooltip = "AFR readings above this value are excluded as lean spikes or wideband errors. Typical WOT target is 11–13 AFR so values above ~15 are usually invalid.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = fuelInjSize, onValueChange = { fuelInjSize = it },
+                    label = "Fuel Injector Size (cc/m)",
+                    tooltip = "Static injector flow rate (cc/min) at rated pressure. Used together with fuel density to convert injector pulse width into a fuel mass estimate.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = fuelDensity, onValueChange = { fuelDensity = it },
+                    label = "Fuel Density (g/cc)",
+                    tooltip = "Mass of fuel per cc (g/cc). Pump gasoline ≈ 0.745 g/cc. Used to convert volumetric injector flow into mass flow for the MLHFM correction.",
+                    modifier = Modifier.fillMaxWidth())
+                ParameterField(value = numInjectors, onValueChange = { numInjectors = it },
+                    label = "Fuel Injectors",
+                    tooltip = "Number of fuel injectors. Typically 4 for inline-4, 5 for inline-5 (e.g. S4/RS4 2.7T), or 6 for V6/V8 engines.",
+                    modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {

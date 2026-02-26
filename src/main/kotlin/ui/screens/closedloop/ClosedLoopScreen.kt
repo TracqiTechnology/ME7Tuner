@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import ui.components.*
+import ui.components.ParameterField
 import ui.theme.ChartBlue
 import ui.theme.ChartGreen
 import ui.theme.ChartMagenta
@@ -318,25 +319,25 @@ private fun ClosedLoopFilterDialog(
         title = { Text("Configure Closed Loop Filter") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                ParameterField(
                     value = minTps,
                     onValueChange = { minTps = it },
-                    label = { Text("Minimum Throttle Angle") },
-                    singleLine = true,
+                    label = "Minimum Throttle Angle",
+                    tooltip = "Minimum throttle plate opening angle (%) to include a log sample. Filters out idle and light-load data — set to your WOT or part-throttle threshold.",
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                ParameterField(
                     value = minRpm,
                     onValueChange = { minRpm = it },
-                    label = { Text("Minimum RPM") },
-                    singleLine = true,
+                    label = "Minimum RPM",
+                    tooltip = "Minimum engine speed (RPM) to include a sample. Excludes cranking, idle, and low-speed data that would skew the MLHFM correction.",
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                ParameterField(
                     value = maxDt,
                     onValueChange = { maxDt = it },
-                    label = { Text("Max dMAFv/dt") },
-                    singleLine = true,
+                    label = "Max dMAFv/dt",
+                    tooltip = "Maximum rate of change of MAF sensor voltage per sample interval. Filters out transient spikes during rapid throttle movements that produce unreliable AFR readings.",
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -432,14 +433,15 @@ private fun ClosedLoopCorrectionTab(
                     ) {
                         Text("Polynomial Degree: ", style = MaterialTheme.typography.bodyMedium)
                         var degreeText by remember { mutableStateOf(polynomialDegree.toString()) }
-                        OutlinedTextField(
+                        ParameterField(
                             value = degreeText,
                             onValueChange = {
                                 degreeText = it
                                 it.toIntOrNull()?.let { v -> polynomialDegree = v }
                             },
-                            singleLine = true,
-                            modifier = Modifier.width(60.dp)
+                            label = "Degree",
+                            tooltip = "Degree of the polynomial curve fit applied to the MLHFM correction. Higher values fit more closely but may overfit noise. 5–7 is typical for a smooth result.",
+                            modifier = Modifier.width(100.dp).height(56.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Button(onClick = {

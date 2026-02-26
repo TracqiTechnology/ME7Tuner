@@ -21,6 +21,7 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.krkte.KrkteCalculator
 import kotlinx.coroutines.delay
+import ui.components.LabeledParameterRow
 import java.text.DecimalFormat
 
 private val decimalFormat = DecimalFormat("#.####")
@@ -260,17 +261,19 @@ private fun EngineParametersSection(
                 description = "Constant at 0\u00B0C and 1013 hPa"
             )
 
-            ConstantRow(
+            LabeledParameterRow(
                 label = "Engine Displacement",
                 value = displacement,
                 unit = "dm\u00B3",
+                tooltip = "Total swept displacement of the engine in litres (dm³). Determines cylinder volume and is used directly in the KRKTE fuel constant calculation.",
                 onValueChange = onDisplacementChange
             )
 
-            ConstantRow(
+            LabeledParameterRow(
                 label = "Number of Cylinders",
                 value = numCylinders,
                 unit = "",
+                tooltip = "Number of engine cylinders. Divides total displacement into per-cylinder volume for the KRKTE calculation.",
                 onValueChange = onNumCylindersChange
             )
 
@@ -308,17 +311,19 @@ private fun FuelPropertiesSection(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            ConstantRow(
+            LabeledParameterRow(
                 label = "Gasoline Density",
                 value = gasolineDensity,
                 unit = "g/cc\u00B3",
+                tooltip = "Mass of gasoline per cubic centimetre (g/cc). Used in KRKTE fuel-mass calculation. Standard pump gasoline ≈ 0.745 g/cc at 20°C.",
                 onValueChange = onGasolineDensityChange
             )
 
-            ConstantRow(
+            LabeledParameterRow(
                 label = "Stoichiometric A/F Ratio",
                 value = stoichiometricAfr,
                 unit = "",
+                tooltip = "Mass ratio of air to fuel at complete combustion. Gasoline ≈ 14.7:1. Affects the calculated fuel mass per cycle in KRKTE.",
                 onValueChange = onStoichiometricAfrChange
             )
         }
@@ -347,10 +352,11 @@ private fun InjectorSection(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            ConstantRow(
+            LabeledParameterRow(
                 label = "Injector Size",
                 value = fuelInjectorSize,
                 unit = "cc/min",
+                tooltip = "Static injector flow rate at rated fuel pressure (cc/min). Combined with fuel density and stoichiometry to derive the KRKTE constant.",
                 onValueChange = onFuelInjectorSizeChange
             )
         }
@@ -517,39 +523,4 @@ private fun DerivedRow(label: String, value: String, unit: String, description: 
     }
 }
 
-@Composable
-private fun ConstantRow(
-    label: String,
-    value: String,
-    unit: String,
-    onValueChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.width(120.dp).height(48.dp)
-        )
-        if (unit.isNotEmpty()) {
-            Text(
-                text = unit,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 8.dp).width(60.dp)
-            )
-        } else {
-            Spacer(modifier = Modifier.width(68.dp))
-        }
-    }
-}
+// LabeledParameterRow used here is defined in ui.components.InfoTooltip

@@ -16,6 +16,7 @@ import domain.model.injector.InjectorScalingSolver
 import domain.model.injector.InjectorSpec
 import domain.model.injector.KrkteScalingResult
 import domain.model.injector.TvubResult
+import ui.components.ParameterField
 import ui.screens.krkte.KrkteScreen
 
 /**
@@ -122,29 +123,29 @@ private fun InjectorScalingTab() {
                 Text("Stock Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                    ParameterField(
                         value = oldFlowRate,
                         onValueChange = { oldFlowRate = it },
-                        label = { Text("Flow Rate (cc/min)") },
+                        label = "Flow Rate (cc/min)",
+                        tooltip = "Static injector flow rate at the rated fuel pressure (cc/min). Used as the baseline for scaling to new injectors.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = oldPressure,
                         onValueChange = { oldPressure = it },
-                        label = { Text("Fuel Pressure (bar)") },
+                        label = "Fuel Pressure (bar)",
+                        tooltip = "Rail fuel pressure at which the stock injector flow rate was measured. ME7 typically runs 3.0 bar. Used for pressure-corrected flow scaling.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = oldDeadTime,
                         onValueChange = { oldDeadTime = it },
-                        label = { Text("Dead Time @ 14V (ms)") },
+                        label = "Dead Time @ 14V (ms)",
+                        tooltip = "Injector opening delay at 14V battery voltage (ms). ME7 compensates for this via the TVUB map. Stock injectors are typically 0.7–1.0 ms.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -160,42 +161,41 @@ private fun InjectorScalingTab() {
                 Text("New Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                    ParameterField(
                         value = newFlowRate,
                         onValueChange = { newFlowRate = it },
-                        label = { Text("Flow Rate (cc/min)") },
+                        label = "Flow Rate (cc/min)",
+                        tooltip = "Static flow rate of the new/upgraded injectors at their rated pressure. Used to compute the KRKTE scaling ratio.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = newPressure,
                         onValueChange = { newPressure = it },
-                        label = { Text("Fuel Pressure (bar)") },
+                        label = "Fuel Pressure (bar)",
+                        tooltip = "Rail fuel pressure at which the new injector flow rate was measured. Flow rate is corrected to match the actual rail pressure.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
+                    ParameterField(
                         value = newDeadTime,
                         onValueChange = { newDeadTime = it },
-                        label = { Text("Dead Time @ 14V (ms)") },
+                        label = "Dead Time @ 14V (ms)",
+                        tooltip = "Injector opening delay of the new injectors at 14V. Larger injectors often have longer dead times. Used to generate the TVUB compensation table.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // TVUB Voltage Table (Optional)
-                OutlinedTextField(
+                ParameterField(
                     value = newTvubData,
                     onValueChange = { newTvubData = it },
-                    label = { Text("TVUB Voltage Table (optional)") },
+                    label = "TVUB Voltage Table (optional)",
+                    tooltip = "Comma-separated voltage:deadtime pairs for full battery-voltage compensation (e.g. 6.0:2.8, 8.0:1.9, 14.0:0.8). If omitted, TVUB is estimated from the 14V dead time using 1/V scaling.",
                     placeholder = { Text("6.0:2.8, 8.0:1.9, 10.0:1.3, 12.0:1.0, 14.0:0.8, 16.0:0.7") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     "Format: voltage:deadtime pairs, comma-separated. " +
