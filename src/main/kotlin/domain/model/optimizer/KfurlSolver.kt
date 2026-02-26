@@ -75,9 +75,13 @@ object KfurlSolver {
             var totalSquaredError = 0.0
 
             for (entry in wotEntries) {
+                // Use requestedMap as ps for rfagr calculation — at WOT under boost,
+                // manifold pressure ≈ pvdks >> baro. Using baro makes rfagr ~2x too large,
+                // which shifts the optimal KFURL. requestedMap (pssol_w) is the ECU's
+                // own pressure estimate, close to actual at WOT.
                 val simPssol = Plsol.plsol(
                     entry.barometricPressure,
-                    entry.barometricPressure,
+                    entry.requestedMap,
                     20.0, 96.0,
                     kfurl,
                     entry.requestedLoad
@@ -194,7 +198,7 @@ object KfurlSolver {
                 var sqError = 0.0
                 for (entry in binEntries) {
                     val simPssol = Plsol.plsol(
-                        entry.barometricPressure, entry.barometricPressure,
+                        entry.barometricPressure, entry.requestedMap,
                         20.0, 96.0, kfurl, entry.requestedLoad
                     )
                     val err = simPssol - entry.requestedMap
@@ -213,7 +217,7 @@ object KfurlSolver {
             // Scalar error for this bin
             for (entry in binEntries) {
                 val simPssol = Plsol.plsol(
-                    entry.barometricPressure, entry.barometricPressure,
+                    entry.barometricPressure, entry.requestedMap,
                     20.0, 96.0, scalarResult.optimalKfurl, entry.requestedLoad
                 )
                 val err = simPssol - entry.requestedMap

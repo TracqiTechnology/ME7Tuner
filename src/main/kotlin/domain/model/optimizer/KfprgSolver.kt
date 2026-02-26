@@ -224,7 +224,7 @@ object KfprgSolver {
                     val kfpbrkValue = kfpbrkMap?.lookup(entry.actualLoad, entry.rpm) ?: 1.016
                     val predictedRl = Rlsol.rlsol(
                         pu = entry.barometricPressure,
-                        ps = entry.barometricPressure,
+                        ps = entry.actualMap,
                         tans = 20.0,
                         tmot = 96.0,
                         kfurl = kfurl,
@@ -250,7 +250,7 @@ object KfprgSolver {
                 val kfpbrkValue = kfpbrkMap?.lookup(entry.actualLoad, entry.rpm) ?: 1.016
                 val predictedRl = Rlsol.rlsol(
                     pu = entry.barometricPressure,
-                    ps = entry.barometricPressure,
+                    ps = entry.actualMap,
                     tans = 20.0,
                     tmot = 96.0,
                     kfurl = kfurl,
@@ -293,9 +293,11 @@ object KfprgSolver {
         var totalSquaredError = 0.0
         for (entry in wotEntries) {
             val kfpbrkValue = kfpbrkMap?.lookup(entry.actualLoad, entry.rpm) ?: 1.016
+            // Use actualMap as ps for rfagr — at WOT under boost, manifold pressure >> baro.
+            // Using baro makes rfagr ~2x too large, distorting the KFPRG optimum.
             val predictedRl = Rlsol.rlsol(
                 pu = entry.barometricPressure,
-                ps = entry.barometricPressure,
+                ps = entry.actualMap,
                 tans = 20.0,
                 tmot = 96.0,
                 kfurl = kfurl,

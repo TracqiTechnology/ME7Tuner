@@ -551,8 +551,11 @@ object AlphaNDiagnostic {
         var totalSqError = 0.0
         for (s in samples) {
             val fpbrkds = kfpbrkMap?.lookup(s.mshfmLoad, s.rpm) ?: DEFAULT_KFPBRK
+            // Use pvdks as ps for rfagr calculation — these are WOT-filtered samples
+            // where pvdks ≈ manifold pressure >> baro. Using pus (baro) as ps makes
+            // rfagr ~2x too large at boost, pushing KFURL artificially down.
             val predictedLoad = Rlsol.rlsol(
-                pu = s.pus, ps = s.pus, tans = 20.0, tmot = 96.0,
+                pu = s.pus, ps = s.pvdks, tans = 20.0, tmot = 96.0,
                 kfurl = kfurl, plsol = s.pvdks, kfprg = kfprg, fpbrkds = fpbrkds
             )
             val err = predictedLoad - s.mshfmLoad
@@ -588,7 +591,8 @@ object AlphaNDiagnostic {
                     var sqErr = 0.0
                     for (s in binSamples) {
                         val fpbrkds = kfpbrkMap?.lookup(s.mshfmLoad, s.rpm) ?: DEFAULT_KFPBRK
-                        val pred = Rlsol.rlsol(s.pus, s.pus, 20.0, 96.0, kfurl, s.pvdks, kfprg, fpbrkds)
+                        // Use pvdks as ps — WOT-filtered samples where pvdks ≈ manifold pressure
+                        val pred = Rlsol.rlsol(s.pus, s.pvdks, 20.0, 96.0, kfurl, s.pvdks, kfprg, fpbrkds)
                         val e = pred - s.mshfmLoad
                         sqErr += e * e
                     }
@@ -652,8 +656,9 @@ object AlphaNDiagnostic {
         var totalSqError = 0.0
         for (s in samples) {
             val fpbrkds = kfpbrkMap?.lookup(s.mshfmLoad, s.rpm) ?: DEFAULT_KFPBRK
+            // Use pvdks as ps — these are WOT-filtered samples where pvdks ≈ manifold pressure
             val predictedLoad = Rlsol.rlsol(
-                pu = s.pus, ps = s.pus, tans = 20.0, tmot = 96.0,
+                pu = s.pus, ps = s.pvdks, tans = 20.0, tmot = 96.0,
                 kfurl = kfurl, plsol = s.pvdks, kfprg = kfprg, fpbrkds = fpbrkds
             )
             val err = predictedLoad - s.mshfmLoad

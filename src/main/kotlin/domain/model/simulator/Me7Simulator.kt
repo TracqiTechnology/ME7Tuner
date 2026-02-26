@@ -284,9 +284,14 @@ object Me7Simulator {
     ): Double {
         val ps = previousPressure ?: op.barometricPressure
         // For KFPBRK lookup, we need load — but we're computing load from pressure.
-        // Use a rough estimate: at ~1013 mbar baro, 1500 mbar abs pressure ≈ 120% load.
-        // The error from this approximation is small because KFPBRK varies slowly with load.
-        val estimatedLoad = calibration.kfurlAt(op.rpm) * (pressure - calibration.kfprgAt(op.rpm) * op.barometricPressure / 1013.0) * 1.016
+        // Use a first-pass Rlsol with default KFPBRK to estimate load, then refine.
+        // This is more accurate than the previous hand-rolled formula which was missing ftbr.
+        val estimatedLoad = Rlsol.rlsol(
+            op.barometricPressure, ps, op.intakeAirTemp, op.coolantTemp,
+            calibration.kfurlAt(op.rpm), pressure,
+            kfprg = calibration.kfprgAt(op.rpm)
+            // fpbrkds defaults to 1.016 for the estimate
+        )
         return Rlsol.rlsol(
             op.barometricPressure,
             ps,
@@ -365,13 +370,17 @@ object Me7Simulator {
 
         // ── Link 2: rlsol → pssol ───────────────────────────────
         // What pressure should correspond to this load?
-        // Uses RPM-dependent KFURL if available (Finding 2)
+        // Uses RPM-dependent KFURL, KFPRG, and KFPBRK from calibration maps.
+        // Previously used scalar overload with hardcoded kfprg=70.0 / fpbrkds=1.016.
         val effectiveKfurl = calibration.kfurlAt(entry.rpm)
         val simulatedPssol = computePssol(
             rlsol = entry.requestedLoad,
             op = op,
-            kfurl = effectiveKfurl,
-            previousPressure = entry.barometricPressure
+            calibration = calibration,
+            // Use actual pressure for rfagr iteration — at WOT under boost,
+            // manifold pressure >> baro, and rfagr = max(pbr-pirg,0)*fupsrl*psagr/ps.
+            // Using baro (~1013) when actual is ~2000 makes rfagr ~2x too large.
+            previousPressure = entry.actualMap
         )
         val pssolError = simulatedPssol - entry.requestedMap
 
@@ -393,12 +402,14 @@ object Me7Simulator {
 
         // ── Link 4: pvdks → rl_w ───────────────────────────────
         // Given the actual pressure, what load does the VE model predict?
-        // Uses RPM-dependent KFURL if available (Finding 2)
+        // Uses RPM-dependent KFURL, KFPRG, and KFPBRK from calibration maps.
+        // Previously used scalar overload with hardcoded defaults.
         val simulatedRl = computeRlFromPressure(
             pressure = entry.actualMap,
             op = op,
-            kfurl = effectiveKfurl,
-            previousPressure = entry.barometricPressure
+            calibration = calibration,
+            // Use actual pressure for rfagr — same reasoning as Link 2.
+            previousPressure = entry.actualMap
         )
 
         // KFPBRK correction: how to scale VE model to match reality
