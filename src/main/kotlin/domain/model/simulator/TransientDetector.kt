@@ -185,7 +185,7 @@ object TransientDetector {
         if (knockEvents > 0) {
             val peakKnock = events.filter { it.type == EventType.KNOCK_REDUCTION }.maxOf { it.peakMagnitude }
             val knockPct = (knockSamples.toDouble() / wotEntries.size * 100)
-            warnings.add("🔴 $knockEvents knock load reduction event(s) detected ($knockSamples samples, peak −${String.format("%.1f", peakKnock)}% load).")
+            warnings.add("ERROR: $knockEvents knock load reduction event(s) detected ($knockSamples samples, peak -${String.format("%.1f", peakKnock)}% load).")
             if (knockPct > 20) {
                 recommendations.add("Reduce LDRXN by ${String.format("%.0f", peakKnock)}% or improve ignition timing — " +
                     "knock reduction is active in ${String.format("%.0f", knockPct)}% of WOT samples.")

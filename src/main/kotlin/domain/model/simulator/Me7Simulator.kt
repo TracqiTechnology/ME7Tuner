@@ -38,6 +38,15 @@ object Me7Simulator {
     /** Link 1: rlsol must be within this fraction of LDRXN to be "on target" */
     private const val TORQUE_CAP_THRESHOLD = 0.95
 
+    /**
+     * Link 1: RPM below which the torque ramp is expected to limit rlsol.
+     * ME7 intentionally limits rlsol at low RPM via KFMIOP (torque → load).
+     * Below this RPM, rlsol < LDRXN is normal ECU behavior — not a calibration
+     * problem. Only flag TORQUE_CAPPED at RPMs where the torque structure
+     * should allow full LDRXN. Typical torque ramp opens fully by ~3000–4000 RPM.
+     */
+    private const val TORQUE_RAMP_RPM_THRESHOLD = 3500.0
+
     /** Link 2: |simulatedPssol − actualPssol| above this → VE model error (mbar) */
     private const val PSSOL_ERROR_THRESHOLD_MBAR = 30.0
 
@@ -366,6 +375,7 @@ object Me7Simulator {
         // ── Link 1: LDRXN → rlsol ───────────────────────────────
         // Was the load request capped by the torque structure?
         val torqueLimited = entry.requestedLoad < calibration.ldrxn * TORQUE_CAP_THRESHOLD
+                && entry.rpm >= TORQUE_RAMP_RPM_THRESHOLD
         val torqueHeadroom = calibration.ldrxn - entry.requestedLoad
 
         // ── Link 2: rlsol → pssol ───────────────────────────────

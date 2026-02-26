@@ -284,8 +284,7 @@ object PidSimulator {
             val rpm = kfldrq2.yAxis[rpmIdx]
             if (rpm < 2500) {
                 for (pIdx in kfldrq2.xAxis.indices) {
-                    if (kfldrq2.zAxis[rpmIdx][pIdx] > 0.001) {
-                        warnings.add("⚠️ KFLDRQ2: D-gain ${String.format("%.3f", kfldrq2.zAxis[rpmIdx][pIdx])} at " +
+                    if (kfldrq2.zAxis[rpmIdx][pIdx] > 0.001) { warnings.add("WARNING: KFLDRQ2: D-gain ${String.format("%.3f", kfldrq2.zAxis[rpmIdx][pIdx])} at " +
                             "${rpm.toInt()} RPM — ME7 recommends 0 below 2500 RPM (line 144453)")
                         break  // One warning per RPM row
                     }
@@ -296,8 +295,8 @@ object PidSimulator {
         // Check if Q2 exceeds 0.9 × LDRQ0DY at any point
         val maxQ2 = kfldrq2.zAxis.flatMap { it.toList() }.maxOrNull() ?: 0.0
         if (maxQ2 > 0.9 * ldrq0dy) {
-            warnings.add("⚠️ KFLDRQ2: max D-gain ${String.format("%.3f", maxQ2)} exceeds 90% of " +
-                "LDRQ0DY (${String.format("%.3f", ldrq0dy)}). ME7 recommends max 0.6 × LDRQ0DY = " +
+            warnings.add("WARNING: KFLDRQ2: max D-gain ${String.format("%.3f", maxQ2)} exceeds 90% of " +
+                "LDRQ0DY (${String.format("%.3f", ldrq0dy)}). ME7 recommends max 0.6 x LDRQ0DY = " +
                 "${String.format("%.3f", 0.6 * ldrq0dy)} (line 144453)")
         }
 

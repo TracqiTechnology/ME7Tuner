@@ -207,6 +207,10 @@ class Me7LogParser {
                                     val injOnTime = if (fuelInjectorOnTimeIndex != -1) {
                                         try { record.get(fuelInjectorOnTimeIndex).toDouble() } catch (_: NumberFormatException) { null }
                                     } else null
+                                    // Optional: MAF voltage for sensor saturation detection
+                                    val mafV = if (mafVoltageIndex != -1) {
+                                        try { record.get(mafVoltageIndex).toDouble() } catch (_: NumberFormatException) { null }
+                                    } else null
 
                                     // Add all at once after successful parsing
                                     map[Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER]!!.add(time)
@@ -226,6 +230,9 @@ class Me7LogParser {
                                     }
                                     if (injOnTime != null) {
                                         map[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER]!!.add(injOnTime)
+                                    }
+                                    if (mafV != null) {
+                                        map[Me7LogFileContract.Header.MAF_VOLTAGE_HEADER]!!.add(mafV)
                                     }
                                 }
                             }
@@ -250,7 +257,8 @@ class Me7LogParser {
                 if (key != Me7LogFileContract.Header.WIDE_BAND_O2_HEADER &&
                     key != Me7LogFileContract.Header.ACTUAL_LOAD_HEADER &&
                     key != Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER &&
-                    key != Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER) {
+                    key != Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER &&
+                    key != Me7LogFileContract.Header.MAF_VOLTAGE_HEADER) {
                     throw RuntimeException("Data is not square! Got: ${value.size} Expected: $size")
                 }
             }
@@ -339,6 +347,7 @@ class Me7LogParser {
                 // Optional headers for mechanical limit detection
                 map[Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER] = mutableListOf()
                 map[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.MAF_VOLTAGE_HEADER] = mutableListOf()
             }
         }
 

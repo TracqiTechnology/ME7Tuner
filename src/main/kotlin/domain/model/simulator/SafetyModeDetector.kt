@@ -85,7 +85,7 @@ object SafetyModeDetector {
             }
         }
         if (overloadCount > 0) {
-            warnings.add("⚠️ $overloadCount samples show overcharge (pvdks − pus > ${DPUPS_THRESHOLD_MBAR.toInt()} mbar). " +
+            warnings.add("WARNING: $overloadCount samples show overcharge (pvdks - pus > ${DPUPS_THRESHOLD_MBAR.toInt()} mbar). " +
                 "These may trigger LDORXN protection and are excluded from calibration.")
         }
 
@@ -112,8 +112,8 @@ object SafetyModeDetector {
             }
         }
         if (regErrorCount > 0) {
-            warnings.add("⚠️ $regErrorCount samples show sustained regulation error (>$REGULATION_ERROR_CONSECUTIVE consecutive samples " +
-                "with |pssol − pvdks| > ${REGULATION_ERROR_THRESHOLD_MBAR.toInt()} mbar). Possible B_ldra condition.")
+            warnings.add("WARNING: $regErrorCount samples show sustained regulation error (>$REGULATION_ERROR_CONSECUTIVE consecutive samples " +
+                "with |pssol - pvdks| > ${REGULATION_ERROR_THRESHOLD_MBAR.toInt()} mbar). Possible B_ldra condition.")
         }
 
         // ── Fallback mode detection (B_lds → KFTVLDRE) ─────────
@@ -153,7 +153,7 @@ object SafetyModeDetector {
             }
         }
         if (fallbackCount > 0) {
-            warnings.add("⚠️ $fallbackCount samples appear to be in B_lds fallback mode (open-loop KFTVLDRE). " +
+            warnings.add("WARNING: $fallbackCount samples appear to be in B_lds fallback mode (open-loop KFTVLDRE). " +
                 "These are excluded from KFLDRL/KFLDIMX suggestions.")
         }
 

@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.AlphaNLogParser
@@ -463,18 +463,30 @@ private fun AlphaNDiagnosticTab() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "ℹ️ Also log pvdks_w and pus_w to enable VE model suggestions (KFURL, KFPRG, KFPBRK).",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Filled.Info, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp).padding(top = 1.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "Also log pvdks_w and pus_w to enable VE model suggestions (KFURL, KFPRG, KFPBRK).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "⚠️ WDKUGDN defines the throttle body choke point — do NOT adjust it to fix alpha-n " +
-                        "accuracy. See the Alpha-N Calibration Guide for the correct approach.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Filled.Warning, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(14.dp).padding(top = 1.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "WDKUGDN defines the throttle body choke point — do NOT adjust it to fix alpha-n " +
+                            "accuracy. See the Alpha-N Calibration Guide for the correct approach.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
 
@@ -554,31 +566,42 @@ private fun AlphaNDiagnosticTab() {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = when (result.severity) {
-                                AlphaNDiagnostic.Severity.GOOD -> "✅"
-                                AlphaNDiagnostic.Severity.WARNING -> "⚠️"
-                                AlphaNDiagnostic.Severity.CRITICAL -> "🔴"
-                            },
-                            style = MaterialTheme.typography.headlineMedium
+                        val (severityIcon, severityColor) = when (result.severity) {
+                            AlphaNDiagnostic.Severity.GOOD ->
+                                Icons.Filled.CheckCircle to MaterialTheme.colorScheme.tertiary
+                            AlphaNDiagnostic.Severity.WARNING ->
+                                Icons.Filled.Warning to MaterialTheme.colorScheme.primary
+                            AlphaNDiagnostic.Severity.CRITICAL ->
+                                Icons.Filled.Cancel to MaterialTheme.colorScheme.error
+                        }
+                        Icon(
+                            imageVector = severityIcon,
+                            contentDescription = result.severity.name,
+                            tint = severityColor,
+                            modifier = Modifier.size(32.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = "Alpha-N Readiness: ${result.severity.name}",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = when (result.severity) {
-                                    AlphaNDiagnostic.Severity.GOOD -> MaterialTheme.colorScheme.tertiary
-                                    AlphaNDiagnostic.Severity.WARNING -> MaterialTheme.colorScheme.primary
-                                    AlphaNDiagnostic.Severity.CRITICAL -> MaterialTheme.colorScheme.error
-                                }
+                                color = severityColor
                             )
-                            Text(
-                                text = "Error type: ${result.errorType.name}" +
-                                    if (result.hasPressureData) " • Pressure data: ✅" else " • Pressure data: ❌",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Error type: ${result.errorType.name}  •  Pressure data: ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    imageVector = if (result.hasPressureData) Icons.Filled.CheckCircle
+                                                  else Icons.Filled.Cancel,
+                                    contentDescription = null,
+                                    tint = if (result.hasPressureData) Color(0xFF4CAF50)
+                                           else Color(0xFFF44336),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
 
@@ -841,11 +864,17 @@ private fun AlphaNDiagnosticTab() {
                                 }
 
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "⚠️ KFPBRK suggestions are preliminary — verify with Optimizer WOT logs for higher confidence.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(Icons.Filled.Warning, contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp).padding(top = 1.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "KFPBRK suggestions are preliminary — verify with Optimizer WOT logs for higher confidence.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
 
                                 // Write action
                                 Spacer(modifier = Modifier.height(12.dp))
@@ -921,11 +950,17 @@ private fun AlphaNDiagnosticTab() {
                                 StatItem("Reduction", String.format("%.1f%%", kfprg.errorReductionPercent))
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "ℹ️ Part-throttle data improves KFPRG accuracy — residual gas dominates at low load.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
+                            Row(verticalAlignment = Alignment.Top) {
+                                Icon(Icons.Filled.Info, contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(14.dp).padding(top = 1.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Part-throttle data improves KFPRG accuracy — residual gas dominates at low load.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
 
                             kfprg.perRpmValues?.let { perRpm ->
                                 if (perRpm.size >= 2) {

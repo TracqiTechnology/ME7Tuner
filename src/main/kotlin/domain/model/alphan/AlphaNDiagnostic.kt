@@ -974,16 +974,16 @@ object AlphaNDiagnostic {
 
         when (severity) {
             Severity.GOOD -> {
-                recs.add("✅ Alpha-n accuracy is good (avg ${String.format("%.1f", abs(avgError))}% error). " +
+                recs.add("OK: Alpha-n accuracy is good (avg ${String.format("%.1f", abs(avgError))}% error). " +
                     "The car should run smoothly if the MAF is unplugged.")
                 recs.add("Ensure adaptations (msndko_w, fkmsdk_w) are fully learned before unplugging MAF.")
             }
             Severity.WARNING -> {
-                recs.add("⚠️ Alpha-n has moderate deviation (avg ${String.format("%.1f", abs(avgError))}% error). " +
+                recs.add("WARNING: Alpha-n has moderate deviation (avg ${String.format("%.1f", abs(avgError))}% error). " +
                     "The car will run but may be rough at some operating points.")
             }
             Severity.CRITICAL -> {
-                recs.add("🔴 Alpha-n has significant deviation (avg ${String.format("%.1f", abs(avgError))}% error). " +
+                recs.add("ERROR: Alpha-n has significant deviation (avg ${String.format("%.1f", abs(avgError))}% error). " +
                     "The car will likely run poorly with MAF unplugged.")
             }
         }
@@ -1064,7 +1064,7 @@ object AlphaNDiagnostic {
             recs.add("KFPRG: current ~${String.format("%.0f", DEFAULT_KFPRG)} hPa, " +
                 "suggested ${String.format("%.0f", kfprgSuggestion.optimalKfprg)} hPa " +
                 "(${String.format("%.1f", kfprgSuggestion.errorReductionPercent)}% VE error reduction)")
-            recs.add("ℹ️ Alpha-n data includes part-throttle points — KFPRG suggestion may be more " +
+            recs.add("INFO: Alpha-n data includes part-throttle points — KFPRG suggestion may be more " +
                 "accurate than WOT-only Optimizer results (residual gas is dominant at low load).")
             val perRpm = kfprgSuggestion.perRpmValues
             if (perRpm != null && perRpm.size >= 2) {
@@ -1089,18 +1089,18 @@ object AlphaNDiagnostic {
                 recs.add("  ${c.rpmCenter.toInt()} RPM → ×${String.format("%.3f", c.correctionFactor)} " +
                     "(${c.sampleCount} samples, $confLabel confidence)")
             }
-            recs.add("⚠️ KFPBRK suggestions are preliminary — verify with Optimizer WOT logs for higher confidence.")
+            recs.add("WARNING: KFPBRK suggestions are preliminary — verify with Optimizer WOT logs for higher confidence.")
         }
 
         if (!hasPressureData && severity != Severity.GOOD) {
             recs.add("")
-            recs.add("ℹ️ Log pvdks_w and pus_w to enable VE model suggestions (KFURL, KFPRG, KFPBRK corrections).")
+            recs.add("INFO: Log pvdks_w and pus_w to enable VE model suggestions (KFURL, KFPRG, KFPBRK corrections).")
         }
 
         // Always add the WDKUGDN clarification
         if (severity != Severity.GOOD) {
             recs.add("")
-            recs.add("⚠️ Note: Do NOT adjust WDKUGDN to fix alpha-n accuracy. WDKUGDN defines the throttle " +
+            recs.add("WARNING: Do NOT adjust WDKUGDN to fix alpha-n accuracy. WDKUGDN defines the throttle " +
                 "body choke point — only change it if you've changed the physical throttle body diameter. " +
                 "See documentation/me7-alpha-n-calibration.md for details.")
         }

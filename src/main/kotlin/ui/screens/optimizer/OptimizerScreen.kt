@@ -6,12 +6,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.Me7LogParser
@@ -31,7 +35,6 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.optimizer.*
 import domain.model.simulator.Me7Simulator
-import domain.model.simulator.MechanicalLimitDetector
 import data.writer.XdfPatchWriter
 import data.writer.ReportExporter
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +56,138 @@ private fun findMap(
     return if (selected != null) {
         mapList.find { it.first.tableName == selected.first.tableName }
     } else null
+}
+
+// ── Reusable icon-aware composables ──────────────────────────────────
+
+/**
+ * Section header combining a Material icon with a title.
+ * Replaces the emoji-prefix pattern (e.g. "🎯 Title") throughout the UI.
+ */
+@Composable
+private fun IconSectionTitle(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.primary,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleMedium
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(title, style = style)
+    }
+}
+
+/** Sub-section header with icon — replaces "📊 Sub-title" patterns. */
+@Composable
+private fun IconSubTitle(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.secondary,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleSmall
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(title, style = style)
+    }
+}
+
+/**
+ * Status dot (check/cancel icon) — replaces 🟢 / 🔴 emoji circles.
+ * Uses CheckCircle for OK, Cancel for error.
+ */
+@Composable
+private fun StatusDot(ok: Boolean, modifier: Modifier = Modifier, size: Dp = 16.dp) {
+    Icon(
+        imageVector = if (ok) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+        contentDescription = if (ok) "OK" else "Error",
+        tint = if (ok) Color(0xFF4CAF50) else Color(0xFFF44336),
+        modifier = modifier.size(size)
+    )
+}
+
+/**
+ * 4-level quality indicator — replaces 🟢 / 🟡 / 🟠 / 🔴 in pull quality contexts.
+ * level: 0=good, 1=noisy, 2=short, 3=incomplete
+ */
+@Composable
+private fun QualityDot(level: Int, modifier: Modifier = Modifier, size: Dp = 14.dp) {
+    val (icon, color) = when (level) {
+        0 -> Icons.Filled.CheckCircle to Color(0xFF4CAF50)
+        1 -> Icons.Filled.Warning to Color(0xFFFFEB3B)
+        2 -> Icons.Filled.RemoveCircle to Color(0xFFFF9800)
+        else -> Icons.Filled.Cancel to Color(0xFFF44336)
+    }
+    Icon(imageVector = icon, contentDescription = null, tint = color, modifier = modifier.size(size))
+}
+
+/** Confidence indicator — replaces 🟢/🟡/🟠/⚪ in per-RPM table confidence columns. */
+@Composable
+private fun ConfidenceDot(confidence: MapDelta.Confidence, modifier: Modifier = Modifier) {
+    val (icon, color) = when (confidence) {
+        MapDelta.Confidence.HIGH -> Icons.Filled.CheckCircle to Color(0xFF4CAF50)
+        MapDelta.Confidence.MEDIUM -> Icons.Filled.Warning to Color(0xFFFFEB3B)
+        MapDelta.Confidence.LOW -> Icons.Filled.RemoveCircle to Color(0xFFFF9800)
+        MapDelta.Confidence.NONE -> Icons.Filled.RadioButtonUnchecked to MaterialTheme.colorScheme.outline
+    }
+    Icon(imageVector = icon, contentDescription = null, tint = color, modifier = modifier.size(14.dp))
+}
+
+/** Inline icon + text row for recommendation / info lines. */
+@Composable
+private fun IconTextRow(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.secondary,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodySmall
+) {
+    Row(verticalAlignment = Alignment.Top, modifier = modifier.padding(vertical = 1.dp)) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint,
+            modifier = Modifier.size(14.dp).padding(top = 1.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(text, style = style)
+    }
+}
+
+
+/**
+ * Renders a domain-layer message string with the appropriate leading Material icon
+ * based on a semantic tag prefix (WARNING:, ERROR:, INFO:, OK:, BOOST:, VE:).
+ * Strips the prefix from the displayed text.
+ */
+@Composable
+private fun TaggedMessageRow(
+    message: String,
+    modifier: Modifier = Modifier,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium,
+    textColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    val (icon, tint, displayText) = when {
+        message.startsWith("ERROR:") ->
+            Triple(Icons.Filled.Cancel, Color(0xFFF44336), message.removePrefix("ERROR:").trim())
+        message.startsWith("WARNING:") ->
+            Triple(Icons.Filled.Warning, Color(0xFFFF9800), message.removePrefix("WARNING:").trim())
+        message.startsWith("INFO:") ->
+            Triple(Icons.Filled.Info, MaterialTheme.colorScheme.primary, message.removePrefix("INFO:").trim())
+        message.startsWith("OK:") ->
+            Triple(Icons.Filled.CheckCircle, Color(0xFF4CAF50), message.removePrefix("OK:").trim())
+        message.startsWith("BOOST:") ->
+            Triple(Icons.Filled.Bolt, MaterialTheme.colorScheme.secondary, message.removePrefix("BOOST:").trim())
+        message.startsWith("VE:") ->
+            Triple(Icons.Filled.BarChart, MaterialTheme.colorScheme.secondary, message.removePrefix("VE:").trim())
+        else ->
+            Triple(Icons.Filled.Info, MaterialTheme.colorScheme.secondary, message)
+    }
+    Row(verticalAlignment = Alignment.Top, modifier = modifier) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint,
+            modifier = Modifier.size(16.dp).padding(top = 2.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(displayText, style = style, color = textColor)
+    }
 }
 
 @Composable
@@ -597,18 +732,24 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                 val deficit = ldrxn - avgRl
                 val statusOk = deficit < 5.0
 
-                Text("🎯 Calibration Status", style = MaterialTheme.typography.titleMedium)
+                IconSectionTitle(Icons.Filled.TrackChanges, "Calibration Status")
                 Spacer(Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Target: LDRXN = ${String.format("%.1f", ldrxn)}%")
                     Text("Achieved: avg rl_w = ${String.format("%.1f", avgRl)}%")
                 }
-                Text(
-                    if (statusOk) "✅ ON TARGET" else "❌ NEEDS CALIBRATION — deficit ${String.format("%.1f", deficit)}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 4.dp)
-                )
+                ) {
+                    StatusDot(statusOk, size = 18.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (statusOk) "ON TARGET" else "NEEDS CALIBRATION — deficit ${String.format("%.1f", deficit)}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
@@ -617,20 +758,39 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Signal Chain Health", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                ChainLinkBar("Link 1: LDRXN → rlsol (Torque)", 100.0 - diag.torqueCappedPercent)
+                // Link 1: Only samples above 3500 RPM are evaluated for torque capping.
+                // Below that RPM, KFMIOP intentionally limits rlsol (normal torque ramp).
+                val highRpmSamples = result.simulationResults.count { it.rpm >= 3500.0 }
+                val link1Label = if (highRpmSamples > 0) {
+                    "Link 1: LDRXN → rlsol (Torque, ≥3500 RPM)"
+                } else {
+                    "Link 1: LDRXN → rlsol (Torque — no high-RPM data)"
+                }
+                ChainLinkBar(link1Label, 100.0 - diag.torqueCappedPercent)
                 ChainLinkBar("Link 2: rlsol → pssol (VE Model)", 100.0 - diag.pssolErrorPercent)
                 ChainLinkBar("Link 3: pssol → pvdks (Boost Control)", 100.0 - diag.boostShortfallPercent)
                 ChainLinkBar("Link 4: pvdks → rl_w (VE Readback)", 100.0 - diag.veMismatchPercent)
 
                 Spacer(Modifier.height(8.dp))
-                val dominantLabel = when (diag.dominantError) {
-                    Me7Simulator.ErrorSource.TORQUE_CAPPED -> "TORQUE_CAPPED — increase KFMIOP/KFMIRL"
-                    Me7Simulator.ErrorSource.PSSOL_WRONG -> "PSSOL_WRONG — check KFURL value"
-                    Me7Simulator.ErrorSource.BOOST_SHORTFALL -> "BOOST_SHORTFALL — apply KFLDRL corrections"
-                    Me7Simulator.ErrorSource.VE_MISMATCH -> "VE_MISMATCH — apply KFPBRK corrections"
-                    Me7Simulator.ErrorSource.ON_TARGET -> "ON_TARGET ✓"
+                val (dominantIcon, dominantTint, dominantLabel) = when (diag.dominantError) {
+                    Me7Simulator.ErrorSource.TORQUE_CAPPED ->
+                        Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "TORQUE_CAPPED — increase KFMIOP/KFMIRL")
+                    Me7Simulator.ErrorSource.PSSOL_WRONG ->
+                        Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "PSSOL_WRONG — check KFURL value")
+                    Me7Simulator.ErrorSource.BOOST_SHORTFALL ->
+                        Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "BOOST_SHORTFALL — apply KFLDRL corrections")
+                    Me7Simulator.ErrorSource.VE_MISMATCH ->
+                        Triple(Icons.Filled.Warning, MaterialTheme.colorScheme.error, "VE_MISMATCH — apply KFPBRK corrections")
+                    Me7Simulator.ErrorSource.ON_TARGET ->
+                        Triple(Icons.Filled.CheckCircle, Color(0xFF4CAF50), "ON TARGET")
                 }
-                Text("Dominant Issue: $dominantLabel", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = dominantIcon, contentDescription = null, tint = dominantTint,
+                        modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Dominant Issue: $dominantLabel",
+                        style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
@@ -641,13 +801,52 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                 Spacer(Modifier.height(8.dp))
                 val limits = result.mechanicalLimits
                 MechLimitRow("MAF Sensor", !limits.mafMaxed, if (limits.mafMaxValue > 0) "${String.format("%.0f", limits.mafMaxValue)} g/s peak" else "N/A")
+                MechLimitRow("MAF Voltage", !limits.mafVoltageMaxed,
+                    if (limits.mafMaxVoltage > 0) "${String.format("%.2f", limits.mafMaxVoltage)} V peak (5V = clipped)" else "N/A (log uhfm_w)")
                 MechLimitRow("Injectors", !limits.injectorMaxed, if (limits.injectorMaxDutyCycle > 0) "${String.format("%.0f", limits.injectorMaxDutyCycle * 100)}% max DC" else "N/A")
                 MechLimitRow("Turbo", !limits.turboMaxed, if (limits.turboMaxWgdc > 0) "${String.format("%.0f", limits.turboMaxWgdc)}% max WGDC" else "N/A")
-                MechLimitRow("MAP Sensor", !limits.mapSensorMaxed, if (limits.mapSensorMaxValue > 0) "${String.format("%.0f", limits.mapSensorMaxValue)} mbar peak" else "N/A")
+                MechLimitRow("MAP Sensor", !limits.mapSensorMaxed,
+                    if (limits.mapSensorMaxValue > 0) "${String.format("%.0f", limits.mapSensorMaxValue)} mbar peak (${limits.mapSensorType})" else "N/A")
                 // v4: Throttle body check
                 result.throttleCheck?.let { tc ->
                     MechLimitRow("Throttle Body", !tc.restricted,
                         if (tc.restricted) "${String.format("%.0f", tc.avgPressureDeficit)} mbar deficit" else "OK")
+                }
+
+                // Sensor saturation details
+                if (limits.sensorSaturationWarnings.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    IconSubTitle(
+                        Icons.Filled.Bolt,
+                        "Sensor Saturation",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    for (sat in limits.sensorSaturationWarnings) {
+                        val rpmDetail = if (sat.affectedRpmRanges.isNotEmpty()) {
+                            " (${sat.affectedRpmRanges.joinToString(", ") {
+                                "${it.first.toInt()}–${it.second.toInt()} RPM"
+                            }})"
+                        } else ""
+                        Text(
+                            "• ${sat.sensorName}: ${String.format("%.1f", sat.maxValue)} ${sat.unit} — " +
+                                "${String.format("%.0f", sat.plateauPercent)}% at ceiling$rpmDetail",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "  → ${sat.recommendation}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Data reliability warning
+                if (limits.dataReliabilityCompromised) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(limits.dataReliabilityDetail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -657,7 +856,7 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
             if (env.altitudeDeviation || env.tempDeviation) {
                 Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("🌍 Environmental Conditions", style = MaterialTheme.typography.titleMedium)
+                        IconSectionTitle(Icons.Filled.Public, "Environmental Conditions")
                         Spacer(Modifier.height(8.dp))
                         Text("Avg Barometric Pressure: ${String.format("%.0f", env.avgBaroPressure)} mbar")
                         Text("Estimated Altitude: ${String.format("%.0f", env.estimatedAltitudeM)}m / ${String.format("%.0f", env.estimatedAltitudeM * 3.281)}ft")
@@ -671,7 +870,7 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
             if (trans.events.isNotEmpty()) {
                 Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("⚡ Transient Events", style = MaterialTheme.typography.titleMedium)
+                        IconSectionTitle(Icons.Filled.Bolt, "Transient Events")
                         Spacer(Modifier.height(8.dp))
                         if (trans.overboostEvents > 0) {
                             Text("Overboost: ${trans.overboostEvents} event(s), ${trans.overboostSampleCount} samples")
@@ -682,7 +881,8 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                         }
                         for (rec in trans.recommendations) {
                             Spacer(Modifier.height(4.dp))
-                            Text("💡 $rec", style = MaterialTheme.typography.bodySmall)
+                            IconTextRow(Icons.Filled.Lightbulb, rec,
+                                tint = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
@@ -694,7 +894,7 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
             if (safety.excludedSamples.isNotEmpty()) {
                 Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("🛡️ Safety Mode Events", style = MaterialTheme.typography.titleMedium)
+                        IconSectionTitle(Icons.Filled.Security, "Safety Mode Events")
                         Spacer(Modifier.height(8.dp))
                         Text("${safety.excludedSamples.size} samples excluded from calibration:")
                         if (safety.overloadCount > 0) Text("  • Overload (DPUPS): ${safety.overloadCount} samples")
@@ -710,7 +910,7 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
             if (solver.errorReductionPercent > 5) {
                 Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("🔧 KFURL Solver", style = MaterialTheme.typography.titleMedium)
+                        IconSectionTitle(Icons.Filled.Build, "KFURL Solver")
                         Spacer(Modifier.height(8.dp))
                         Text("Optimal KFURL (scalar): ${String.format("%.4f", solver.optimalKfurl)}")
                         Text("pssol RMSE: ${String.format("%.1f", solver.rmse)} mbar")
@@ -720,7 +920,8 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                         solver.perRpmKfurl?.let { perRpm ->
                             if (perRpm.improvementPercent > 2) {
                                 Spacer(Modifier.height(12.dp))
-                                Text("📊 RPM-Dependent KFURL (Kennlinie)", style = MaterialTheme.typography.titleSmall)
+                                IconSubTitle(Icons.Filled.BarChart, "RPM-Dependent KFURL (Kennlinie)",
+                                    modifier = Modifier.padding(top = 12.dp))
                                 Text(
                                     "Per-RPM solving improves RMSE by additional ${String.format("%.1f", perRpm.improvementPercent)}% " +
                                         "(${String.format("%.1f", perRpm.scalarRmse)} → ${String.format("%.1f", perRpm.perRpmRmse)} mbar)",
@@ -745,14 +946,18 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
         result.convergenceHistory?.let { conv ->
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("🔄 Iterative Convergence", style = MaterialTheme.typography.titleMedium)
+                    IconSectionTitle(Icons.Filled.Refresh, "Iterative Convergence")
                     Spacer(Modifier.height(8.dp))
-                    val status = when {
-                        conv.converged -> "✅ Converged in ${conv.iterationsToConverge} iterations"
-                        conv.diverged -> "❌ Diverged after ${conv.iterationsToConverge} iterations"
-                        else -> "⚠️ Did not converge (${conv.steps.size} iterations)"
+                    val (convOk, convLabel) = when {
+                        conv.converged -> true to "Converged in ${conv.iterationsToConverge} iterations"
+                        conv.diverged -> false to "Diverged after ${conv.iterationsToConverge} iterations"
+                        else -> false to "Did not converge (${conv.steps.size} iterations)"
                     }
-                    Text(status, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StatusDot(convOk, size = 18.dp)
+                        Spacer(Modifier.width(6.dp))
+                        Text(convLabel, fontWeight = FontWeight.Bold)
+                    }
                     Text("Final error: ${String.format("%.2f", conv.finalError)}")
                     if (conv.steps.size >= 2) {
                         val improvement = conv.steps.first().totalError - conv.steps.last().totalError
@@ -766,10 +971,14 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
         if (diag.recommendations.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Recommended Actions", style = MaterialTheme.typography.titleMedium)
+                    IconSectionTitle(Icons.Filled.Lightbulb, "Recommended Actions")
                     Spacer(Modifier.height(8.dp))
-                    diag.recommendations.forEachIndexed { index, rec ->
-                        Text("${index + 1}. $rec", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 6.dp))
+                    diag.recommendations.forEachIndexed { _, rec ->
+                        if (rec.isBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                        } else {
+                            TaggedMessageRow(rec, modifier = Modifier.padding(bottom = 6.dp))
+                        }
                     }
                 }
             }
@@ -831,9 +1040,12 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Warning ${index + 1}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text("Warning ${index + 1}", style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer)
                         Spacer(Modifier.height(4.dp))
-                        Text(warning, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                        TaggedMessageRow(warning,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textColor = MaterialTheme.colorScheme.onErrorContainer)
                     }
                 }
             }
@@ -843,24 +1055,31 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
 
 @Composable
 private fun MechLimitRow(name: String, ok: Boolean, detail: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        StatusDot(ok, size = 14.dp)
+        Spacer(Modifier.width(8.dp))
+        Text("$name:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+            modifier = Modifier.width(116.dp))
         Text(
-            if (ok) "🟢" else "🔴",
-            modifier = Modifier.width(24.dp)
+            if (ok) "OK" else "MAXED",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (ok) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+            modifier = Modifier.width(60.dp)
         )
-        Text("$name: ", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, modifier = Modifier.width(100.dp))
-        Text(if (ok) "OK" else "MAXED", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(60.dp))
-        Text(detail, style = MaterialTheme.typography.bodySmall)
+        Text(detail, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun PidIndicator(label: String, triggered: Boolean, detail: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            if (triggered) "🔴" else "🟢",
-            style = MaterialTheme.typography.titleMedium
-        )
+        StatusDot(!triggered, size = 20.dp)
+        Spacer(Modifier.height(2.dp))
         Text(label, style = MaterialTheme.typography.labelSmall)
         Text(detail, style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -933,7 +1152,7 @@ private fun PerLinkBoostContent(result: OptimizerCalculator.OptimizerResult) {
             Spacer(Modifier.height(16.dp))
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("🎛️ PID Dynamics Analysis", style = MaterialTheme.typography.titleMedium)
+                        IconSectionTitle(Icons.Filled.Tune, "PID Dynamics Analysis")
                     Spacer(Modifier.height(8.dp))
 
                     val diag = pidSim.diagnosis
@@ -1130,16 +1349,9 @@ private fun PerRpmTable(
                     Text(String.format("%.1f", row.avgError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                     Text(String.format("%.1f", row.maxError), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
                     Text(String.format("%.2f", row.correction), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        when (row.confidence) {
-                            MapDelta.Confidence.HIGH -> "🟢"
-                            MapDelta.Confidence.MEDIUM -> "🟡"
-                            MapDelta.Confidence.LOW -> "🟠"
-                            MapDelta.Confidence.NONE -> "⚪"
-                        },
-                        modifier = Modifier.width(50.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Box(modifier = Modifier.width(50.dp), contentAlignment = Alignment.CenterStart) {
+                        ConfidenceDot(row.confidence)
+                    }
                 }
             }
         }
@@ -1235,7 +1447,7 @@ private fun PredictionTab(result: OptimizerCalculator.OptimizerResult) {
         // ── Convergence Summary ─────────────────────────────────
         Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("📈 Predicted Convergence", style = MaterialTheme.typography.titleMedium)
+                    IconSectionTitle(Icons.AutoMirrored.Filled.TrendingUp, "Predicted Convergence")
                 Text(
                     "Estimated ${String.format("%.0f", pred.convergenceImprovement)}% improvement in overall error",
                     style = MaterialTheme.typography.bodyMedium,
@@ -1357,17 +1569,23 @@ private fun PullsTab(result: OptimizerCalculator.OptimizerResult) {
                 val noisy = pulls.count { it.quality == PullSegmenter.PullQuality.NOISY }
                 val short = pulls.count { it.quality == PullSegmenter.PullQuality.SHORT }
                 val incomplete = pulls.count { it.quality == PullSegmenter.PullQuality.INCOMPLETE }
-                Text("🟢 Good: $good  🟡 Noisy: $noisy  🟠 Short: $short  🔴 Incomplete: $incomplete")
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    QualityDot(0); Text("Good: $good", style = MaterialTheme.typography.bodySmall)
+                    QualityDot(1); Text("Noisy: $noisy", style = MaterialTheme.typography.bodySmall)
+                    QualityDot(2); Text("Short: $short", style = MaterialTheme.typography.bodySmall)
+                    QualityDot(3); Text("Incomplete: $incomplete", style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
 
         // ── Per-pull cards ────────────────────────────────────
         for (pull in pulls) {
-            val qualityEmoji = when (pull.quality) {
-                PullSegmenter.PullQuality.GOOD -> "🟢"
-                PullSegmenter.PullQuality.NOISY -> "🟡"
-                PullSegmenter.PullQuality.SHORT -> "🟠"
-                PullSegmenter.PullQuality.INCOMPLETE -> "🔴"
+            val qualityLevel = when (pull.quality) {
+                PullSegmenter.PullQuality.GOOD -> 0
+                PullSegmenter.PullQuality.NOISY -> 1
+                PullSegmenter.PullQuality.SHORT -> 2
+                PullSegmenter.PullQuality.INCOMPLETE -> 3
             }
 
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -1377,8 +1595,11 @@ private fun PullsTab(result: OptimizerCalculator.OptimizerResult) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Pull ${pull.pullIndex + 1} $qualityEmoji",
-                            style = MaterialTheme.typography.titleSmall)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            QualityDot(qualityLevel)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Pull ${pull.pullIndex + 1}", style = MaterialTheme.typography.titleSmall)
+                        }
                         Text("${pull.sampleCount} samples",
                             style = MaterialTheme.typography.bodySmall)
                     }
@@ -1416,8 +1637,8 @@ private fun PullsTab(result: OptimizerCalculator.OptimizerResult) {
                     // Consistency warning if any
                     consistency[pull.pullIndex]?.let { note ->
                         Spacer(Modifier.height(4.dp))
-                        Text("⚠️ $note", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error)
+                        IconTextRow(Icons.Filled.Warning, note,
+                            tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -1503,7 +1724,7 @@ private fun ExportTab(
 
         Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("📦 Write Corrections to BIN", style = MaterialTheme.typography.titleMedium)
+                IconSectionTitle(Icons.Filled.SaveAlt, "Write Corrections to BIN")
                 Spacer(Modifier.height(12.dp))
 
                 var writeKfmiop by remember { mutableStateOf(true) }
@@ -1604,15 +1825,20 @@ private fun ExportTab(
                                 if (writeKfldrl && sm.kfldrl != null) Text("• KFLDRL: ${sm.kfldrl.cellsModified} cells")
                                 if (writeKfldimx && sm.kfldimx != null) Text("• KFLDIMX: ${sm.kfldimx.cellsModified} cells")
                                 Spacer(Modifier.height(8.dp))
-                                Text("⚠️ Ensure you have a backup of your original BIN!", fontWeight = FontWeight.Bold)
-                            }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Warning, contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Ensure you have a backup of your original BIN!", fontWeight = FontWeight.Bold)
+                                }                            }
                         },
                         confirmButton = {
                             Button(onClick = {
                                 showConfirm = false
                                 val binFile = BinFilePreferences.getStoredFile()
                                 if (!binFile.exists()) {
-                                    writeStatus = "❌ BIN file not found"
+                                    writeStatus = "ERROR: BIN file not found"
                                     return@Button
                                 }
 
@@ -1638,7 +1864,7 @@ private fun ExportTab(
                                     val def = KfldimxPreferences.getSelectedMap()
                                     if (def != null) { BinWriter.write(binFile, def.first, sm.kfldimx.suggested); written++ }
                                 }
-                                writeStatus = "✅ $written map(s) written to BIN successfully"
+                                writeStatus = "OK: $written map(s) written to BIN successfully"
                             }) {
                                 Text("Confirm Write")
                             }
@@ -1652,13 +1878,14 @@ private fun ExportTab(
                 }
 
                 if (writeStatus.isNotEmpty()) {
-                    Text(writeStatus, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                    TaggedMessageRow(writeStatus, modifier = Modifier.padding(top = 8.dp))
                 }
 
-                Text(
-                    "⚠️ Always keep a backup of your original BIN file before writing!",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp)
+                IconTextRow(
+                    Icons.Filled.Warning,
+                    "Always keep a backup of your original BIN file before writing!",
+                    modifier = Modifier.padding(top = 8.dp),
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -1666,7 +1893,7 @@ private fun ExportTab(
         // ── v4: Export Options ────────────────────────────────
         Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("📄 Export Reports", style = MaterialTheme.typography.titleMedium)
+                IconSectionTitle(Icons.Filled.Description, "Export Reports")
                 Spacer(Modifier.height(12.dp))
 
                 var exportStatus by remember { mutableStateOf("") }
@@ -1688,9 +1915,9 @@ private fun ExportTab(
                                 sm.kfldrl?.let { d -> kfldrlPair?.first?.let { corrections.add(it to d) } }
                                 sm.kfldimx?.let { d -> kfldimxPair?.first?.let { corrections.add(it to d) } }
                                 XdfPatchWriter.write(File(dir, file), corrections)
-                                exportStatus = "✅ XDF patch exported (${corrections.size} maps)"
+                                exportStatus = "OK: XDF patch exported (${corrections.size} maps)"
                             } catch (e: Exception) {
-                                exportStatus = "❌ XDF export failed: ${e.message}"
+                                exportStatus = "ERROR: XDF export failed: ${e.message}"
                             }
                         }
                     }) {
@@ -1715,9 +1942,9 @@ private fun ExportTab(
                                     convergence = result.convergenceHistory,
                                     kfurlResult = result.kfurlSolverResult
                                 )
-                                exportStatus = "✅ HTML report exported"
+                                exportStatus = "OK: HTML report exported"
                             } catch (e: Exception) {
-                                exportStatus = "❌ Report export failed: ${e.message}"
+                                exportStatus = "ERROR: Report export failed: ${e.message}"
                             }
                         }
                     }) {
@@ -1726,7 +1953,7 @@ private fun ExportTab(
                 }
 
                 if (exportStatus.isNotEmpty()) {
-                    Text(exportStatus, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                    TaggedMessageRow(exportStatus, modifier = Modifier.padding(top = 8.dp))
                 }
             }
         }
@@ -1808,7 +2035,7 @@ private fun ParameterField(
                 state = rememberTooltipState(isPersistent = true)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Info,
+                    imageVector = Icons.Filled.Info,
                     contentDescription = "$label info",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)

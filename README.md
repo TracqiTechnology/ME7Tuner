@@ -986,3 +986,30 @@ The Optimizer is designed for iterative use:
 3. **Verify:** On the final pass, both pressure and load charts should show tight tracking between requested and actual values. Warnings should be clear.
 
 If the maps are calibrated correctly, `pssol` should match `pvdks_w` and `rlsol` should match `rl_w` — the ECU's physical model "just works."
+
+### Sensor Voltage Saturation Detection
+
+All ME7 analog sensors output 0–5 V. When a tuned engine pushes a sensor beyond its measurement range, the voltage clips at or near 5 V and the ECU cannot measure the real value. The Optimizer detects this automatically.
+
+#### Detected Sensors
+
+| Sensor | Log Signal | What Saturates | Stock Max | Upgrade Path |
+|--------|-----------|----------------|-----------|--------------|
+| **MAF (HFM5)** | `uhfm_w` | Airflow exceeds MLHFM top voltage bin | ~4.96 V (~370 g/s) | Rescale MLHFM for larger MAF housing (e.g., 80mm → 85mm) |
+| **MAP (3-bar)** | `pvdks_w` | Boost pressure exceeds sensor ceiling | ~2550 mbar | Upgrade to 4-bar MAP sensor, update KFVPDKSD/KFVPDKSE |
+| **MAP (4-bar)** | `pvdks_w` | Boost pressure exceeds sensor ceiling | ~3500 mbar | Upgrade to 5-bar MAP sensor, update KFVPDKSD/KFVPDKSE |
+| **MAP (5-bar)** | `pvdks_w` | Boost pressure exceeds sensor ceiling | ~4500 mbar | 6-bar or dual-sensor setup |
+
+#### How It Works
+
+1. **MAF Voltage Clipping:** If `uhfm_w` is logged, the Optimizer checks whether ≥10% of WOT samples are at or above 4.8 V. When saturated, `mshfm_w` (airflow in g/s) plateaus — any airflow beyond the top MLHFM bin is invisible. This means all downstream calculations (load, fueling, VE model corrections) at high-RPM/high-load are based on incorrect airflow readings.
+
+2. **MAP Sensor Type Auto-Detection:** The Optimizer classifies the installed MAP sensor type (3-bar, 4-bar, 5-bar, etc.) from the observed maximum `pvdks_w` pressure, then checks whether samples are plateauing near that sensor's ceiling.
+
+3. **Data Reliability Warning:** When any sensor is saturated, the Optimizer marks solver suggestions at affected operating points as potentially unreliable. A ⚠️ banner appears in the Mechanical Limits card explaining which solvers are affected and why.
+
+#### Recommended Logging
+
+For optimal sensor saturation detection, include `uhfm_w` (MAF voltage) in your ME7Logger configuration alongside the standard optimizer channels. The MAP sensor saturation is detected from `pvdks_w` which is already a required channel.
+
+

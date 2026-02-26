@@ -83,21 +83,23 @@ object OptimizerCalculator {
         val wotEntries: List<WotLogEntry>,
         val mafValues: List<Double>?,
         val injectorOnTimes: List<Double>?,
-        val wotRpms: List<Double>?
+        val wotRpms: List<Double>?,
+        val mafVoltages: List<Double>?
     )
 
     fun filterWotEntriesWithOptionalData(
         values: Map<Me7LogFileContract.Header, List<Double>>,
         minThrottleAngle: Double = 80.0
     ): FilteredLogData {
-        val rpms = values[Me7LogFileContract.Header.RPM_COLUMN_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val requestedLoads = values[Me7LogFileContract.Header.REQUESTED_LOAD_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val actualLoads = values[Me7LogFileContract.Header.ENGINE_LOAD_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val requestedMaps = values[Me7LogFileContract.Header.REQUESTED_PRESSURE_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val actualMaps = values[Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val wgdcs = values[Me7LogFileContract.Header.WASTEGATE_DUTY_CYCLE_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val throttleAngles = values[Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
-        val baroPressures = values[Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER] ?: return FilteredLogData(emptyList(), null, null, null)
+        val emptyResult = FilteredLogData(emptyList(), null, null, null, null)
+        val rpms = values[Me7LogFileContract.Header.RPM_COLUMN_HEADER] ?: return emptyResult
+        val requestedLoads = values[Me7LogFileContract.Header.REQUESTED_LOAD_HEADER] ?: return emptyResult
+        val actualLoads = values[Me7LogFileContract.Header.ENGINE_LOAD_HEADER] ?: return emptyResult
+        val requestedMaps = values[Me7LogFileContract.Header.REQUESTED_PRESSURE_HEADER] ?: return emptyResult
+        val actualMaps = values[Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER] ?: return emptyResult
+        val wgdcs = values[Me7LogFileContract.Header.WASTEGATE_DUTY_CYCLE_HEADER] ?: return emptyResult
+        val throttleAngles = values[Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER] ?: return emptyResult
+        val baroPressures = values[Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER] ?: return emptyResult
 
         val altLoads = values[Me7LogFileContract.Header.ACTUAL_LOAD_HEADER]
         val useAltLoads = altLoads != null && altLoads.size == rpms.size
@@ -106,11 +108,14 @@ object OptimizerCalculator {
         val hasMaf = allMafValues != null && allMafValues.size == rpms.size
         val allInjectorTimes = values[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER]
         val hasInjector = allInjectorTimes != null && allInjectorTimes.size == rpms.size
+        val allMafVoltages = values[Me7LogFileContract.Header.MAF_VOLTAGE_HEADER]
+        val hasMafVoltage = allMafVoltages != null && allMafVoltages.size == rpms.size
 
         val entries = mutableListOf<WotLogEntry>()
         val wotMaf = if (hasMaf) mutableListOf<Double>() else null
         val wotInjector = if (hasInjector) mutableListOf<Double>() else null
         val wotRpms = if (hasInjector) mutableListOf<Double>() else null
+        val wotMafVoltages = if (hasMafVoltage) mutableListOf<Double>() else null
 
         for (i in rpms.indices) {
             if (throttleAngles[i] >= minThrottleAngle) {
@@ -129,10 +134,11 @@ object OptimizerCalculator {
                 wotMaf?.add(allMafValues!![i])
                 wotInjector?.add(allInjectorTimes!![i])
                 wotRpms?.add(rpms[i])
+                wotMafVoltages?.add(allMafVoltages!![i])
             }
         }
 
-        return FilteredLogData(entries, wotMaf, wotInjector, wotRpms)
+        return FilteredLogData(entries, wotMaf, wotInjector, wotRpms, wotMafVoltages)
     }
 
     fun filterWotEntries(
@@ -648,6 +654,7 @@ object OptimizerCalculator {
 
             // Build a predicted simulation result for chain diagnosis
             val predTorqueLimited = entry.requestedLoad < calibration.ldrxn * 0.95
+                && entry.rpm >= 3500.0
             val predPssolError = sim.pssolError // PLSOL model doesn't change
             val predBoostError = correctedBoostError
             val predKfpbrkCorr = 1.0 + correctedVeError
@@ -737,19 +744,38 @@ object OptimizerCalculator {
 
         val recs = mutableListOf<String>()
 
+        // Count samples in the low-RPM torque ramp region for context
+        val lowRpmSamples = simulationResults.count { it.rpm < 3500.0 }
+        val lowRpmBelowLdrxn = simulationResults.count {
+            it.rpm < 3500.0 && it.rlsol < ldrxnTarget * 0.95
+        }
+
         if (torquePct > 20) {
-            val avgHeadroom = simulationResults.filter { it.torqueLimited }.map { it.torqueHeadroom }.average()
+            val torqueLimitedResults = simulationResults.filter { it.torqueLimited }
+            val avgHeadroom = if (torqueLimitedResults.isNotEmpty()) {
+                torqueLimitedResults.map { it.torqueHeadroom }.average()
+            } else 0.0
             recs.add(
-                "⚠️ Torque structure is capping load in ${String.format("%.0f", torquePct)}% of WOT samples. " +
+                "WARNING: Torque structure is capping load in ${String.format("%.0f", torquePct)}% of WOT samples (above 3500 RPM). " +
                     "rlsol averages ${String.format("%.1f", avgHeadroom)}% below LDRXN (${ldrxnTarget.format()}%). " +
                     "Increase KFMIOP/KFMIRL ranges to support the target load."
+            )
+        }
+
+        // Add context about low-RPM torque ramp if significant
+        if (lowRpmBelowLdrxn > 0 && lowRpmSamples > 0) {
+            val lowRpmPct = lowRpmBelowLdrxn.toDouble() / total * 100
+            recs.add(
+                "INFO: ${lowRpmBelowLdrxn} samples (${String.format("%.0f", lowRpmPct)}%) are below 3500 RPM where " +
+                    "rlsol < LDRXN is expected (KFMIOP torque ramp limits load at low RPM). " +
+                    "This is normal ECU behavior, not a calibration issue."
             )
         }
 
         if (boostPct > 10) {
             val avgBoostError = simulationResults.filter { it.boostError > 0 }.map { it.boostError }.average()
             recs.add(
-                "⚡ Boost shortfall in ${String.format("%.0f", boostPct)}% of WOT samples. " +
+                "BOOST: Boost shortfall in ${String.format("%.0f", boostPct)}% of WOT samples. " +
                     "Actual pressure falls short of pssol by avg ${String.format("%.0f", avgBoostError)} mbar. " +
                     "Apply suggested KFLDRL corrections to increase base duty cycle."
             )
@@ -759,7 +785,7 @@ object OptimizerCalculator {
             val avgVeError = simulationResults.filter { abs(it.kfpbrkCorrectionFactor - 1.0) > 0.01 }
                 .map { (it.kfpbrkCorrectionFactor - 1.0) * 100 }.average()
             recs.add(
-                "📊 VE model mismatch in ${String.format("%.0f", vePct)}% of WOT samples. " +
+                "VE: VE model mismatch in ${String.format("%.0f", vePct)}% of WOT samples. " +
                     "KFPBRK is off by avg ${String.format("%+.1f", avgVeError)}%. " +
                     "Apply suggested KFPBRK corrections so the ECU correctly converts pressure to load."
             )
@@ -768,7 +794,7 @@ object OptimizerCalculator {
         if (pssolPct > 10) {
             val avgPssolError = simulationResults.filter { abs(it.pssolError) > 10 }.map { it.pssolError }.average()
             recs.add(
-                "🔧 PLSOL model predicts wrong pressure in ${String.format("%.0f", pssolPct)}% of WOT samples. " +
+                "ERROR: PLSOL model predicts wrong pressure in ${String.format("%.0f", pssolPct)}% of WOT samples. " +
                     "Simulated pssol deviates from logged pssol by avg ${String.format("%+.0f", avgPssolError)} mbar. " +
                     "Check KFURL value (currently ${String.format("%.4f", kfurl)}) — it may not match your engine's VE."
             )
@@ -776,7 +802,7 @@ object OptimizerCalculator {
 
         if (recs.isEmpty() && okPct > 80) {
             recs.add(
-                "✅ Signal chain is healthy: ${String.format("%.0f", okPct)}% of WOT samples are on-target. " +
+                "OK: Signal chain is healthy: ${String.format("%.0f", okPct)}% of WOT samples are on-target. " +
                     "LDRXN=${ldrxnTarget.format()}% is being achieved."
             )
         }
@@ -835,7 +861,8 @@ object OptimizerCalculator {
             wotEntries = wotEntries,
             mafValues = filteredData.mafValues,
             injectorOnTimes = filteredData.injectorOnTimes,
-            rpms = filteredData.wotRpms
+            rpms = filteredData.wotRpms,
+            mafVoltages = filteredData.mafVoltages
         )
 
         // ── v3: MapDelta-based suggestions ──────────────────────
@@ -975,44 +1002,44 @@ object OptimizerCalculator {
         v4Warnings.addAll(transients.warnings)
         v4Warnings.addAll(environmental.warnings)
         if (throttleCheck.restricted) {
-            v4Warnings.add("⚠️ Throttle restriction: ${throttleCheck.detail}")
+            v4Warnings.add("WARNING: Throttle restriction: ${throttleCheck.detail}")
         }
         if (kfurlSolverResult != null && kfurlSolverResult.errorReductionPercent > 10) {
-            v4Warnings.add("💡 KFURL solver suggests ${String.format("%.4f", kfurlSolverResult.optimalKfurl)} " +
+            v4Warnings.add("INFO: KFURL solver suggests ${String.format("%.4f", kfurlSolverResult.optimalKfurl)} " +
                 "(current: $kfurl) — would reduce pssol RMSE by ${String.format("%.0f", kfurlSolverResult.errorReductionPercent)}%")
         }
         // Finding 2: Report per-RPM KFURL improvement if significant
         if (kfurlSolverResult?.perRpmKfurl != null && kfurlSolverResult.perRpmKfurl.improvementPercent > 5) {
             val perRpm = kfurlSolverResult.perRpmKfurl
             val rpmRange = perRpm.rpmValues.joinToString(", ") {
-                "${it.first.toInt()}→${String.format("%.4f", it.second)}"
+                "${it.first.toInt()}>${String.format("%.4f", it.second)}"
             }
-            v4Warnings.add("📊 RPM-dependent KFURL would improve pssol RMSE by additional " +
+            v4Warnings.add("INFO: RPM-dependent KFURL would improve pssol RMSE by additional " +
                 "${String.format("%.1f", perRpm.improvementPercent)}% vs scalar. " +
                 "Per-RPM values: $rpmRange (me7-raw.txt line 54368)")
         }
         // Phase 26: KFPRG solver warnings
         if (kfprgSolverResult != null && kfprgSolverResult.errorReductionPercent > 5) {
-            v4Warnings.add("💡 KFPRG solver suggests ${String.format("%.1f", kfprgSolverResult.optimalKfprg)} hPa " +
+            v4Warnings.add("INFO: KFPRG solver suggests ${String.format("%.1f", kfprgSolverResult.optimalKfprg)} hPa " +
                 "(default: 70.0) — would reduce VE model RMSE by ${String.format("%.0f", kfprgSolverResult.errorReductionPercent)}%")
         }
         if (kfprgSolverResult?.perRpmKfprg != null && kfprgSolverResult.perRpmKfprg.improvementPercent > 5) {
             val perRpm = kfprgSolverResult.perRpmKfprg
             val rpmRange = perRpm.rpmValues.joinToString(", ") {
-                "${it.first.toInt()}→${String.format("%.1f", it.second)}"
+                "${it.first.toInt()}>${String.format("%.1f", it.second)}"
             }
-            v4Warnings.add("📊 RPM-dependent KFPRG would improve VE model RMSE by additional " +
+            v4Warnings.add("INFO: RPM-dependent KFPRG would improve VE model RMSE by additional " +
                 "${String.format("%.1f", perRpm.improvementPercent)}% vs scalar. " +
                 "Per-RPM values: $rpmRange hPa (me7-raw.txt line 54365)")
         }
         if (convergenceHistory != null && convergenceHistory.diverged) {
-            v4Warnings.add("⚠️ Iterative convergence diverged — corrections may be oscillating. Consider reducing LDRXN target.")
+            v4Warnings.add("WARNING: Iterative convergence diverged — corrections may be oscillating. Consider reducing LDRXN target.")
         }
         pullConsistency.forEach { (pullIdx, note) ->
-            v4Warnings.add("🔍 Pull ${pullIdx + 1}: $note")
+            v4Warnings.add("INFO: Pull ${pullIdx + 1}: $note")
         }
         pidSimulation?.diagnosis?.recommendations?.forEach { rec ->
-            v4Warnings.add("🎛️ PID: $rec")
+            v4Warnings.add("INFO: PID: $rec")
         }
 
         val allWarningsV4 = allWarnings + v4Warnings
