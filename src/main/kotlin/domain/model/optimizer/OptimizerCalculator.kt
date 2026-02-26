@@ -805,6 +805,7 @@ object OptimizerCalculator {
         minThrottleAngle: Double = 80.0,
         kfldimxOverheadPercent: Double = 8.0,
         kfurl: Double = 0.106,
+        kfurlMap: Map3d? = null,        // Finding 2: RPM-dependent KFURL Kennlinie
         logSummaries: List<LogSummary> = emptyList(),
         // v4: PID gain maps (optional)
         kfldrq0Map: Map3d? = null,
@@ -821,6 +822,7 @@ object OptimizerCalculator {
             kfldrl = kfldrlMap,
             kfldimx = kfldimxMap,
             kfurl = kfurl,
+            kfurlMap = kfurlMap,    // Finding 2: RPM-dependent KFURL
             ldrxn = ldrxnTarget
         )
 
@@ -967,6 +969,16 @@ object OptimizerCalculator {
         if (kfurlSolverResult != null && kfurlSolverResult.errorReductionPercent > 10) {
             v4Warnings.add("💡 KFURL solver suggests ${String.format("%.4f", kfurlSolverResult.optimalKfurl)} " +
                 "(current: $kfurl) — would reduce pssol RMSE by ${String.format("%.0f", kfurlSolverResult.errorReductionPercent)}%")
+        }
+        // Finding 2: Report per-RPM KFURL improvement if significant
+        if (kfurlSolverResult?.perRpmKfurl != null && kfurlSolverResult.perRpmKfurl.improvementPercent > 5) {
+            val perRpm = kfurlSolverResult.perRpmKfurl
+            val rpmRange = perRpm.rpmValues.joinToString(", ") {
+                "${it.first.toInt()}→${String.format("%.4f", it.second)}"
+            }
+            v4Warnings.add("📊 RPM-dependent KFURL would improve pssol RMSE by additional " +
+                "${String.format("%.1f", perRpm.improvementPercent)}% vs scalar. " +
+                "Per-RPM values: $rpmRange (me7-raw.txt line 54368)")
         }
         if (convergenceHistory != null && convergenceHistory.diverged) {
             v4Warnings.add("⚠️ Iterative convergence diverged — corrections may be oscillating. Consider reducing LDRXN target.")

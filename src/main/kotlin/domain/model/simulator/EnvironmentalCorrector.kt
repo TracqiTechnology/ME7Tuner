@@ -34,6 +34,7 @@ object EnvironmentalCorrector {
         val intakeTempRange: Pair<Double, Double>?,
         val altitudeDeviation: Boolean,  // true if significantly non-sea-level
         val tempDeviation: Boolean,      // true if significantly non-standard
+        val kftarxWarning: Boolean = false,  // Finding 4: KFTARX may reduce LDRXN
         val warnings: List<String>
     )
 
@@ -46,7 +47,8 @@ object EnvironmentalCorrector {
         if (wotEntries.isEmpty()) {
             return EnvironmentalSummary(
                 STANDARD_BARO_MBAR, 0.0, null, null, null,
-                altitudeDeviation = false, tempDeviation = false, warnings = emptyList()
+                altitudeDeviation = false, tempDeviation = false, kftarxWarning = false,
+                warnings = emptyList()
             )
         }
 
@@ -63,6 +65,23 @@ object EnvironmentalCorrector {
                 "KFLDRL suggestions may need KFLDIOPU altitude correction.")
         }
 
+        // Finding 4: KFTARX intake air temperature correction warning
+        // ME7 Reference: LDRLMX 3.100 (line 142587)
+        // KFTARX reduces effective LDRXN above tans ≈ 75°C.
+        // We check for high ambient conditions using barometric pressure as a rough
+        // indicator (low baro + high altitude = higher density altitude).
+        // Since we can't read tans directly from most logs, we warn conservatively
+        // when conditions suggest hot intake air.
+        val kftarxWarning = false  // Will be set when tans is available from logs
+
+        // Check for potential intake temp issues from very low barometric pressure
+        // (high altitude + heat = especially bad for charge air temps)
+        if (altitudeDeviation && avgBaro < 950) {
+            warnings.add("🌡️ High altitude (${String.format("%.0f", altitudeM)}m) with low baro pressure — " +
+                "charge air temperatures may be elevated. KFTARX (me7-raw.txt line 142587) " +
+                "reduces effective LDRXN above tans > 75°C. Monitor intake air temps.")
+        }
+
         return EnvironmentalSummary(
             avgBaroPressure = avgBaro,
             estimatedAltitudeM = altitudeM,
@@ -71,6 +90,7 @@ object EnvironmentalCorrector {
             intakeTempRange = null,
             altitudeDeviation = altitudeDeviation,
             tempDeviation = false,
+            kftarxWarning = kftarxWarning,
             warnings = warnings
         )
     }

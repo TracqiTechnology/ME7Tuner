@@ -64,9 +64,37 @@ object Me7Simulator {
         val kfldimx: Map3d? = null,        // PID I-term limiter
         val kfmiop: Map3d? = null,         // Load → torque
         val kfmirl: Map3d? = null,         // Torque → load (inverse)
-        val kfurl: Double = 0.106,         // Basic VE constant
+        val kfurl: Double = 0.106,         // Basic VE constant (scalar fallback)
+        val kfurlMap: Map3d? = null,       // RPM-dependent KFURL (Kennlinie, me7-raw.txt line 53923)
         val ldrxn: Double = 191.0          // Max specified load
-    )
+    ) {
+        /**
+         * Look up KFURL at a given RPM. Uses RPM-dependent map if available,
+         * falls back to scalar.
+         *
+         * ME7 Reference: BGSRM 17.10 (line 54368) — KFURL is a Kennlinie
+         * indexed by RPM. Values typically 0.105–0.142 %/hPa, decreasing
+         * with RPM.
+         */
+        fun kfurlAt(rpm: Double): Double {
+            val map = kfurlMap ?: return kfurl
+            // KFURL is a 1D Kennlinie (1×N or N×1). Use lookup with x=0 and y=RPM
+            // or x=RPM and y=0, depending on how the XDF stores it.
+            return if (map.yAxis.size > 1 && map.xAxis.size <= 1) {
+                // Column vector: y-axis is RPM
+                map.lookup(map.xAxis.firstOrNull() ?: 0.0, rpm)
+            } else if (map.xAxis.size > 1 && map.yAxis.size <= 1) {
+                // Row vector: x-axis is RPM
+                map.lookup(rpm, map.yAxis.firstOrNull() ?: 0.0)
+            } else if (map.xAxis.size == 1 && map.yAxis.size == 1) {
+                // Scalar — just return the value
+                map.zAxis.firstOrNull()?.firstOrNull() ?: kfurl
+            } else {
+                // 2D map (e.g. KFURL with cam angle) — use RPM on y-axis, default x
+                map.lookup(map.xAxis.firstOrNull() ?: 0.0, rpm)
+            }
+        }
+    }
 
     /** Which link in the chain is the primary source of error. */
     enum class ErrorSource {
@@ -144,6 +172,21 @@ object Me7Simulator {
         )
     }
 
+    /**
+     * Compute pssol using RPM-dependent KFURL from [CalibrationSet].
+     * This is the preferred path when a KFURL Kennlinie is available.
+     *
+     * @see documentation/optimizer-algorithms.md Finding 2
+     */
+    fun computePssol(
+        rlsol: Double,
+        op: OperatingPoint,
+        calibration: CalibrationSet,
+        previousPressure: Double? = null
+    ): Double {
+        return computePssol(rlsol, op, calibration.kfurlAt(op.rpm), previousPressure)
+    }
+
     // ── Forward path: pssol → plsol (LDRPLS) ────────────────────────
 
     /**
@@ -184,6 +227,20 @@ object Me7Simulator {
             kfurl,
             pressure
         )
+    }
+
+    /**
+     * Compute rl_w using RPM-dependent KFURL from [CalibrationSet].
+     *
+     * @see documentation/optimizer-algorithms.md Finding 2
+     */
+    fun computeRlFromPressure(
+        pressure: Double,
+        op: OperatingPoint,
+        calibration: CalibrationSet,
+        previousPressure: Double? = null
+    ): Double {
+        return computeRlFromPressure(pressure, op, calibration.kfurlAt(op.rpm), previousPressure)
     }
 
     // ── Boost control: predict WGDC ──────────────────────────────────
@@ -252,10 +309,12 @@ object Me7Simulator {
 
         // ── Link 2: rlsol → pssol ───────────────────────────────
         // What pressure should correspond to this load?
+        // Uses RPM-dependent KFURL if available (Finding 2)
+        val effectiveKfurl = calibration.kfurlAt(entry.rpm)
         val simulatedPssol = computePssol(
             rlsol = entry.requestedLoad,
             op = op,
-            kfurl = calibration.kfurl,
+            kfurl = effectiveKfurl,
             previousPressure = entry.barometricPressure
         )
         val pssolError = simulatedPssol - entry.requestedMap
@@ -278,10 +337,11 @@ object Me7Simulator {
 
         // ── Link 4: pvdks → rl_w ───────────────────────────────
         // Given the actual pressure, what load does the VE model predict?
+        // Uses RPM-dependent KFURL if available (Finding 2)
         val simulatedRl = computeRlFromPressure(
             pressure = entry.actualMap,
             op = op,
-            kfurl = calibration.kfurl,
+            kfurl = effectiveKfurl,
             previousPressure = entry.barometricPressure
         )
 

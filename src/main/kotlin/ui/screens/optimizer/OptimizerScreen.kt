@@ -75,6 +75,8 @@ fun OptimizerScreen() {
 
     // Phase 22: Auto-read KFURL from BIN if available
     val autoKfurl = remember(mapList) { KfurlSolver.findKfurlFromBin(mapList) }
+    // Finding 2: Also load the full KFURL Kennlinie (RPM-dependent) if available
+    val autoKfurlMap = remember(mapList) { KfurlSolver.findKfurlMapFromBin(mapList) }
 
     // Preference-backed input state
     var toleranceMbar by remember { mutableStateOf(OptimizerPreferences.mapToleranceMbar.toString()) }
@@ -215,6 +217,7 @@ fun OptimizerScreen() {
                                 minThrottleAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0,
                                 kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
                                 kfurl = kfurl.toDoubleOrNull() ?: 0.106,
+                                kfurlMap = autoKfurlMap,  // Finding 2: RPM-dependent KFURL
                                 kfldrq0Map = kfldrq0Pair?.second,
                                 kfldrq1Map = kfldrq1Pair?.second,
                                 kfldrq2Map = kfldrq2Pair?.second
@@ -292,6 +295,7 @@ fun OptimizerScreen() {
                                 minThrottleAngle = minAngle,
                                 kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
                                 kfurl = kfurl.toDoubleOrNull() ?: 0.106,
+                                kfurlMap = autoKfurlMap,  // Finding 2: RPM-dependent KFURL
                                 logSummaries = summaries,
                                 kfldrq0Map = kfldrq0Pair?.second,
                                 kfldrq1Map = kfldrq1Pair?.second,
@@ -708,9 +712,30 @@ private fun OverviewTab(result: OptimizerCalculator.OptimizerResult) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("🔧 KFURL Solver", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(8.dp))
-                        Text("Optimal KFURL: ${String.format("%.4f", solver.optimalKfurl)}")
+                        Text("Optimal KFURL (scalar): ${String.format("%.4f", solver.optimalKfurl)}")
                         Text("pssol RMSE: ${String.format("%.1f", solver.rmse)} mbar")
                         Text("Error reduction vs current: ${String.format("%.0f", solver.errorReductionPercent)}%")
+
+                        // Finding 2: Show per-RPM KFURL values if available
+                        solver.perRpmKfurl?.let { perRpm ->
+                            if (perRpm.improvementPercent > 2) {
+                                Spacer(Modifier.height(12.dp))
+                                Text("📊 RPM-Dependent KFURL (Kennlinie)", style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    "Per-RPM solving improves RMSE by additional ${String.format("%.1f", perRpm.improvementPercent)}% " +
+                                        "(${String.format("%.1f", perRpm.scalarRmse)} → ${String.format("%.1f", perRpm.perRpmRmse)} mbar)",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                for ((rpm, kfurl) in perRpm.rpmValues) {
+                                    Text(
+                                        "  ${rpm.toInt()} RPM → ${String.format("%.4f", kfurl)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

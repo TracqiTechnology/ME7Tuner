@@ -105,6 +105,7 @@ object IterativeConvergence {
                 kfmiop = currentKfmiop,
                 kfmirl = currentKfmirl,
                 kfurl = initialCalibration.kfurl,
+                kfurlMap = initialCalibration.kfurlMap,  // Finding 2: Preserve RPM-dependent KFURL
                 ldrxn = ldrxnTarget
             )
 
