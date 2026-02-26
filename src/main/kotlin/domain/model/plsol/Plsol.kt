@@ -30,15 +30,32 @@ class Plsol {
     }
 
     companion object {
-        fun plsol(pu: Double, ps: Double, tans: Double, tmot: Double, kfurl: Double, rlsol: Double): Double {
-            val KFPRG = 70.0
-            val FPBRKDS = 1.016
+        /**
+         * Compute pssol (target manifold pressure) from rlsol (target load).
+         *
+         * BGSRM VE model forward path (me7-raw.txt line 54297–54327):
+         *   pssol = (rlsol + rfagr) / fupsrl / FPBRKDS / VPSSPLS
+         *
+         * @param pu Barometric pressure (mbar)
+         * @param ps Previous manifold pressure estimate (mbar)
+         * @param tans Intake air temperature (°C)
+         * @param tmot Coolant temperature (°C)
+         * @param kfurl VE slope constant (%/hPa)
+         * @param rlsol Target relative load (%)
+         * @param kfprg Residual gas partial pressure (hPa) — from KFPRG map or default 70.0
+         * @param fpbrkds Combustion chamber pressure correction factor — from KFPBRK map or default 1.016
+         */
+        fun plsol(
+            pu: Double, ps: Double, tans: Double, tmot: Double, kfurl: Double, rlsol: Double,
+            kfprg: Double = 70.0,
+            fpbrkds: Double = 1.016
+        ): Double {
             val KFFWTBR = 0.02
             val VPSSPLS = 1.016
 
             val fho = pu / 1013.0
-            val pirg = fho * KFPRG
-            val pbr = ps * FPBRKDS
+            val pirg = fho * kfprg
+            val pbr = ps * fpbrkds
             val psagr = 250.0
 
             val evtmod = tans + (tmot - tans) * KFFWTBR
@@ -47,7 +64,7 @@ class Plsol {
 
             val fupsrl = kfurl * ftbr
             val rfagr = maxOf(pbr - pirg, 0.0) * fupsrl * psagr / ps
-            val pssol = (rlsol + rfagr) / fupsrl / FPBRKDS
+            val pssol = (rlsol + rfagr) / fupsrl / fpbrkds
 
             return pssol / VPSSPLS
         }

@@ -66,6 +66,8 @@ object Me7Simulator {
         val kfmirl: Map3d? = null,         // Torque → load (inverse)
         val kfurl: Double = 0.106,         // Basic VE constant (scalar fallback)
         val kfurlMap: Map3d? = null,       // RPM-dependent KFURL (Kennlinie, me7-raw.txt line 53923)
+        val kfprg: Double = 70.0,          // Residual gas partial pressure (hPa) scalar fallback
+        val kfprgMap: Map3d? = null,       // RPM-dependent KFPRG (me7-raw.txt line 53833, 54365)
         val ldrxn: Double = 191.0          // Max specified load
     ) {
         /**
@@ -93,6 +95,36 @@ object Me7Simulator {
                 // 2D map (e.g. KFURL with cam angle) — use RPM on y-axis, default x
                 map.lookup(map.xAxis.firstOrNull() ?: 0.0, rpm)
             }
+        }
+
+        /**
+         * Look up KFPRG at a given RPM. Uses RPM-dependent map if available,
+         * falls back to scalar.
+         *
+         * ME7 Reference: BGSRM (line 54365) — KFPRG is a 2D map indexed by
+         * RPM (x-axis) and cam angle (y-axis). Typical values: 30–150 hPa.
+         *
+         * XDF: "Internal exhaust partial pressure dependent on cam adjustment"
+         */
+        fun kfprgAt(rpm: Double): Double {
+            val map = kfprgMap ?: return kfprg
+            if (map.xAxis.isEmpty() || map.yAxis.isEmpty()) return kfprg
+            // KFPRG XDF: x=RPM, y=cam°KW. Use first cam position for non-variable engines.
+            return map.lookup(rpm, map.yAxis.firstOrNull() ?: 0.0)
+        }
+
+        /**
+         * Look up KFPBRK correction factor at a given RPM and load.
+         *
+         * ME7 Reference: BGSRM (line 53578) — KFPBRK is a 2D map indexed by
+         * load % (x-axis) and RPM (y-axis). Returns dimensionless correction factor.
+         *
+         * XDF: "Correction factor for combustion chamber pressure"
+         * x-axis: load %, y-axis: RPM, z: factor (typically 0.95–1.05)
+         */
+        fun kfpbrkAt(load: Double, rpm: Double): Double {
+            val map = kfpbrk ?: return 1.016
+            return map.lookup(load, rpm)
         }
     }
 
@@ -173,8 +205,8 @@ object Me7Simulator {
     }
 
     /**
-     * Compute pssol using RPM-dependent KFURL from [CalibrationSet].
-     * This is the preferred path when a KFURL Kennlinie is available.
+     * Compute pssol using RPM-dependent KFURL and KFPRG/KFPBRK from [CalibrationSet].
+     * This is the preferred path when calibration maps are available.
      *
      * @see documentation/optimizer-algorithms.md Finding 2
      */
@@ -184,7 +216,17 @@ object Me7Simulator {
         calibration: CalibrationSet,
         previousPressure: Double? = null
     ): Double {
-        return computePssol(rlsol, op, calibration.kfurlAt(op.rpm), previousPressure)
+        val ps = previousPressure ?: op.barometricPressure
+        return Plsol.plsol(
+            op.barometricPressure,
+            ps,
+            op.intakeAirTemp,
+            op.coolantTemp,
+            calibration.kfurlAt(op.rpm),
+            rlsol,
+            kfprg = calibration.kfprgAt(op.rpm),
+            fpbrkds = calibration.kfpbrkAt(rlsol, op.rpm)
+        )
     }
 
     // ── Forward path: pssol → plsol (LDRPLS) ────────────────────────
@@ -230,7 +272,7 @@ object Me7Simulator {
     }
 
     /**
-     * Compute rl_w using RPM-dependent KFURL from [CalibrationSet].
+     * Compute rl_w using RPM-dependent KFURL and KFPRG/KFPBRK from [CalibrationSet].
      *
      * @see documentation/optimizer-algorithms.md Finding 2
      */
@@ -240,7 +282,21 @@ object Me7Simulator {
         calibration: CalibrationSet,
         previousPressure: Double? = null
     ): Double {
-        return computeRlFromPressure(pressure, op, calibration.kfurlAt(op.rpm), previousPressure)
+        val ps = previousPressure ?: op.barometricPressure
+        // For KFPBRK lookup, we need load — but we're computing load from pressure.
+        // Use a rough estimate: at ~1013 mbar baro, 1500 mbar abs pressure ≈ 120% load.
+        // The error from this approximation is small because KFPBRK varies slowly with load.
+        val estimatedLoad = calibration.kfurlAt(op.rpm) * (pressure - calibration.kfprgAt(op.rpm) * op.barometricPressure / 1013.0) * 1.016
+        return Rlsol.rlsol(
+            op.barometricPressure,
+            ps,
+            op.intakeAirTemp,
+            op.coolantTemp,
+            calibration.kfurlAt(op.rpm),
+            pressure,
+            kfprg = calibration.kfprgAt(op.rpm),
+            fpbrkds = calibration.kfpbrkAt(estimatedLoad.coerceIn(0.0, 300.0), op.rpm)
+        )
     }
 
     // ── Boost control: predict WGDC ──────────────────────────────────

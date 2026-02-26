@@ -6,12 +6,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import ui.screens.closedloop.ClosedLoopScreen
 import ui.screens.configuration.ConfigurationScreen
+import ui.screens.fueling.FuelingScreen
 import ui.screens.kfmiop.KfmiopScreen
 import ui.screens.kfmirl.KfmirlScreen
 import ui.screens.kfvpdksd.KfvpdksdScreen
 import ui.screens.kfzw.KfzwScreen
 import ui.screens.kfzwop.KfzwopScreen
-import ui.screens.krkte.KrkteScreen
 import ui.screens.ldrpid.LdrpidScreen
 import ui.screens.mlhfm.MlhfmScreen
 import ui.screens.openloop.OpenLoopScreen
@@ -21,7 +21,7 @@ import ui.screens.wdkugdn.WdkugdnScreen
 
 enum class Tab(val title: String, val tooltip: String) {
     CONFIGURATION("Configuration", "Table Definition Configuration"),
-    KRKTE("KRKTE", "KRKTE Calculator"),
+    FUELING("Fueling", "KRKTE Calculator & Injector Scaling"),
     CLOSED_LOOP("Closed Loop Fueling", "Closed Loop MLHFM Compensation"),
     OPEN_LOOP("Open Loop Fueling", "Open Loop MLHFM Compensation"),
     PLSOL("PLSOL", "Requested Boost"),
@@ -56,7 +56,7 @@ fun ME7TunerApp() {
             Box(modifier = Modifier.fillMaxSize().weight(1f)) {
                 when (selectedTab) {
                     Tab.CONFIGURATION -> ConfigurationScreen()
-                    Tab.KRKTE -> KrkteScreen()
+                    Tab.FUELING -> FuelingScreen()
                     Tab.CLOSED_LOOP -> ClosedLoopScreen()
                     Tab.OPEN_LOOP -> OpenLoopScreen()
                     Tab.PLSOL -> PlsolScreen()

@@ -35,6 +35,7 @@ import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
 import data.preferences.kfpbrk.KfpbrkPreferences
 import data.preferences.kfpbrknw.KfpbrknwPreferences
+import data.preferences.kfprg.KfprgPreferences
 import data.preferences.kfvpdksd.KfvpdksdPreferences
 import data.preferences.kfwdkmsn.KfwdkmsnPreferences
 import data.preferences.kfzw.KfzwPreferences
@@ -70,6 +71,7 @@ private val mapDefinitions = listOf(
     MapDefinitionEntry("KFLDIMX", KfldimxPreferences),
     MapDefinitionEntry("KFPBRK", KfpbrkPreferences),
     MapDefinitionEntry("KFPBRKNW", KfpbrknwPreferences),
+    MapDefinitionEntry("KFPRG", KfprgPreferences),
     // v4: Environmental correction maps
     MapDefinitionEntry("KFLDIOPU", KfldioPuPreferences),
     MapDefinitionEntry("KFFWTBR", KffwtbrPreferences),

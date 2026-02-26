@@ -32,7 +32,7 @@ Note that ME7Tuner built against Java 17, so you will need to have Java 17+ inst
 
 #### Table of contents
 1. [Tuning Philosophy](#tuning-philosophy)
-2. [KRKTE(Primary Fueling)](#krkte-primary-fueling)
+2. [Fueling (KRKTE & Injector Scaling)](#fueling-krkte--injector-scaling)
 3. [MLHFM (MAF Scaling)](#mlhfm-maf-scaling)
 4. [MLHFM - Closed Loop](#mlhfm---closed-loop)
 5. [MLHFM - Open Loop](#mlhfm---open-loop)
@@ -42,9 +42,10 @@ Note that ME7Tuner built against Java 17, so you will need to have Java 17+ inst
 10. [KFZWOP (Optimal Ignition Timing)](#kfzwop-optimal-ignition-timing)
 11. [KFZW/2 (Ignition Timing)](#kfzw2-ignition-timing)
 13. [KFVPDKSD (Throttle Transition)](#kfvpdksd-throttle-transition)
-14. [WDKUGDN (Alpha-N Fueling)](#wdkugdn-alpha-n-fueling)
-15. [LDRPID (Feed-Forward PID)](#ldrpid-feed-forward-pid)
-16. [Optimizer (Pressure/Load Optimizer)](#optimizer-pressureload-optimizer)
+14. [WDKUGDN (Throttle Body Choke Point)](#wdkugdn-throttle-body-choke-point)
+15. [Alpha-N Calibration & Diagnostic Tool](#alpha-n-calibration--diagnostic-tool)
+16. [LDRPID (Feed-Forward PID)](#ldrpid-feed-forward-pid)
+17. [Optimizer (Pressure/Load Optimizer)](#optimizer-pressureload-optimizer)
 
 # Tuning Philosophy
 
@@ -161,6 +162,9 @@ ME7Tuner makes the following assumptions about units:
 * KFWDKMSN - %
 * KFLDRL - %
 * KFLDIMX - %
+* KFPBRK - unitless (multiplier)
+* KFPBRKNW - unitless (multiplier)
+* KFPRG - hPa
 
 ME7Tuner automatically filters map definitions base on what is in the editable text box.
 
@@ -187,7 +191,11 @@ When the fueling has been calibrated, you can take logs to have ME7Tuner suggest
 
 Once the fueling and MAF are calibrated load request, ignition advance and pressure (boost) requested can be calibrated.
 
-# KRKTE (Primary Fueling)
+# Fueling (KRKTE & Injector Scaling)
+
+The Fueling tab consolidates all fuel-injector-related calibration into one place with two sub-tabs:
+
+## KRKTE (Primary Fueling)
 
 * Read [Primary Fueling](https://s4wiki.com/wiki/Tuning#Primary) first
 
@@ -209,6 +217,54 @@ to pressure.
 The KRKTE tab of ME7Tuner will help you calculate a value for KRKTE. Simply fill in the constants with the appropriate values.
 
 <img src="/documentation/images/krkte.png" width="800">
+
+## Injector Scaling (KRKTE / TVUB)
+
+When swapping fuel injectors (e.g., upgrading to larger injectors for more fueling headroom), two things need updating in the BIN:
+
+### KRKTE — Injector Constant (Scalar)
+
+KRKTE is a scalar constant [ms/%] that converts relative fuel mass to injection pulse width. The ME7 injection time formula (me7-raw.txt line 257427) is:
+
+```
+te = rk_w × KRKTE + TVUB(ubat)
+```
+
+**ME7 does NOT have a 2D injection time map** — there is no "KFTI". The fueling math uses the scalar KRKTE multiplied by the fuel mass request. When you change injectors, KRKTE scales by the flow ratio:
+
+```
+KRKTE_new = KRKTE_old × (old_flow / new_flow) × √(P_new / P_old)
+```
+
+Where:
+- `old_flow / new_flow` = ratio of old to new injector flow rate (cc/min)
+- `√(P_new / P_old)` = fuel pressure correction via Bernoulli's principle (= 1.0 if same pressure)
+
+The KRKTE tab computes the absolute value from first principles. The Injector Scaling tab provides a quick ratio-based cross-check.
+
+### TVUB — Dead Time Table
+
+TVUB is a 1D Kennlinie: battery voltage (V) → dead time (ms). Dead time (Ventilverzugszeit) is the electrical opening delay of the injector solenoid — it does NOT scale with flow rate. Each injector model has a unique dead time curve from the manufacturer's data sheet. If you only have the dead time at 14V, the calculator estimates the full curve using 1/V scaling.
+
+### KFLF Clarification
+
+KFLF exists in ME7 but is "Lambda map at partial load" — a partial-load AFR target map (RPM × load → lambda). It is **NOT** an injector linearization table. There is no "KFLFW" injector linearization in ME7. ME7 handles minimum pulse width via the TEMIN constant.
+
+### Usage
+
+1. Open the **Fueling** tab → **Injector Scaling** sub-tab
+2. Enter the stock injector flow rate, fuel pressure, and dead time
+3. Enter the new injector flow rate, fuel pressure, and dead time
+4. Optionally provide a TVUB voltage table (voltage:deadtime pairs) from the injector data sheet
+5. Click **Calculate** to get the KRKTE scale factor and TVUB table
+6. Apply the results to your BIN
+
+### Important Notes
+
+- **Changing injectors does NOT require alpha-n (msdk_w) recalibration** — injectors affect fueling, not air measurement
+- **Always update KRKTE** (via the KRKTE sub-tab) when changing injectors — KRKTE encodes the injector constant
+- **Always reset ECU adaptations** after flashing new injector calibration, then drive with the MAF connected to re-learn fuel trim adaptations
+- If the new injectors shift lambda enough to trigger O2 adaptation (KFKHFM), the MAF reading changes, which affects the msndko_w/fkmsdk_w learning — **verify alpha-n accuracy** with the Alpha-N Diagnostic (WDKUGDN tab) after re-learning
 
 # MLHFM (MAF Scaling)
 
@@ -561,11 +617,39 @@ ME7Tuner:
 * Wait for ME7Tuner to finishing the parse and calculations
 * KFVPDKSD will be produced on the right side
 
-# WDKUGDN (Alpha-N Fueling)
+# WDKUGDN (Throttle Body Choke Point)
 
-WDKUGDN is the choked flow point of the throttle body at a given RPM. This value is critical for the ECU to estimate airflow based on a throttle angle. The ECU needs to know at what throttle angle airflow becomes throttled/unthrottled. 
-For a given displacement, RPM and throttle body area there is a range beyond the choke point where increasing the throttle angle will not increase airflow. Inversely, there is a range where decreasing the throttle will not decrease airflow until the choke point has been reached. 
-The transition between restricted airflow and unrestricted airflow is the choke point -> the point at which the throttle angle becomes either throttled or unthrottled. 
+WDKUGDN is a 1D Kennlinie (`RPM → throttle angle °`) that defines the **choked flow point** of the throttle body at each RPM. It tells the ECU at what throttle angle airflow transitions from **throttled** (restricted by the throttle plate) to **unthrottled** (no longer restricted — airflow is limited only by the turbo/engine).
+
+> **⚠️ WDKUGDN is NOT an alpha-n calibration map.** It defines a physical property of the throttle body — the angle at which the throttle body stops restricting airflow. Adjusting WDKUGDN to "fix alpha-n" is a common misconception. **Only change WDKUGDN if you physically change the throttle body diameter or engine displacement.** See the [Alpha-N Calibration](#alpha-n-calibration--diagnostic-tool) section below for the correct maps to modify.
+
+### What WDKUGDN Controls
+
+When the throttle angle exceeds `WDKUGDN(rpm)`:
+- The `B_ugds` flag is set (`true` = "unthrottled operation")
+- The ECU stops using the throttle for load control and lets the turbo/wastegate control load instead
+- Fuel adaptation (FUEREG) is disabled at WOT
+- The throttle enters the "Überweg" (bypass) range — linear interpolation to 100%
+
+When the throttle angle is below `WDKUGDN(rpm)`:
+- The throttle is actively restricting airflow
+- Throttle position is set via KFWDKMSN (mass flow → angle inverse map)
+- The ECU uses the throttle angle as the primary load control actuator
+
+### Why Changing WDKUGDN for Alpha-N is Wrong
+
+WDKUGDN defines *when* the throttle chokes — it does **not** define *how much air flows* at a given angle. The common tuning advice ("compare msdk_w vs mshfm_w, adjust WDKUGDN") conflates two completely different problems:
+
+| Problem | Correct Solution | **Wrong** Solution |
+|---------|------------------|--------------------|
+| msdk_w ≠ mshfm_w (alpha-n inaccuracy) | Calibrate BGSRM VE model (KFURL/KFPBRK/KFPRG), KFMSNWDK | Adjusting WDKUGDN |
+| Throttle body physically changed | Recalculate WDKUGDN for new bore diameter | Adjusting KFMSNWDK |
+
+Changing WDKUGDN when you should be changing KFMSNWDK or BGSRM maps will:
+- Break the throttled/unthrottled transition point
+- Incorrectly set/clear the `B_ugds` flag
+- Disable fuel adaptation (FUEREG) at wrong throttle angles
+- Cause the bypass ("Überweg") calculation to produce wrong values in the pressure ratio > 0.95 region
 
 <img src="/documentation/images/wdkugdn.png" width="800">
 
@@ -588,6 +672,125 @@ While this model can used to achieve a baseline WDKUGDN, it appears that it has 
 ### Useage
 
 * Calculate WDKUGDN for your engines displacement
+
+# Alpha-N Calibration & Diagnostic Tool
+
+Alpha-N (speed-density) mode is when the ECU runs without the MAF sensor. When the MAF is unplugged or fails (`B_ehfm = true`), the ECU switches from `mshfm_w` (MAF-measured airflow) to `msdk_w` (throttle-model-estimated airflow) as the sole load input. If `msdk_w` doesn't match reality, the car runs poorly — wrong fueling, wrong ignition timing, wrong boost targets.
+
+The Alpha-N Diagnostic Tool compares `mshfm_w` against `msdk_w` to assess how well your car will run with the MAF unplugged and identifies exactly which maps need calibrating.
+
+> **Important:** WDKUGDN defines the throttle body choke point — the angle at which airflow becomes unthrottled. **Do NOT adjust WDKUGDN to fix alpha-n accuracy.** WDKUGDN should only be changed if you have physically changed the throttle body diameter. See the [BGSRM VE Model](#bgsrm-ve-model--the-correct-maps-for-alpha-n) section below for the correct maps to modify.
+
+## Background: Main vs Side Load Signals
+
+ME7 uses two parallel load measurement paths:
+
+| Path | Signal | Source | Role |
+|------|--------|--------|------|
+| **Main (Haupt)** | `mshfm_w` | HFM (MAF sensor) | Primary load signal — used when MAF is healthy |
+| **Side (Neben)** | `msdk_w` | DK model (throttle + pressure model) | Backup load signal — used when MAF fails |
+
+When the MAF is unplugged or fails (`B_ehfm = true`), the ECU switches entirely to `msdk_w`. If `msdk_w` doesn't match `mshfm_w`, the car will run poorly with wrong fueling, timing, and boost targets.
+
+The ECU continuously adapts `msdk_w` to match `mshfm_w` via two learned values:
+- **msndko_w** — additive offset compensating throttle body leak air
+- **fkmsdk_w** — multiplicative factor compensating proportional errors
+
+These adaptations **freeze when the MAF is unplugged** — they must be learned correctly beforehand.
+
+## What Actually Needs Calibrating for Alpha-N
+
+If `mshfm_w` and `msdk_w` diverge after hardware changes, here is what to calibrate (in priority order):
+
+| Priority | Map/Parameter | When to Change |
+|----------|--------------|----------------|
+| 1 | **KFMSNWDK** (throttle body flow map) | Changed throttle body or intake manifold |
+| 2 | **KFURL / KFPBRK / KFPRG** (VE model) | Changed cams, head work, or port work |
+| 3 | **Adaptation reset** (msndko_w, fkmsdk_w) | After ANY map changes — let the ECU re-learn |
+| 4 | **KUMSRL** (mass flow conversion) | Changed engine displacement |
+
+**Fuel injector changes do NOT require alpha-n recalibration.** Injectors affect fueling, not air measurement. However, reset adaptations after injector changes to avoid stale learned values.
+
+## BGSRM VE Model — The Correct Maps for Alpha-N
+
+The BGSRM (Brennraum-Grundmodell Saugrohr-Modell — combustion chamber base model / intake manifold model) is the ME7 subsystem that converts between manifold pressure and relative load. **These are the maps that need calibrating when alpha-n is inaccurate** — not WDKUGDN.
+
+The BGSRM formula:
+```
+rl = fupsrl_w × (ps - pirg_w) × FPBRKDS
+
+where:
+  fupsrl_w = KFURL(nmot) × fho_w × ftbr    → VE slope corrected for altitude + temp
+  pirg_w   = KFPRG(nmot, wnw) × fho_w      → Residual gas partial pressure
+  FPBRKDS  = KFPBRK(nmot, wnw)             → Volumetric efficiency correction factor
+  ftbr     = f(tans, tmot, FWFTBRTA)        → Combustion chamber temperature correction
+  fho_w    = pu / 1013.0                     → Altitude correction (barometric)
+```
+
+### The 6 Calibratable Components
+
+| Component | What It Calibrates | In ME7Tuner? | Hardcoded? |
+|-----------|-------------------|:------------:|:----------:|
+| **KFURL** | VE slope (%/hPa per RPM) — how much load each hPa of pressure produces | ✅ KfurlSolver, `CalibrationSet.kfurlAt()` | No — read from BIN |
+| **KFPBRK** | Combustion chamber correction (RPM × load → factor) — accounts for chamber shape, valve timing, flow losses | ✅ `suggestKfpbrkDelta()`, `CalibrationSet.kfpbrkAt()` | ⚠️ Plsol/Rlsol previously used constant `1.016`, now parameterized |
+| **KFPRG** | Residual gas offset (hPa per RPM) — the manifold pressure at which cylinder filling = 0 | ✅ KfprgSolver, `CalibrationSet.kfprgAt()` | ⚠️ Previously hardcoded `70.0 hPa`, now parameterized |
+| **FWFTBRTA** | IAT → ftbr weighting — how intake air temp blends with coolant temp for combustion chamber temp correction | ❌ Not read from BIN | ⚠️ Simplified formula (minor impact at WOT) |
+| **PSMXN** | Max manifold pressure cap — physical limit on pressure in the VE model | ❌ Not in codebase | N/A |
+| **KUMSRL** | Mass flow → load conversion constant — depends on displacement and cylinder count | ❌ Not read from BIN | Implicit in KFURL calculation |
+
+### Which Component to Adjust Based on Error Pattern
+
+| Symptom in Logs | Likely Cause | Map to Fix |
+|----------------|-------------|------------|
+| Load error proportional to pressure (grows linearly) | VE slope is wrong | **KFURL** |
+| Constant load offset at each RPM (independent of pressure) | Residual gas offset is wrong | **KFPRG** |
+| Non-linear load error (varies with both RPM and load) | VE correction factor is wrong at specific operating points | **KFPBRK** |
+| Error varies with intake air temperature | Temperature weighting is off | **FWFTBRTA** |
+| Error varies with altitude / barometric pressure | Barometric correction issue | Check baro sensor calibration |
+
+> **For detailed technical documentation** of each component, including me7-raw.txt line references, calibration methods, and solver algorithms, see [`documentation/me7-alpha-n-calibration.md`](documentation/me7-alpha-n-calibration.md).
+
+## Error Type Classification
+
+The diagnostic tool classifies the dominant error between `mshfm_w` and `msdk_w`:
+
+| Error Type | Pattern | Root Cause | Fix |
+|-----------|---------|------------|-----|
+| **ADDITIVE** | Constant offset regardless of airflow | msndko_w or MSLG wrong | Reset adaptations; check vacuum leaks |
+| **MULTIPLICATIVE** | Error scales with airflow | fkmsdk_w or KFMSNWDK wrong | Reset adaptations; re-calibrate KFMSNWDK if at limits |
+| **RPM_DEPENDENT** | Varies with RPM, not consistently with load | KFURL or KFPBRK wrong | Use Optimizer for per-RPM KFURL/KFPBRK correction |
+| **MIXED** | Combination of above | Multiple issues | Reset adaptations first, then investigate per-RPM |
+
+## Usage
+
+### Step 1: Log with MAF Connected
+
+Log these channels simultaneously across various RPM and load conditions (idle, cruise, part-throttle, WOT):
+
+* `nmot` (RPM) — **required**
+* `mshfm_w` (MAF-measured mass flow, kg/h) — **required**
+* `msdk_w` (throttle-model-estimated mass flow, kg/h) — **required**
+* `wdkba` (throttle angle) — optional but recommended
+* `pvdks_w` (pre-throttle pressure, mbar) — optional, enables VE model solving
+* `pus_w` (barometric pressure) — optional, enables VE model solving
+* `rl_w` (relative load, %) — recommended for VE model accuracy
+
+> **Note on pvdks_w:** This is the pressure **before** the throttle valve (compressor outlet), NOT manifold pressure. At WOT, pvdks ≈ manifold pressure (throttle fully open). The VE solvers automatically filter to WOT samples for accuracy.
+
+### Step 2: Load and Analyze
+
+1. Go to the **WDKUGDN** tab and select the **Alpha-N Diagnostic** sub-tab
+2. Click **"Load Log File"** for a single log, or **"Load Log Directory"** for multiple logs
+3. Review the results
+
+### Step 3: Interpret Results
+
+The diagnostic provides:
+- **Severity rating:** GOOD (≤5%), WARNING (5–15%), or CRITICAL (>15%) average error
+- **Error type classification:** Identifies whether the error is additive, multiplicative, or RPM-dependent
+- **Per-RPM breakdown:** Shows error at each RPM bin to identify problem areas
+- **Estimated corrections:** Multiplicative factor or additive offset to apply
+- **Actionable recommendations:** Specific steps based on the error classification
 
 # LDRPID (Feed-Forward PID)
 
@@ -627,7 +830,7 @@ The core philosophy is that ME7's internal physical model — converting between
 
 Before using the Optimizer, you should have already:
 
-1. **Calibrated KRKTE** (primary fueling) so the ECU knows the correct fuel injector constant
+1. **Calibrated KRKTE and TVUB** (Fueling tab) so the ECU knows the correct fuel injector constant and dead times
 2. **Scaled MLHFM** (MAF sensor) using the Closed Loop and Open Loop tabs so that fuel trims are near 0% and actual AFR matches requested AFR
 3. **Defined KFMIRL/KFMIOP** (load and torque tables) scaled for your MAP sensor limits
 4. **Calibrated LDRPID** (feed-forward PID / KFLDRL) with at least a rough baseline

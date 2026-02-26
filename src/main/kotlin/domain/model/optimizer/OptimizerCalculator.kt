@@ -72,7 +72,9 @@ object OptimizerCalculator {
         val throttleCheck: ThrottleBodyChecker.ThrottleCheckResult? = null,
         val convergenceHistory: IterativeConvergence.ConvergenceHistory? = null,
         val kfurlSolverResult: KfurlSolver.SolverResult? = null,
-        val pidSimulation: PidSimulator.PidSimulationResult? = null
+        val pidSimulation: PidSimulator.PidSimulationResult? = null,
+        // v6: KFPRG solver
+        val kfprgSolverResult: KfprgSolver.SolverResult? = null
     )
 
     // ── Helpers ────────────────────────────────────────────────────────
@@ -918,6 +920,15 @@ object OptimizerCalculator {
             KfurlSolver.solve(wotEntries)
         } else null
 
+        // Phase 26: KFPRG solver — find optimal per-RPM residual gas values
+        val kfprgSolverResult = if (wotEntries.size >= 10) {
+            KfprgSolver.solve(
+                wotEntries = wotEntries,
+                kfurl = kfurlSolverResult?.optimalKfurl ?: kfurl,
+                kfpbrkMap = kfpbrkMap
+            )
+        } else null
+
         // Phase 20: Iterative convergence (only if we have enough data and maps)
         val convergenceHistory = if (wotEntries.size >= 20 &&
             (kfldrlMap != null || kfpbrkMap != null)) {
@@ -980,6 +991,20 @@ object OptimizerCalculator {
                 "${String.format("%.1f", perRpm.improvementPercent)}% vs scalar. " +
                 "Per-RPM values: $rpmRange (me7-raw.txt line 54368)")
         }
+        // Phase 26: KFPRG solver warnings
+        if (kfprgSolverResult != null && kfprgSolverResult.errorReductionPercent > 5) {
+            v4Warnings.add("💡 KFPRG solver suggests ${String.format("%.1f", kfprgSolverResult.optimalKfprg)} hPa " +
+                "(default: 70.0) — would reduce VE model RMSE by ${String.format("%.0f", kfprgSolverResult.errorReductionPercent)}%")
+        }
+        if (kfprgSolverResult?.perRpmKfprg != null && kfprgSolverResult.perRpmKfprg.improvementPercent > 5) {
+            val perRpm = kfprgSolverResult.perRpmKfprg
+            val rpmRange = perRpm.rpmValues.joinToString(", ") {
+                "${it.first.toInt()}→${String.format("%.1f", it.second)}"
+            }
+            v4Warnings.add("📊 RPM-dependent KFPRG would improve VE model RMSE by additional " +
+                "${String.format("%.1f", perRpm.improvementPercent)}% vs scalar. " +
+                "Per-RPM values: $rpmRange hPa (me7-raw.txt line 54365)")
+        }
         if (convergenceHistory != null && convergenceHistory.diverged) {
             v4Warnings.add("⚠️ Iterative convergence diverged — corrections may be oscillating. Consider reducing LDRXN target.")
         }
@@ -1018,7 +1043,8 @@ object OptimizerCalculator {
             throttleCheck = throttleCheck,
             convergenceHistory = convergenceHistory,
             kfurlSolverResult = kfurlSolverResult,
-            pidSimulation = pidSimulation
+            pidSimulation = pidSimulation,
+            kfprgSolverResult = kfprgSolverResult
         )
     }
 
