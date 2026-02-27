@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should_release: ${{ steps.check_tag.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from gradle.properties
+        id: version
+        run: |
+          VERSION=$(grep '^app.version=' gradle.properties | cut -d'=' -f2)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.version.outputs.version }} already exists — skipping release"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag v${{ steps.version.outputs.version }} does not exist — proceeding with release"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-macos:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Package DMG
+        run: ./gradlew packageReleaseDmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: build/compose/binaries/main-release/dmg/*.dmg
+
+  build-windows:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Package MSI
+        run: ./gradlew packageReleaseMsi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi
+          path: build/compose/binaries/main-release/msi/*.msi
+
+  build-linux:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Package DEB
+        run: ./gradlew packageReleaseDeb
+
+      - name: Create portable tar.gz
+        run: |
+          ./gradlew createReleaseDistributable
+          VERSION=${{ needs.check-version.outputs.version }}
+          tar -czf "ME7Tuner-${VERSION}-linux-x64.tar.gz" \
+            -C build/compose/binaries/main-release/app .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            build/compose/binaries/main-release/deb/*.deb
+            ME7Tuner-*-linux-x64.tar.gz
+
+  build-jar:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Package uber JAR
+        run: ./gradlew packageReleaseUberJarForCurrentOS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uber-jar
+          path: build/compose/jars/*.jar
+
+  release:
+    needs: [check-version, build-macos, build-windows, build-linux, build-jar]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: ME7Tuner ${{ needs.check-version.outputs.version }}
+          generate_release_notes: true
+          files: artifacts/*

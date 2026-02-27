@@ -1,0 +1,15 @@
+/build
+/target
+/.gradle
+/.idea
+/.claude
+CLAUDE.md
+
+# Private documentation (only calibration-guide.md and images/ are public)
+documentation/*.md
+!documentation/calibration-guide.md
+documentation/me7-raw.txt
+
+# Private example files
+example/*.rar
+example/C22mb31g.*
