@@ -54,12 +54,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package DMG
-        run: ./gradlew packageReleaseDmg
+        run: ./gradlew packageDmg
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
-          path: build/compose/binaries/main-release/dmg/*.dmg
+          path: build/compose/binaries/main/dmg/*.dmg
 
   build-windows:
     needs: check-version
@@ -76,12 +76,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package MSI
-        run: ./gradlew packageReleaseMsi
+        run: ./gradlew packageMsi
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-msi
-          path: build/compose/binaries/main-release/msi/*.msi
+          path: build/compose/binaries/main/msi/*.msi
 
   build-linux:
     needs: check-version
@@ -98,20 +98,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package DEB
-        run: ./gradlew packageReleaseDeb
+        run: ./gradlew packageDeb
 
       - name: Create portable tar.gz
         run: |
-          ./gradlew createReleaseDistributable
+          ./gradlew createDistributable
           VERSION=${{ needs.check-version.outputs.version }}
           tar -czf "ME7Tuner-${VERSION}-linux-x64.tar.gz" \
-            -C build/compose/binaries/main-release/app .
+            -C build/compose/binaries/main/app .
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-packages
           path: |
-            build/compose/binaries/main-release/deb/*.deb
+            build/compose/binaries/main/deb/*.deb
             ME7Tuner-*-linux-x64.tar.gz
 
   build-jar:
@@ -129,7 +129,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package uber JAR
-        run: ./gradlew packageReleaseUberJarForCurrentOS
+        run: ./gradlew packageUberJarForCurrentOS
 
       - uses: actions/upload-artifact@v4
         with:
