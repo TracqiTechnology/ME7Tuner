@@ -1,7 +1,7 @@
 {
-    "name": "Audi B5 S4 2.7T — MBox",
-    "description": "Audi B5 S4 2.7T biturbo (AGB/AZB). ME7.1, twin K03/K04 turbos. Stock injectors 349 cc/min. 3-bar MAP sensor.",
-    "ecuPartNumbers": ["8D0907551M", "8D0907551F", "8D0907551G", "8D0907551L"],
+    "name": "Audi/VW 1.8T 150hp — ME7.5 (A4/Passat)",
+    "description": "Audi B5/B6 A4 1.8T 20V (150hp) and VW Passat 1.8T. ME7.5. Single turbo, 4-cylinder. Stock injectors ~210 cc/min. Lower boost than high-output 1.8T variants.",
+    "ecuPartNumbers": ["06A906032BX", "06A906032DX", "06A906032GX", "022906032BX", "022906032DX"],
     "mapDefinitions": {
         "KRKTE": {
             "tableName": "KRKTE",
@@ -29,7 +29,7 @@
             "unit": "grad KW"
         },
         "KFZW": {
-            "tableName": "KFZW (16-bit load)",
+            "tableName": "KFZW",
             "tableDescription": "Ignition angle map",
             "unit": "grad KW"
         },
@@ -62,37 +62,32 @@
             "tableName": "KFPBRK",
             "tableDescription": "Correction factor for combustion chamber pressure",
             "unit": "-"
-        },
-        "KFPBRKNW": {
-            "tableName": "KFPBRKNW",
-            "tableDescription": "Correction factor for combustion chamber pressure at NWS active",
-            "unit": "-"
         }
     },
     "primaryFueling": {
         "airDensity": 1.2929,
-        "displacement": 0.4496,
-        "numCylinders": 6,
+        "displacement": 0.45,
+        "numCylinders": 4,
         "stoichiometricAfr": 14.7,
-        "gasolineGramsPerCcm": 0.7,
-        "fuelInjectorSize": 349.0
+        "gasolineGramsPerCcm": 0.745,
+        "fuelInjectorSize": 210.0
     },
     "plsol": {
         "barometricPressure": 1013.0,
         "intakeAirTemperature": 20.0,
-        "kfurl": 0.1037,
-        "displacement": 2.7,
-        "rpm": 6000
+        "kfurl": 0.115,
+        "displacement": 1.8,
+        "rpm": 6500
     },
     "kfmiop": {
-        "maxMapPressure": 2550.0,
-        "maxBoostPressure": 2100.0
+        "maxMapPressure": 2200.0,
+        "maxBoostPressure": 1800.0
     },
     "kfvpdksd": {
         "maxWastegateCrackingPressure": 200.0
     },
     "wdkugdn": {
-        "displacement": 2.7
+        "displacement": 1.8
     },
     "closedLoopFueling": {
         "minThrottleAngle": 0.0,
@@ -105,9 +100,9 @@
         "minMe7Points": 75,
         "minAfrPoints": 150,
         "maxAfr": 16.0,
-        "fuelInjectorSize": 349.0,
-        "gasolineGramsPerCcm": 0.7,
-        "numFuelInjectors": 6.0
+        "fuelInjectorSize": 210.0,
+        "gasolineGramsPerCcm": 0.745,
+        "numFuelInjectors": 4.0
     },
     "logHeaders": {
         "START_TIME_HEADER": "start_time",
@@ -132,3 +127,4 @@
         "ACTUAL_LOAD_HEADER": "rl"
     }
 }
+

@@ -106,7 +106,9 @@ private val defaultHeaderValues = mapOf(
 )
 
 @Composable
-fun ConfigurationScreen() {
+fun ConfigurationScreen(
+    trailingContent: (@Composable ColumnScope.() -> Unit)? = null
+) {
     val scrollState = rememberScrollState()
 
     val xdfFile by XdfFilePreferences.file.collectAsState()
@@ -142,6 +144,13 @@ fun ConfigurationScreen() {
             ) {
                 MapDefinitionsSection(modifier = Modifier.weight(1f))
                 LogHeadersSection(modifier = Modifier.weight(1f))
+            }
+
+            if (trailingContent != null) {
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+                trailingContent()
             }
         }
     }
@@ -296,27 +305,10 @@ private fun QuickSetupSection() {
             Column(modifier = Modifier.padding(16.dp)) {
                 if (defaultProfiles.isNotEmpty()) {
                     for (profile in defaultProfiles) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = profile.name.ifEmpty { "Unnamed Profile" },
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(
-                                onClick = {
-                                    ProfileManager.applyProfile(profile)
-                                    statusMessage = "Applied profile: ${profile.name}"
-                                },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            ) {
-                                Text("Apply")
-                            }
-                        }
+                        ProfileRow(profile = profile, onApply = {
+                            ProfileManager.applyProfile(profile)
+                            statusMessage = "Applied profile: ${profile.name}"
+                        })
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -324,27 +316,10 @@ private fun QuickSetupSection() {
 
                 if (userProfiles.isNotEmpty()) {
                     for (profile in userProfiles) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = profile.name.ifEmpty { "Unnamed Profile" },
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Button(
-                                onClick = {
-                                    ProfileManager.applyProfile(profile)
-                                    statusMessage = "Applied profile: ${profile.name}"
-                                },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            ) {
-                                Text("Apply")
-                            }
-                        }
+                        ProfileRow(profile = profile, onApply = {
+                            ProfileManager.applyProfile(profile)
+                            statusMessage = "Applied profile: ${profile.name}"
+                        })
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -431,6 +406,43 @@ private fun ManualConfigDivider() {
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         HorizontalDivider(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun ProfileRow(profile: data.profile.ConfigurationProfile, onApply: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = profile.name.ifEmpty { "Unnamed Profile" },
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (profile.description.isNotBlank()) {
+                Text(
+                    text = profile.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (profile.ecuPartNumbers.isNotEmpty()) {
+                Text(
+                    text = profile.ecuPartNumbers.joinToString(" · "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Button(
+            onClick = onApply,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            Text("Apply")
+        }
     }
 }
 

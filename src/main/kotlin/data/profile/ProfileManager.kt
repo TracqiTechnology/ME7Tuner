@@ -84,6 +84,8 @@ object ProfileManager {
 
         return ConfigurationProfile(
             name = name,
+            description = "",
+            ecuPartNumbers = emptyList(),
             mapDefinitions = mapDefs,
             primaryFueling = PrimaryFuelingConfig(
                 airDensity = PrimaryFuelingPreferences.airDensity,
@@ -130,16 +132,26 @@ object ProfileManager {
     }
 
     fun applyProfile(profile: ConfigurationProfile) {
-        // Apply map definitions
+        // Apply map definitions — try exact 3-way match first, then fuzzy tableName-only fallback.
+        // Fuzzy fallback enables profiles to work across XDF variants that use slightly different
+        // descriptions or units for the same map (e.g. MBox vs ABox XDFs).
         val tableDefs = XdfParser.tableDefinitions.value
         for ((key, ref) in profile.mapDefinitions) {
             val pref = mapPreferencesByKey[key] ?: continue
-            val match = tableDefs.firstOrNull { def ->
+            // 1. Exact match: tableName + tableDescription + unit (original behaviour)
+            val exact = tableDefs.firstOrNull { def ->
                 ref.tableName == def.tableName &&
                     ref.tableDescription == def.tableDescription &&
                     ref.unit == def.zAxis.unit
             }
-            pref.setSelectedMap(match)
+            // 2. Fuzzy fallback: tableName-only (case-insensitive prefix match)
+            val fuzzy = if (exact == null) {
+                tableDefs.firstOrNull { def ->
+                    def.tableName.startsWith(ref.tableName, ignoreCase = true) ||
+                        ref.tableName.startsWith(def.tableName, ignoreCase = true)
+                }
+            } else null
+            pref.setSelectedMap(exact ?: fuzzy)
         }
 
         // Apply primary fueling

@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ConfigurationProfile(
     val name: String = "",
+    val description: String = "",
+    val ecuPartNumbers: List<String> = emptyList(),
     val mapDefinitions: Map<String, MapDefinitionRef> = emptyMap(),
     val primaryFueling: PrimaryFuelingConfig = PrimaryFuelingConfig(),
     val plsol: PlsolConfig = PlsolConfig(),

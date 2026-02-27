@@ -3,15 +3,13 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is 
-somewhat specific to an ME7 M-box ECU.
+primarily designed for the ME7 M-box ECU (Audi B5 S4 2.7T biturbo), but the XDF parser supports the full TunerPro XDF
+format so many ME7 / ME7.1 variant ECUs can be used with the correct XDF and configuration file.
 
-There are vast number of binary formats for ME7. TunerPro is equipped to handle most of them and supports MSB<->LSB,
-and other complex definitions, but ME7Tuner is not. ME7Tuner is designed to work with a specific binary format,
-specifically the B5 S4 2.7T M-box. If you have a different binary format, there is a possibility that ME7Tuner will not work.
-
-I have no intention of modifying ME7Tuner to work with other binary formats, but you can certainly do so yourself.
-
-See the example binary format and xdf in the `example` directory to see the supported binary format.
+See the example binary and XDF in the `example` directory as a starting point. See the [XDF Format Support](#xdf-format-support) section and
+[`documentation/me7-xdf-format.md`](documentation/me7-xdf-format.md) for details on what XDF features are supported.
+See [`documentation/me7-ecu-compatibility.md`](documentation/me7-ecu-compatibility.md) for ECU compatibility notes.
+WinOLS `.kp` files are also supported in hint mode — see [WinOLS KP File Support](#winols-kp-file-support) and [`documentation/me7-kp-format.md`](documentation/me7-kp-format.md).
 
 <img src="/documentation/images/me7Tuner.png" width="800">
 
@@ -32,15 +30,17 @@ Note that ME7Tuner built against Java 17, so you will need to have Java 17+ inst
 
 #### Table of contents
 1. [Tuning Philosophy](#tuning-philosophy)
-2. [Fueling (KRKTE & Injector Scaling)](#fueling-krkte--injector-scaling)
-3. [MLHFM (MAF Scaling)](#mlhfm-maf-scaling)
-4. [MLHFM - Closed Loop](#mlhfm---closed-loop)
-5. [MLHFM - Open Loop](#mlhfm---open-loop)
-7. [PLSOL (Pressure -> Load)](#plsol---rlsol-pressure-to-load-conversion)
-8. [KFMIRL (Load)](#kfmirl-torque-request-to-loadfill-request)
-9. [KFMIOP (Torque)](#kfmiop-loadfill-to-torque)
-10. [KFZWOP (Optimal Ignition Timing)](#kfzwop-optimal-ignition-timing)
-11. [KFZW/2 (Ignition Timing)](#kfzw2-ignition-timing)
+2. [XDF Format Support](#xdf-format-support)
+3. [WinOLS KP File Support](#winols-kp-file-support)
+4. [Fueling (KRKTE & Injector Scaling)](#fueling-krkte--injector-scaling)
+5. [MLHFM (MAF Scaling)](#mlhfm-maf-scaling)
+6. [MLHFM - Closed Loop](#mlhfm---closed-loop)
+7. [MLHFM - Open Loop](#mlhfm---open-loop)
+8. [PLSOL (Pressure -> Load)](#plsol---rlsol-pressure-to-load-conversion)
+9. [KFMIRL (Load)](#kfmirl-torque-request-to-loadfill-request)
+10. [KFMIOP (Torque)](#kfmiop-loadfill-to-torque)
+11. [KFZWOP (Optimal Ignition Timing)](#kfzwop-optimal-ignition-timing)
+12. [KFZW/2 (Ignition Timing)](#kfzw2-ignition-timing)
 13. [KFVPDKSD (Throttle Transition)](#kfvpdksd-throttle-transition)
 14. [WDKUGDN (Throttle Body Choke Point)](#wdkugdn-throttle-body-choke-point)
 15. [Alpha-N Calibration & Diagnostic Tool](#alpha-n-calibration--diagnostic-tool)
@@ -144,7 +144,134 @@ ME7Tuner works from a binary file and an XDF definition file. You will need to l
 
 <img src="/documentation/images/xdf.png" width="800">
 
-### Map Definitions
+# XDF Format Support
+
+ME7Tuner implements the full TunerPro XDF format. This means any ECU binary that has a valid XDF file can be loaded — the parser is not limited to the B5 S4 MBox format.
+
+### Supported ECUs
+
+| ECU | Application | Notes |
+|-----|-------------|-------|
+| **ME7 MBox (8D0907551M)** | Audi B5 S4 2.7T | Primary supported ECU — example XDF included |
+| **ME7 ABox** | Audi B5 S4 2.7T | Same engine family, compatible maps |
+| **ME7 RS4 (8D0907551R)** | Audi B5 RS4 2.7T | Higher boost maps; same VE model |
+| **ME7 1.8T (A4/TT/Golf)** | Various 1.8T platforms | Same ME7 software generation; maps compatible |
+| **ME7.1** | Later Audi/VW platforms | Compatible when XDF is available |
+
+XDF files for many of these can be found at [files.s4wiki.com/defs/](https://files.s4wiki.com/defs/) and the [Nefarious Motorsports forums](http://nefariousmotorsports.com/forum).
+
+### Supported XDF Features
+
+| Feature | Support | Notes |
+|---------|---------|-------|
+| `XDFHEADER` BASEOFFSET | ✅ Full | Applied to all addresses at parse time |
+| `DEFAULTS` (lsbfirst, signed, float, datasizeinbits) | ✅ Full | Inherited as fallbacks when per-axis values are absent |
+| `CATEGORY` name map | ✅ Full | Available for future UI filtering |
+| `CATEGORYMEM` table grouping | ✅ Full | Category indices stored per-table |
+| `XDFTABLE` (1-D, 2-D, 3-D maps) | ✅ Full | All axis combinations supported |
+| `XDFCONSTANT` (scalar values) | ✅ Full | |
+| 8-bit integer data (signed / unsigned) | ✅ Full | |
+| 16-bit integer data (signed / unsigned) | ✅ Full | |
+| 32-bit integer data (signed / unsigned) | ✅ Full | |
+| 32-bit IEEE-754 float data | ✅ Full | |
+| Little-endian byte order | ✅ Full | Default for all ME7 ECUs |
+| Big-endian byte order | ✅ Full | Per-axis via `mmedtypeflags` bit 1 or `DEFAULTS lsbfirst="0"` |
+| `mmedmajorstridebits` row stride / padding | ✅ Full | Negative = virtual axis (LABEL values used) |
+| `mmedminorstridebits` element padding | ✅ Full | Interleaved data layouts |
+| Column-major data layout (`mmedtypeflags` bit 2) | ✅ Full | Automatically transposed to row-major |
+| Virtual / shared axes (negative stride) | ✅ Full | Falls back to `LABEL` breakpoint values |
+| `LABEL` axis breakpoint values | ✅ Full | Used when axis has no binary address |
+| `<decimalpl>` display precision | ✅ Parsed | Stored in `AxisDefinition.decimalPl` |
+| `<min>` / `<max>` range hints | ✅ Parsed | Stored in `AxisDefinition.min/max` |
+| `XDFPATCH` code patches | ❌ Not supported | No byte-patch UI |
+| `XDFFLAG` bitfields | ❌ Not supported | No bitfield editor UI |
+| `DALINK` / `uniqueid` cross-references | ❌ Not needed | All standard ME7 XDFs use `uniqueid="0x0"` |
+
+### Write-Back (Equation Inversion)
+
+When ME7Tuner writes a corrected map back to the binary file, it analytically inverts the XDF's forward equation to convert engineering-unit values back to raw integers. Supported equation forms:
+
+| Forward Equation | Inverse Applied |
+|-----------------|----------------|
+| `A * X` | `X / A` |
+| `A * X + B` | `(X - B) / A` |
+| `A * X - B` | `(X + B) / A` |
+| `X * A` | `X / A` |
+| `X + B` | `X - B` |
+| `X - B` | `X + B` |
+| `X / A` | `X * A` |
+| Anything else | `X` (pass-through — safe for identity equations) |
+
+These cover every equation form produced by the Bosch ME7 TunerPro translators for standard map types.
+
+For complete technical detail see [`documentation/me7-xdf-format.md`](documentation/me7-xdf-format.md).
+
+---
+
+# WinOLS KP File Support
+
+ME7Tuner includes **hint-mode** support for WinOLS `.kp` ECU definition files.
+
+### What KP files are
+
+WinOLS `.kp` files (EVC GmbH — https://www.evc.de) are **proprietary binary containers**, NOT XML. The format is:
+
+```
+[WinOLS binary header]   — WinOLS proprietary metadata
+[Embedded ZIP archive]   — standard DEFLATE
+  └── intern             — proprietary binary record database
+```
+
+The `intern` blob contains map definitions, but the binary layout of axes, dimensions, and scaling factors is
+**not publicly documented**. ME7Tuner reverse-engineered the record structure (see `documentation/me7-kp-format.md`)
+and can reliably extract map names and binary addresses, but not full axis/scaling data.
+
+### How KP hint mode works
+
+When you load a KP file via `WinOLS → Open KP File...`:
+
+1. ME7Tuner parses the KP file and extracts up to ~90 map name + address pairs
+2. When you open any map selection dialog (e.g. *Select KFPBRK*), ME7Tuner:
+   - Shows a **hint badge** with the KP-derived description and binary address
+   - **Auto-pre-selects** the XDF definition whose address matches the KP address
+   - Marks the matched definition with a **KP badge** in the list
+
+This means the map picker is automatically pre-filtered and pre-selected to the most likely correct definition — you don't have to search manually.
+
+### KP vs XDF coverage
+
+| | XDF | KP (hint mode) |
+|-|-----|----------------|
+| Map definitions | ~393 | ~90 with address, ~62 name-only |
+| Axes & dimensions | ✅ Full | ❌ Not parseable |
+| Scaling factors | ✅ Full | ❌ Not parseable |
+| Use case | Primary source of truth | Address cross-reference aid |
+
+**The XDF is always required for binary reading and writing.** The KP file is optional and only provides selection hints.
+
+### Address verification
+
+KP AR addresses and XDF addresses match perfectly for the `8D0907551M` ECU:
+
+| Map | KP address | XDF address |
+|-----|-----------|------------|
+| KFPBRK | `0x1E3B0` | `0x1E3B0` ✅ |
+| MLHFM | `0x13974` | `0x13974` ✅ |
+| KFMIRL | `0x14A1C` | `0x14A1C` ✅ |
+| KRKTE | `0x1EB44` | `0x1EB44` ✅ |
+| KFKHFM | `0x10CCE` | `0x10CCE` ✅ |
+
+### Why not full KP parsing?
+
+The WinOLS binary format is proprietary and has no public specification. Axis dimensions, element sizes, and scaling
+factor offsets are at undocumented positions within each binary record. XDF files for the same ECU contain ~4× more
+definitions with full axis/scaling data. See `documentation/me7-kp-format.md` for the complete reverse-engineering analysis.
+
+KP files available from https://files.s4wiki.com/defs/ can be used alongside the XDF files from the same source.
+
+---
+
+
 
 You will need to tell ME7Tuner what definition you want to use for *all* fields. This is necessary because many XDF
 files have multiple definitions for the same map using different units. ***Pay attention to the units!***

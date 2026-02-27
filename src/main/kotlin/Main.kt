@@ -5,11 +5,17 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import data.parser.bin.BinParser
+import data.parser.csv.WinOlsCsvParser
+import data.parser.kp.KpHintParser
 import data.parser.xdf.XdfParser
 import data.preferences.MapPreferenceManager
 import data.preferences.bin.BinFilePreferences
+import data.preferences.csv.WinOlsCsvFileChooserPreferences
+import data.preferences.csv.WinOlsCsvFilePreferences
 import data.preferences.filechooser.BinFileChooserPreferences
 import data.preferences.filechooser.XdfFileChooserPreferences
+import data.preferences.kp.KpFileChooserPreferences
+import data.preferences.kp.KpFilePreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.xdf.XdfFilePreferences
 import data.profile.ProfileManager
@@ -27,14 +33,20 @@ fun main() {
     // Initialize data layer flows
     XdfParser.init()
     BinParser.init()
+    KpHintParser.init()
+    WinOlsCsvParser.init()
     LogHeaderPreference.loadHeaders()
 
     application {
         val binFile by BinFilePreferences.file.collectAsState()
         val xdfFile by XdfFilePreferences.file.collectAsState()
+        val kpFile by KpFilePreferences.file.collectAsState()
+        val csvFile by WinOlsCsvFilePreferences.file.collectAsState()
 
-        val title = remember(binFile, xdfFile) {
-            "ME7 Tuner - ${binFile.name} | XDF File - ${xdfFile.name}"
+        val title = remember(binFile, xdfFile, kpFile, csvFile) {
+            val kpSuffix = if (kpFile.exists()) " | WinOLS KP - ${kpFile.name}" else ""
+            val csvSuffix = if (csvFile.exists()) " | WinOLS CSV - ${csvFile.name}" else ""
+            "ME7 Tuner - ${binFile.name} | XDF File - ${xdfFile.name}$kpSuffix$csvSuffix"
         }
 
         Window(
@@ -60,6 +72,28 @@ fun main() {
                             XdfFilePreferences.setFile(file)
                             XdfFileChooserPreferences.lastDirectory = file.parent
                         }
+                    }
+                }
+                Menu("WinOLS") {
+                    Item("Open KP File...") {
+                        val file = openFileDialog(window, "Open WinOLS KP File", "kp", KpFileChooserPreferences.lastDirectory)
+                        if (file != null) {
+                            KpFilePreferences.setFile(file)
+                            KpFileChooserPreferences.lastDirectory = file.parent
+                        }
+                    }
+                    Item("Clear KP File") {
+                        KpFilePreferences.clear()
+                    }
+                    Item("Open WinOLS CSV Export...") {
+                        val file = openFileDialog(window, "Open WinOLS CSV Export", "csv", WinOlsCsvFileChooserPreferences.lastDirectory)
+                        if (file != null) {
+                            WinOlsCsvFilePreferences.setFile(file)
+                            WinOlsCsvFileChooserPreferences.lastDirectory = file.parent
+                        }
+                    }
+                    Item("Clear CSV Export") {
+                        WinOlsCsvFilePreferences.clear()
                     }
                 }
                 Menu("Profiles") {
@@ -105,6 +139,8 @@ fun main() {
                         BinFilePreferences.clear()
                         XdfFileChooserPreferences.clear()
                         BinFileChooserPreferences.clear()
+                        KpFilePreferences.clear()
+                        KpFileChooserPreferences.clear()
                     }
                 }
             }
