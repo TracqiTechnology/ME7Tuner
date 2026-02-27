@@ -15,8 +15,7 @@ import ui.screens.configuration.ConfigurationScreen
 import ui.screens.optimizer.OptimizerScreen
 
 @Composable
-fun ME7TunerApp() {
-    val navState = remember { NavigationState() }
+fun ME7TunerApp(navState: NavigationState = remember { NavigationState() }) {
 
     val xdfFile by XdfFilePreferences.file.collectAsState()
     val binFile by BinFilePreferences.file.collectAsState()

@@ -45,6 +45,12 @@ dependencies {
     // Removed: jfreechart, rxjava, flatlaf, flatlaf-intellij-themes
 }
 
+tasks.register<JavaExec>("screenshots") {
+    mainClass.set("ScreenshotHarnessKt")
+    classpath = sourceSets["main"].runtimeClasspath
+    workingDir = projectDir
+}
+
 compose.desktop {
     application {
         mainClass = "MainKt"

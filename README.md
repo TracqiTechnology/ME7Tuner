@@ -1,10 +1,20 @@
-# ME7Tuner
+<p align="center">
+  <img src="/documentation/images/banner.png" alt="TracQi ME7Tuner">
+</p>
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<p align="center">
+  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/TracqiTechnology/ME7Tuner/releases/latest"><img src="https://img.shields.io/github/v/release/TracqiTechnology/ME7Tuner?color=green" alt="Release"></a>
+  <a href="https://dl.circleci.com/status-badge/redirect/gh/TracqiTechnology/ME7Tuner/tree/master"><img src="https://dl.circleci.com/status-badge/img/gh/TracqiTechnology/ME7Tuner/tree/master.svg?style=shield" alt="CircleCI"></a>
+  <img src="https://img.shields.io/github/downloads/TracqiTechnology/ME7Tuner/total?color=brightgreen" alt="Downloads">
+  <img src="https://img.shields.io/badge/Java-17+-orange.svg" alt="Java 17+">
+  <img src="https://img.shields.io/badge/Kotlin-Compose_Desktop-7F52FF.svg" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Platform-macOS_|_Windows_|_Linux-lightgrey.svg" alt="Platform">
+</p>
 
-ME7Tuner is software that provides tools to help calibrate the MAF, primary fueling and torque/load requests. It is
-primarily designed for the ME7 M-box ECU (Audi B5 S4 2.7T biturbo), but the XDF parser supports the full TunerPro XDF
-format so many ME7 / ME7.1 variant ECUs can be used with the correct XDF and configuration file.
+ME7Tuner is a calibration and optimization tool for Bosch ME7 and ME7.x ECUs. It provides calculators for fueling, MAF linearization, torque/load tables, ignition timing, throttle transition, and boost control — plus a log-analysis Optimizer that diagnoses and corrects boost control and volumetric efficiency errors from real-world data.
+
+ME7Tuner supports any ME7 variant that has a TunerPro XDF or WinOLS KP definition file. Bundled profiles are included for the Audi B5 S4/RS4 2.7T, B5/B6 A4 1.8T, Audi TT 1.8T, and VW Golf/Jetta 1.8T platforms.
 
 <img src="/documentation/images/me7Tuner.png" width="800">
 
@@ -21,15 +31,21 @@ ME7Tuner is packaged as a JAR file. You will need to have Java installed on your
 
 Note that ME7Tuner built against Java 17, so you will need to have Java 17+ installed on your system to run it. Once you have Java 17+ installed and the JAR file, simply double click the JAR file to run it.
 
-<a href="https://github.com/KalebKE/ME7Tuner/releases/latest">![GitHub Release](https://img.shields.io/github/v/release/KalebKE/ME7Tuner?color=GREEN)</a>
+Download the latest release [here](https://github.com/TracqiTechnology/ME7Tuner/releases/latest).
 
 # Do I Need ME7Tuner?
 
-You probably don't need to use ME7Tuner. For most applications, the stock M-box is sufficient to support the power you want to make.
+ME7Tuner has two major workflows — **Calibration** and **Optimization** — and who needs each is different.
 
-In general ME7Tuner is only useful if you need to request more than 191% load on an M-Box. This means that K03 and most K04 configurations do not need the level of calibrations provided by ME7Tuner.
+### Optimizer: Yes, you probably need it
 
-The following information should give you a good estimate of what hardware you need to achieve a given power goal, how much calibration you will need to do to support that power and if ME7Tuner is useful to you.
+The Optimizer analyzes WOT logs and corrects your boost control (KFLDRL/KFLDIMX) and volumetric efficiency model (KFPBRK) so that actual pressure tracks requested pressure and actual load tracks requested load. This is useful at **any power level** — even a completely stock K03 car benefits from having an accurate VE model and properly linearized wastegate duty cycle. If your car runs ME7 and you datalog, the Optimizer can improve your tune.
+
+### Calibration: Only if you've changed hardware
+
+The Calibration tools (fueling, MAF scaling, torque/load tables, ignition timing, throttle transition) are for engines where the base maps no longer match reality — typically because you've upgraded turbos, injectors, MAF housings, or increased the MAP sensor limit. For most applications, the stock M-box calibration is sufficient to support K03 and basic K04 configurations without recalibration.
+
+In general you need the Calibration workflow if you need to request more than 191% load on an M-Box. The following reference should give you a good estimate of what hardware you need to achieve a given power goal and how much calibration you will need to do to support it.
 
 ##### Stock MAP Limit
 
@@ -40,58 +56,39 @@ The stock MAP limit is the primary limitation to calibration. A stock M-box has 
 Read [MAP Sensor](https://s4wiki.com/wiki/Manifold_air_pressure)
 Read [5120 Hack](http://nefariousmotorsports.com/forum/index.php?topic=3027.0)
 
-Unless you are planning on making more than 2.5 bar absolute (~22.45 psi relative) of pressure, you don't need to use ME7Tuner.
+Unless you are planning on making more than 2.5 bar absolute (~22.45 psi relative) of pressure, you don't need the Calibration workflow. You may still benefit from the [Optimizer](#stage-3-optimization).
 
 ##### Turbo Airflow
 
-* K03 16 lbs/min (120 g/sec) (~160hp)
-* K04 22 lbs/min (166 g/sec) (~225hp)
-* RS6 25 lbs/min  (196 g/sec) (~265hp)
-* 650R 37 lbs/min (287 g/sec) (~370hp)
-* 770R 48 lbs/min (370 g/sec) ((~490hp)
+<img src="/documentation/images/charts/turbo_airflow.png" width="800">
 
 Note: Remember to multiply by the number of turbo. The 2.7T has two turbos.
 
-Unless you are planning on maxing your K04's, or have a larger turbo frame, you don't need to use ME7Tuner.
+Unless you are maxing your K04's or running a larger turbo frame, you don't need the Calibration workflow. The [Optimizer](#stage-3-optimization) can still improve your tune at any power level.
 
 ##### MAF Airflow
 
-* Stock Bosch/Hitachi 73mm (337 g/sec)
-* Stock RS4 83mm (498 g/sec)
-* Stock Hitachi 85mm (493 g/sec)
-* HPX 89mm (800+ g/sec)
+<img src="/documentation/images/charts/maf_airflow.png" width="800">
 
 Read [MAF Sensor](https://s4wiki.com/wiki/Mass_air_flow)
 
-Unless you are planning on maxing the stock MAF, or have a larger MAF, you don't need to use ME7Tuner.
+Unless you are maxing the stock MAF or running a larger housing, you don't need MAF recalibration. The [Optimizer](#stage-3-optimization) can still improve your tune at any power level.
 
 ##### Fuel for Airflow (10:1 AFR)
 
-* K03 16 lbs/min air ->  ~1000 cc/min fuel
-* K04 22 lbs/min air -> ~1400 cc/min fuel
-* RS6 25 lbs/min air -> ~1600 cc/min fuel
-* 650R 37 lbs/min air -> ~2200 cc/min fuel
-* 770R 48 lbs/min air -> ~3024 cc/min fuel
+<img src="/documentation/images/charts/fuel_demand.png" width="800">
 
 Note: Remember to multiply air by the number of turbos and divide fuel by the number of fuel injectors. The 2.7T has 6 fuel injectors.
 
 ##### Theoretical fuel injector size for a V6 bi-turbo configuration
 
-* K03 16 lbs/min air -> ~340 cc/min
-* K04 22 lbs/min air -> ~470 cc/min
-* RS6 25 lbs/min air -> ~540 cc/min
-* 650R 37 lbs/min air -> ~740 cc/min
-* 770R 48 lbs/min air -> ~1000 cc/min
+<img src="/documentation/images/charts/injector_size.png" width="800">
 
 Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 
 ##### Theoretical load for a 2.7l V6 configuration
 
-* K03 16 lbs/min air -> ~155% load -> ~320hp
-* K04 22 lbs/min air -> ~210% load -> ~440hp
-* RS6 25 lbs/min air -> ~240% load -> ~500hp
-* 650R 37 lbs/min air -> ~354% load -> ~740hp
-* 770R 48 lbs/min air -> ~460% load -> ~960hp
+<img src="/documentation/images/charts/load_hp.png" width="800">
 
 Note that a stock M-box has a maximum load request of 191%, but can be increased with the stock MAP sensor to ~215%.
 
@@ -147,12 +144,10 @@ Start with Configuration, calibrate if your hardware has changed, then optimize 
 
 # Stage 1: Configuration
 
-ME7Tuner works from a binary file and an XDF definition file. You will need to load these using the ME7Toolbar.
+ME7Tuner works from a binary file and an XDF definition file. Load these using the menu bar:
 
-* File -> Open Bin
-* XDF -> Select XDF
-
-<img src="/documentation/images/xdf.png" width="800">
+* **File > Open Bin...** — select your ME7 binary file
+* **XDF > Select XDF...** — select the matching XDF definition file
 
 See the example binary and XDF in the `example` directory as a starting point.
 
@@ -420,6 +415,8 @@ Uses narrowband O2 sensors and fuel trims (STFT/LTFT) to correct the MAF lineari
 
 **How much data:** At least 75 minutes of mixed driving (highway, city, parking lot). More data = better corrections. Multiple log files can be loaded at once.
 
+<img src="/documentation/images/closed_loop_mlhfm.png" width="800">
+
 For detailed step-by-step usage, algorithm description, and screenshots see the [Calibration Guide — Closed Loop](documentation/calibration-guide.md#closed-loop-mlhfm).
 
 ### Open Loop
@@ -432,6 +429,8 @@ ME7Tuner matches WOT pulls between ME7Logger and Zeitronix logs by throttle posi
 
 **What to log (Zeitronix):** AFR
 
+<img src="/documentation/images/open_loop_mlhfm.png" width="800">
+
 For detailed step-by-step usage, algorithm description, and screenshots see the [Calibration Guide — Open Loop](documentation/calibration-guide.md#open-loop-mlhfm).
 
 ## Pressure to Load (PLSOL)
@@ -439,6 +438,8 @@ For detailed step-by-step usage, algorithm description, and screenshots see the 
 PLSOL is a sanity check tool that converts between pressure, load, airflow, and horsepower. The key insight is that the *only* parameter that affects load is pressure — barometric pressure, intake air temperature, and the pressure-to-load conversion (KFURL) are assumed constant.
 
 This is useful for determining if your hardware can support a given load request. For example, 2.7L of displacement approaching 900hp requires ~3bar (45psi) relative / 4bar (60psi) absolute.
+
+<img src="/documentation/images/plsol.png" width="800">
 
 For detailed usage and screenshots see the [Calibration Guide — PLSOL](documentation/calibration-guide.md#plsol---pressure-to-load-conversion).
 
@@ -456,11 +457,15 @@ Empirical tuning points:
 * Any part of KFMIOP (load/RPM range) that can only be reached above ~60% wped_w is unrestricted and can be raised to keep mimax high such that requested load does not get capped.
 * Ensure that mibas remains below miszul to avoid intervention (which you will see in mizsolv) by lowering KFMIOP in areas reachable by actual measured load.
 
+<img src="/documentation/images/kfmiop.png" width="800">
+
 For detailed tuning philosophy, algorithm, and usage see the [Calibration Guide — KFMIOP](documentation/calibration-guide.md#kfmiop-loadfill-to-torque).
 
 ### KFMIRL (Torque to Load/Fill)
 
 KFMIRL is the inverse of KFMIOP. It exists as a lookup optimization so the ECU doesn't have to search KFMIOP every time it converts a torque request into a load request. KFMIOP is the input and KFMIRL is the output.
+
+<img src="/documentation/images/kfmirl.png" width="800">
 
 For detailed usage see the [Calibration Guide — KFMIRL](documentation/calibration-guide.md#kfmirl-torque-request-to-loadfill-request).
 
@@ -470,6 +475,10 @@ If you modified KFMIRL/KFMIOP, you need to modify KFZWOP (optimal ignition timin
 
 *Pay attention to the output!* Extrapolation works well for linear functions, but usually doesn't for non-linear functions like ignition advance. Examine the output and make sure it is reasonable before using it — you will probably have to rework it.
 
+<img src="/documentation/images/kfzwop.png" width="800">
+
+<img src="/documentation/images/kfzw.png" width="800">
+
 For detailed algorithm and usage see the Calibration Guide for [KFZWOP](documentation/calibration-guide.md#kfzwop-optimal-ignition-timing) and [KFZW/2](documentation/calibration-guide.md#kfzw2-ignition-timing).
 
 ## Throttle Transition (KFVPDKSD)
@@ -477,6 +486,8 @@ For detailed algorithm and usage see the Calibration Guide for [KFZWOP](document
 In a turbocharged application the throttle is controlled by a combination of the turbo wastegate (N75 valve) and the throttle body valve. KFVPDKSD defines the pressure ratio at which the ECU transitions between throttle-controlled and boost-controlled operation. ME7Tuner parses a directory of logs and determines at what RPM points a given boost level can be achieved.
 
 **What to log:** `nmot`, `wdkba`, `pus_w`, `pvdks_w`
+
+<img src="/documentation/images/kfvpdksd.png" width="800">
 
 For detailed algorithm and usage see the [Calibration Guide — KFVPDKSD](documentation/calibration-guide.md#kfvpdksd-throttle-transition).
 
@@ -487,6 +498,8 @@ WDKUGDN is a 1D Kennlinie (`RPM → throttle angle °`) that defines the **choke
 > **WDKUGDN is NOT an alpha-n calibration map.** It defines a physical property of the throttle body. **Only change WDKUGDN if you physically change the throttle body diameter or engine displacement.** See [Alpha-N Calibration](#alpha-n-calibration--diagnostic) for the correct maps to modify.
 
 Unless you have changed the throttle body or engine displacement, WDKUGDN should not have to be modified.
+
+<img src="/documentation/images/wdkugdn.png" width="800">
 
 For the full choked flow algorithm, what WDKUGDN controls, and why changing it for alpha-n is wrong, see the [Calibration Guide — WDKUGDN](documentation/calibration-guide.md#wdkugdn-throttle-body-choke-point).
 
@@ -541,6 +554,8 @@ Read [Actual pre-control in LDRPID](http://nefariousmotorsports.com/forum/index.
 **What to log:** `nmot`, `pvdks_w`, `pus_w`, `wdkba`, `ldtvm`, `gangi`
 
 Get as many WOT pulls as possible across the full RPM range. Put all logs in a single directory and load them in ME7Tuner. The linearized duty cycle will be output in KFLDRL, and a new KFLDIMX with x-axis will be estimated from the linearized boost table.
+
+<img src="/documentation/images/ldrpid.png" width="800">
 
 For the full algorithm and step-by-step usage see the [Calibration Guide — LDRPID](documentation/calibration-guide.md#ldrpid-feed-forward-pid).
 
@@ -741,20 +756,3 @@ All ME7 analog sensors output 0–5 V. When a tuned engine pushes a sensor beyon
 For optimal sensor saturation detection, include `uhfm_w` (MAF voltage) in your ME7Logger configuration alongside the standard optimizer channels. The MAP sensor saturation is detected from `pvdks_w` which is already a required channel.
 
 ---
-
-# Technical Reference
-
-Detailed documentation for deep dives into ME7 internals:
-
-| Document | Description |
-|----------|-------------|
-| [`me7-boost-control.md`](documentation/me7-boost-control.md) | Signal path reference (torque → load → pressure → boost) with me7-raw.txt line citations |
-| [`me7-maps-reference.md`](documentation/me7-maps-reference.md) | Complete catalog of ME7 maps, constants, and log signals relevant to the Optimizer |
-| [`me7-alpha-n-calibration.md`](documentation/me7-alpha-n-calibration.md) | Alpha-N deep dive — what actually needs calibrating for correct MAF-off operation |
-| [`me7-xdf-format.md`](documentation/me7-xdf-format.md) | XDF format details — field meanings, parser/reader/writer pipeline |
-| [`me7-kp-format.md`](documentation/me7-kp-format.md) | WinOLS KP format reverse-engineering analysis |
-| [`me7-ecu-compatibility.md`](documentation/me7-ecu-compatibility.md) | Supported ME7/ME7.x ECU variants and how to add new ECUs |
-| [`DAMOS.md`](documentation/DAMOS.md) | DAMOS 2 format reference derived from ME7.1 ECU files |
-| [`optimizer-architecture.md`](documentation/optimizer-architecture.md) | How the Optimizer works and why it's built that way |
-| [`optimizer-algorithms.md`](documentation/optimizer-algorithms.md) | Detailed algorithm descriptions for each detector, solver, and suggestion method |
-| [`calibration-guide.md`](documentation/calibration-guide.md) | Step-by-step calibration usage with screenshots for every tool |
