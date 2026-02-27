@@ -7,6 +7,8 @@ plugins {
     id("org.jetbrains.compose")
 }
 
+val appVersion = project.property("app.version") as String
+
 repositories {
     mavenCentral()
     google()
@@ -58,7 +60,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ME7Tuner"
-            packageVersion = "2.0.0"
+            packageVersion = appVersion
             description = "ME7 M-box ECU Calibration Tool"
 
             macOS {

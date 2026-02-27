@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"></a>
   <a href="https://github.com/TracqiTechnology/ME7Tuner/releases/latest"><img src="https://img.shields.io/github/v/release/TracqiTechnology/ME7Tuner?color=green" alt="Release"></a>
-  <a href="https://dl.circleci.com/status-badge/redirect/gh/TracqiTechnology/ME7Tuner/tree/master"><img src="https://dl.circleci.com/status-badge/img/gh/TracqiTechnology/ME7Tuner/tree/master.svg?style=shield" alt="CircleCI"></a>
+  <a href="https://github.com/TracqiTechnology/ME7Tuner/actions/workflows/release.yml"><img src="https://github.com/TracqiTechnology/ME7Tuner/actions/workflows/release.yml/badge.svg?branch=master" alt="Build"></a>
   <img src="https://img.shields.io/github/downloads/TracqiTechnology/ME7Tuner/total?color=brightgreen" alt="Downloads">
   <img src="https://img.shields.io/badge/Java-17+-orange.svg" alt="Java 17+">
   <img src="https://img.shields.io/badge/Kotlin-Compose_Desktop-7F52FF.svg" alt="Kotlin">
