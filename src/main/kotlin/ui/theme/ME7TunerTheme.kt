@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.sp
 
 // Material 3 dark theme colors
@@ -45,6 +47,17 @@ val InverseSurface = Color(0xFFEDE1D1)
 val InverseOnSurface = Color(0xFF363025)
 val InversePrimary = Color(0xFF7B5800)
 val Scrim = Color(0xFF000000)
+
+// Brand font families
+val DisplayFontFamily = FontFamily(
+    Font(resource = "fonts/Orbitron-Regular.ttf", weight = FontWeight.Normal),
+    Font(resource = "fonts/Orbitron-Bold.ttf", weight = FontWeight.Bold),
+)
+
+val BodyFontFamily = FontFamily(
+    Font(resource = "fonts/JetBrainsMono-Regular.ttf", weight = FontWeight.Normal),
+    Font(resource = "fonts/JetBrainsMono-Bold.ttf", weight = FontWeight.Bold),
+)
 
 // Chart colors
 val ChartRed = Color(0xFFD32F2F)
@@ -94,22 +107,30 @@ private val ME7ColorScheme = darkColorScheme(
 )
 
 private val ME7Typography = Typography(
+    titleLarge = TextStyle(
+        fontFamily = DisplayFontFamily,
+        fontSize = 20.sp,
+    ),
+    titleMedium = TextStyle(
+        fontFamily = DisplayFontFamily,
+        fontSize = 16.sp,
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = DisplayFontFamily,
+        fontSize = 14.sp,
+    ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BodyFontFamily,
         fontSize = 13.sp,
     ),
     bodySmall = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BodyFontFamily,
         fontSize = 11.sp,
     ),
-    titleMedium = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontSize = 16.sp,
-    ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = BodyFontFamily,
         fontSize = 12.sp,
-    )
+    ),
 )
 
 @Composable

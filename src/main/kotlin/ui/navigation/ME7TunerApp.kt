@@ -1,10 +1,13 @@
 package ui.navigation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import data.preferences.bin.BinFilePreferences
 import data.preferences.xdf.XdfFilePreferences
@@ -24,7 +27,31 @@ fun ME7TunerApp() {
     Surface(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
             NavigationRail(
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.fillMaxHeight(),
+                header = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    ) {
+                        Image(
+                            painter = painterResource("pistons_0.png"),
+                            contentDescription = "TracQi Logo",
+                            modifier = Modifier.size(40.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primaryContainer)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "TracQi",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        )
+                        Text(
+                            text = "ME7Tuner",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 

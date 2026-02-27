@@ -46,7 +46,7 @@ fun main() {
         val title = remember(binFile, xdfFile, kpFile, csvFile) {
             val kpSuffix = if (kpFile.exists()) " | WinOLS KP - ${kpFile.name}" else ""
             val csvSuffix = if (csvFile.exists()) " | WinOLS CSV - ${csvFile.name}" else ""
-            "ME7 Tuner - ${binFile.name} | XDF File - ${xdfFile.name}$kpSuffix$csvSuffix"
+            "TracQi ME7Tuner - ${binFile.name} | XDF File - ${xdfFile.name}$kpSuffix$csvSuffix"
         }
 
         Window(
