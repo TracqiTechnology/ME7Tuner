@@ -63,6 +63,8 @@ compose.desktop {
             packageVersion = appVersion
             description = "ME7 M-box ECU Calibration Tool"
 
+            includeAllModules = true
+
             macOS {
                 bundleID = "com.tracqi.me7tuner"
             }
