@@ -16,32 +16,30 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-      should_release: ${{ steps.check_tag.outputs.should_release }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Read version from gradle.properties
+      - name: Compute next patch version from latest tag
         id: version
         run: |
-          VERSION=$(grep '^app.version=' gradle.properties | cut -d'=' -f2)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Check if tag already exists
-        id: check_tag
-        run: |
-          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
-            echo "Tag v${{ steps.version.outputs.version }} already exists — skipping release"
-            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            # No tags yet — fall back to gradle.properties
+            VERSION=$(grep '^app.version=' gradle.properties | cut -d'=' -f2)
           else
-            echo "Tag v${{ steps.version.outputs.version }} does not exist — proceeding with release"
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            CURRENT=${LATEST_TAG#v}
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT" | cut -d. -f3)
+            VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
           fi
+          echo "Next release: v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   build-macos:
     needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
     strategy:
       matrix:
         include:
@@ -61,7 +59,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package DMG and uber JAR
-        run: ./gradlew packageDmg packageUberJarForCurrentOS
+        run: ./gradlew packageDmg packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
 
       - name: Rename uber JAR
         run: |
@@ -77,7 +75,6 @@ jobs:
 
   build-windows:
     needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +87,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package MSI and uber JAR
-        run: ./gradlew packageMsi packageUberJarForCurrentOS
+        run: ./gradlew packageMsi packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
 
       - name: Rename uber JAR
         shell: bash
@@ -107,7 +104,6 @@ jobs:
 
   build-linux:
     needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -120,11 +116,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package DEB and uber JAR
-        run: ./gradlew packageDeb packageUberJarForCurrentOS
+        run: ./gradlew packageDeb packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
 
       - name: Create portable tar.gz and rename uber JAR
         run: |
-          ./gradlew createDistributable
+          ./gradlew createDistributable -Papp.version=${{ needs.check-version.outputs.version }}
           VERSION=${{ needs.check-version.outputs.version }}
           tar -czf "ME7Tuner-${VERSION}-linux-x64.tar.gz" \
             -C build/compose/binaries/main/app .
