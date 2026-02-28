@@ -42,7 +42,14 @@ jobs:
   build-macos:
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: aarch64
+          - runner: macos-13
+            arch: x64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,13 +60,20 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Package DMG
-        run: ./gradlew packageDmg
+      - name: Package DMG and uber JAR
+        run: ./gradlew packageDmg packageUberJarForCurrentOS
+
+      - name: Rename uber JAR
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          mv build/compose/jars/*.jar "build/compose/jars/ME7Tuner-${VERSION}-macos-${{ matrix.arch }}.jar"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
-          path: build/compose/binaries/main/dmg/*.dmg
+          name: macos-${{ matrix.arch }}
+          path: |
+            build/compose/binaries/main/dmg/*.dmg
+            build/compose/jars/*.jar
 
   build-windows:
     needs: check-version
@@ -75,13 +89,21 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Package MSI
-        run: ./gradlew packageMsi
+      - name: Package MSI and uber JAR
+        run: ./gradlew packageMsi packageUberJarForCurrentOS
+
+      - name: Rename uber JAR
+        shell: bash
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          mv build/compose/jars/*.jar "build/compose/jars/ME7Tuner-${VERSION}-windows-x64.jar"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-msi
-          path: build/compose/binaries/main/msi/*.msi
+          name: windows-packages
+          path: |
+            build/compose/binaries/main/msi/*.msi
+            build/compose/jars/*.jar
 
   build-linux:
     needs: check-version
@@ -97,47 +119,27 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Package DEB
-        run: ./gradlew packageDeb
+      - name: Package DEB and uber JAR
+        run: ./gradlew packageDeb packageUberJarForCurrentOS
 
-      - name: Create portable tar.gz
+      - name: Create portable tar.gz and rename uber JAR
         run: |
           ./gradlew createDistributable
           VERSION=${{ needs.check-version.outputs.version }}
           tar -czf "ME7Tuner-${VERSION}-linux-x64.tar.gz" \
             -C build/compose/binaries/main/app .
+          mv build/compose/jars/*.jar "build/compose/jars/ME7Tuner-${VERSION}-linux-x64.jar"
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-packages
           path: |
             build/compose/binaries/main/deb/*.deb
+            build/compose/jars/*.jar
             ME7Tuner-*-linux-x64.tar.gz
 
-  build-jar:
-    needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - uses: gradle/actions/setup-gradle@v4
-
-      - name: Package uber JAR
-        run: ./gradlew packageUberJarForCurrentOS
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: uber-jar
-          path: build/compose/jars/*.jar
-
   release:
-    needs: [check-version, build-macos, build-windows, build-linux, build-jar]
+    needs: [check-version, build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
