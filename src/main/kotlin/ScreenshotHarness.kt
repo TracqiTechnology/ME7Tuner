@@ -189,24 +189,15 @@ fun main() {
 
     // --- Log-dependent screens ---
 
-    // Closed Loop: load logs, then capture
-    captureScreenWithLogData(
-        filename = "closed_loop_mlhfm.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
-    ) {
+    // Closed Loop: empty state (no log data)
+    captureScreen("closed_loop_mlhfm.png") {
         val navState = NavigationState()
         navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
         ME7TunerApp(navState)
     }
 
-    // Open Loop: load ME7Logger + Zeitronix logs
-    captureScreenWithLogData(
-        filename = "open_loop_mlhfm.png",
-        loadData = {
-            OpenLoopLogParser.loadFile(File("example/me7logger.csv"))
-            AfrLogParser.load(File("example/zeitronix.csv"))
-        }
-    ) {
+    // Open Loop: empty state (no log data)
+    captureScreen("open_loop_mlhfm.png") {
         val navState = NavigationState()
         navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
         ME7TunerApp(navState)
@@ -221,6 +212,146 @@ fun main() {
     ) {
         val navState = NavigationState()
         navState.navigateToCalibration(CalibrationTab.KFVPDKSD)
+        ME7TunerApp(navState)
+    }
+
+    // --- Closed Loop sub-tab screenshots (all need log data) ---
+
+    captureScreenWithLogData(
+        filename = "closed_loop_mlhfm_filter.png",
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+    ) {
+        val navState = NavigationState()
+        navState.closedLoopTab = 0
+        navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithLogData(
+        filename = "closed_loop_mlhfm_corrected_percentage.png",
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+    ) {
+        val navState = NavigationState()
+        navState.closedLoopTab = 2
+        navState.closedLoopCorrectionSubTab = 0
+        navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithLogData(
+        filename = "closed_loop_mlhfm_derivative.png",
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+    ) {
+        val navState = NavigationState()
+        navState.closedLoopTab = 2
+        navState.closedLoopCorrectionSubTab = 1
+        navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithLogData(
+        filename = "closed_loop_mlhfm_corrected.png",
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+    ) {
+        val navState = NavigationState()
+        navState.closedLoopTab = 2
+        navState.closedLoopCorrectionSubTab = 2
+        navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithLogData(
+        filename = "closed_loop_mlhfm_corrected_best_fit.png",
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+    ) {
+        val navState = NavigationState()
+        navState.closedLoopTab = 2
+        navState.closedLoopCorrectionSubTab = 2
+        navState.autoFitDegree = 6
+        navState.navigateToCalibration(CalibrationTab.CLOSED_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    // --- Open Loop sub-tab screenshots (all need log data) ---
+
+    captureScreenWithLogData(
+        filename = "open_loop_mlhfm_logs.png",
+        loadData = {
+            OpenLoopLogParser.loadFile(File("example/me7logger.csv"))
+            AfrLogParser.load(File("example/zeitronix.csv"))
+        }
+    ) {
+        val navState = NavigationState()
+        navState.openLoopTab = 0
+        navState.openLoopLogSubTab = 0
+        navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithLogData(
+        filename = "open_loop_mlhfm_airflow.png",
+        loadData = {
+            OpenLoopLogParser.loadFile(File("example/me7logger.csv"))
+            AfrLogParser.load(File("example/zeitronix.csv"))
+        }
+    ) {
+        val navState = NavigationState()
+        navState.openLoopTab = 0
+        navState.openLoopLogSubTab = 1
+        navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithTwoPhaseLogData(
+        filename = "open_loop_mlhfm_correction.png",
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+    ) {
+        val navState = NavigationState()
+        navState.openLoopTab = 2
+        navState.openLoopCorrectionSubTab = 0
+        navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithTwoPhaseLogData(
+        filename = "open_loop_mlhfm_correction_percentage.png",
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+    ) {
+        val navState = NavigationState()
+        navState.openLoopTab = 2
+        navState.openLoopCorrectionSubTab = 1
+        navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    captureScreenWithTwoPhaseLogData(
+        filename = "open_loop_mlhfm_correction_best_fit.png",
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+    ) {
+        val navState = NavigationState()
+        navState.openLoopTab = 2
+        navState.openLoopCorrectionSubTab = 0
+        navState.autoFitDegree = 6
+        navState.navigateToCalibration(CalibrationTab.OPEN_LOOP)
+        ME7TunerApp(navState)
+    }
+
+    // --- PLSOL sub-tab screenshots (no log data needed) ---
+
+    captureScreen("plsol_airflow.png") {
+        val navState = NavigationState()
+        navState.plsolTab = 1
+        navState.navigateToCalibration(CalibrationTab.PLSOL)
+        ME7TunerApp(navState)
+    }
+
+    captureScreen("plsol_power.png") {
+        val navState = NavigationState()
+        navState.plsolTab = 2
+        navState.navigateToCalibration(CalibrationTab.PLSOL)
         ME7TunerApp(navState)
     }
 
@@ -282,6 +413,43 @@ private fun captureScreenWithLogData(
     // Render many frames to let state propagate through compose tree
     repeat(30) { scene.render((it + 5) * 16_000_000L) }
     val image = scene.render(560_000_000L)
+    val data = image.encodeToData(EncodedImageFormat.PNG)
+        ?: error("Failed to encode $filename to PNG")
+    File("documentation/images/$filename").writeBytes(data.bytes)
+    scene.close()
+    println(" done")
+}
+
+/**
+ * Two-phase variant for screens where correction depends on ME7 logs being
+ * collected before AFR logs emit (e.g. OpenLoopScreen).
+ */
+private fun captureScreenWithTwoPhaseLogData(
+    filename: String,
+    width: Int = 1480,
+    height: Int = 1080,
+    loadPhase1: () -> Unit,
+    loadPhase2: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    print("Capturing $filename (with log data)...")
+    val scene = ImageComposeScene(width, height, density = Density(1f)) {
+        ME7TunerTheme { content() }
+    }
+    // Initial render to start LaunchedEffect collectors
+    repeat(5) { scene.render(it * 16_000_000L) }
+
+    // Phase 1: load ME7 logs and let state propagate
+    loadPhase1()
+    Thread.sleep(2000)
+    repeat(20) { scene.render((it + 5) * 16_000_000L) }
+
+    // Phase 2: load AFR logs — me7LogMap is now set so correction will be computed
+    loadPhase2()
+    Thread.sleep(2000)
+    repeat(20) { scene.render((it + 25) * 16_000_000L) }
+
+    val image = scene.render(720_000_000L)
     val data = image.encodeToData(EncodedImageFormat.PNG)
         ?: error("Failed to encode $filename to PNG")
     File("documentation/images/$filename").writeBytes(data.bytes)

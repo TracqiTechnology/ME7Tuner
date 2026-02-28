@@ -12,6 +12,7 @@ import data.preferences.MapPreferenceManager
 import data.preferences.bin.BinFilePreferences
 import data.preferences.csv.WinOlsCsvFileChooserPreferences
 import data.preferences.csv.WinOlsCsvFilePreferences
+import data.preferences.eula.EulaPreferences
 import data.preferences.filechooser.BinFileChooserPreferences
 import data.preferences.filechooser.XdfFileChooserPreferences
 import data.preferences.kp.KpFileChooserPreferences
@@ -19,6 +20,7 @@ import data.preferences.kp.KpFilePreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.xdf.XdfFilePreferences
 import data.profile.ProfileManager
+import ui.components.EulaDialog
 import ui.navigation.ME7TunerApp
 import ui.theme.ME7TunerTheme
 import java.awt.FileDialog
@@ -38,6 +40,27 @@ fun main() {
     LogHeaderPreference.loadHeaders()
 
     application {
+        var eulaAccepted by remember { mutableStateOf(EulaPreferences.accepted) }
+
+        if (!eulaAccepted) {
+            Window(
+                onCloseRequest = ::exitApplication,
+                title = "TracQi ME7Tuner — License Agreement",
+                state = rememberWindowState(width = 800.dp, height = 700.dp),
+            ) {
+                ME7TunerTheme {
+                    EulaDialog(
+                        onAccept = {
+                            EulaPreferences.accepted = true
+                            eulaAccepted = true
+                        },
+                        onDecline = ::exitApplication,
+                    )
+                }
+            }
+            return@application
+        }
+
         val binFile by BinFilePreferences.file.collectAsState()
         val xdfFile by XdfFilePreferences.file.collectAsState()
         val kpFile by KpFilePreferences.file.collectAsState()

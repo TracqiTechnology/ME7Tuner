@@ -90,10 +90,7 @@ fun ME7TunerApp(navState: NavigationState = remember { NavigationState() }) {
                     }
                     RailDestination.CALIBRATION -> {
                         if (isConfigured) {
-                            CalibrationContent(
-                                selectedTab = navState.calibrationTab,
-                                onTabSelected = { navState.selectCalibrationTab(it) }
-                            )
+                            CalibrationContent(navState = navState)
                         } else {
                             ConfigurationRequiredPlaceholder()
                         }

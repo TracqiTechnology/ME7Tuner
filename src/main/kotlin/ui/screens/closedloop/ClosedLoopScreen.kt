@@ -51,7 +51,11 @@ private fun findMlhfmMap(mapList: List<Pair<TableDefinition, Map3d>>): Pair<Tabl
 }
 
 @Composable
-fun ClosedLoopScreen() {
+fun ClosedLoopScreen(
+    initialTab: Int = 0,
+    initialCorrectionSubTab: Int = 0,
+    autoFitDegree: Int? = null
+) {
     val mapList by BinParser.mapList.collectAsState()
     val mlhfmPair = remember(mapList) { findMlhfmMap(mapList) }
 
@@ -86,7 +90,7 @@ fun ClosedLoopScreen() {
     val mlhfmMapConfigured = mlhfmPair != null
     val mlhfmMapName = mlhfmPair?.first?.tableName
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     val tabTitles = listOf("ME7 Logs", "MLHFM", "Correction")
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -148,6 +152,8 @@ fun ClosedLoopScreen() {
             2 -> ClosedLoopCorrectionTab(
                 correction = correction,
                 onCorrectionUpdated = { correction = it },
+                initialSubTab = initialCorrectionSubTab,
+                autoFitDegree = autoFitDegree,
                 binLoaded = binLoaded,
                 binFileName = if (binLoaded) binFile.name else null,
                 mlhfmMapConfigured = mlhfmMapConfigured,
@@ -362,6 +368,8 @@ private fun ClosedLoopFilterDialog(
 private fun ClosedLoopCorrectionTab(
     correction: ClosedLoopFuelingCorrection?,
     onCorrectionUpdated: (ClosedLoopFuelingCorrection) -> Unit,
+    initialSubTab: Int = 0,
+    autoFitDegree: Int? = null,
     binLoaded: Boolean,
     binFileName: String?,
     mlhfmMapConfigured: Boolean,
@@ -374,8 +382,16 @@ private fun ClosedLoopCorrectionTab(
         return
     }
 
-    var polynomialDegree by remember { mutableStateOf(6) }
-    var correctionSubTab by remember { mutableStateOf(0) }
+    var polynomialDegree by remember { mutableStateOf(autoFitDegree ?: 6) }
+    var correctionSubTab by remember { mutableStateOf(initialSubTab) }
+
+    // Auto-fit for screenshot harness
+    LaunchedEffect(autoFitDegree, correction) {
+        if (autoFitDegree != null && correction.correctedMlhfm.yAxis.isNotEmpty()) {
+            val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, autoFitDegree)
+            onCorrectionUpdated(correction.copy(fitMlhfm = fitMlhfm))
+        }
+    }
     val correctionSubTabs = listOf("AFR Correction %", "dMAFv/dt", "MLHFM")
 
     var showWriteConfirmation by remember { mutableStateOf(false) }
