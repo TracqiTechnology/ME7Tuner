@@ -40,14 +40,7 @@ jobs:
 
   build-macos:
     needs: check-version
-    strategy:
-      matrix:
-        include:
-          - runner: macos-latest
-            arch: aarch64
-          - runner: macos-13
-            arch: x64
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -64,11 +57,11 @@ jobs:
       - name: Rename uber JAR
         run: |
           VERSION=${{ needs.check-version.outputs.version }}
-          mv build/compose/jars/*.jar "build/compose/jars/ME7Tuner-${VERSION}-macos-${{ matrix.arch }}.jar"
+          mv build/compose/jars/*.jar "build/compose/jars/ME7Tuner-${VERSION}-macos-aarch64.jar"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}
+          name: macos-aarch64
           path: |
             build/compose/binaries/main/dmg/*.dmg
             build/compose/jars/*.jar
