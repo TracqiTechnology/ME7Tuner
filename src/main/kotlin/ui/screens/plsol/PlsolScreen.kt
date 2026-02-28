@@ -18,14 +18,14 @@ import ui.theme.ChartRed
 import ui.theme.Primary
 
 @Composable
-fun PlsolScreen() {
+fun PlsolScreen(initialTab: Int = 0) {
     var barometricPressure by remember { mutableStateOf(PlsolPreferences.barometricPressure.toString()) }
     var intakeAirTemp by remember { mutableStateOf(PlsolPreferences.intakeAirTemperature.toString()) }
     var kfurl by remember { mutableStateOf(PlsolPreferences.kfurl.toString()) }
     var displacement by remember { mutableStateOf(PlsolPreferences.displacement.toString()) }
     var maxRpm by remember { mutableStateOf(PlsolPreferences.rpm.toString()) }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     val tabTitles = listOf("Load", "Airflow", "Power")
 
     // Calculate all chart data

@@ -21,10 +21,9 @@ import ui.screens.plsol.PlsolScreen
 import ui.screens.wdkugdn.WdkugdnScreen
 
 @Composable
-fun CalibrationContent(
-    selectedTab: CalibrationTab,
-    onTabSelected: (CalibrationTab) -> Unit
-) {
+fun CalibrationContent(navState: NavigationState) {
+    val selectedTab = navState.calibrationTab
+
     Column(modifier = Modifier.fillMaxSize()) {
         SecondaryScrollableTabRow(
             selectedTabIndex = selectedTab.ordinal
@@ -32,7 +31,7 @@ fun CalibrationContent(
             CalibrationTab.entries.forEach { tab ->
                 Tab(
                     selected = selectedTab == tab,
-                    onClick = { onTabSelected(tab) },
+                    onClick = { navState.selectCalibrationTab(tab) },
                     text = { Text(tab.label) }
                 )
             }
@@ -41,9 +40,18 @@ fun CalibrationContent(
         Box(modifier = Modifier.fillMaxSize().weight(1f)) {
             when (selectedTab) {
                 CalibrationTab.FUELING -> FuelingScreen()
-                CalibrationTab.CLOSED_LOOP -> ClosedLoopScreen()
-                CalibrationTab.OPEN_LOOP -> OpenLoopScreen()
-                CalibrationTab.PLSOL -> PlsolScreen()
+                CalibrationTab.CLOSED_LOOP -> ClosedLoopScreen(
+                    initialTab = navState.closedLoopTab,
+                    initialCorrectionSubTab = navState.closedLoopCorrectionSubTab,
+                    autoFitDegree = navState.autoFitDegree
+                )
+                CalibrationTab.OPEN_LOOP -> OpenLoopScreen(
+                    initialTab = navState.openLoopTab,
+                    initialLogSubTab = navState.openLoopLogSubTab,
+                    initialCorrectionSubTab = navState.openLoopCorrectionSubTab,
+                    autoFitDegree = navState.autoFitDegree
+                )
+                CalibrationTab.PLSOL -> PlsolScreen(initialTab = navState.plsolTab)
                 CalibrationTab.KFMIOP -> KfmiopScreen()
                 CalibrationTab.KFMIRL -> KfmirlScreen()
                 CalibrationTab.KFZWOP -> KfzwopScreen()

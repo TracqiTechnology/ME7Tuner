@@ -53,7 +53,12 @@ private fun findMlhfmMap(mapList: List<Pair<TableDefinition, Map3d>>): Pair<Tabl
 }
 
 @Composable
-fun OpenLoopScreen() {
+fun OpenLoopScreen(
+    initialTab: Int = 0,
+    initialLogSubTab: Int = 0,
+    initialCorrectionSubTab: Int = 0,
+    autoFitDegree: Int? = null
+) {
     val mapList by BinParser.mapList.collectAsState()
     val mlhfmPair = remember(mapList) { findMlhfmMap(mapList) }
 
@@ -112,7 +117,7 @@ fun OpenLoopScreen() {
     val hasAfrLogs = afrLogMap != null && afrLogMap!!.isNotEmpty()
     val hasCorrection = correction != null
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     val tabTitles = listOf("ME7 Logs", "MLHFM", "Correction")
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -160,12 +165,15 @@ fun OpenLoopScreen() {
             0 -> OpenLoopLogsTab(
                 me7LogMap = me7LogMap,
                 afrLogMap = afrLogMap,
-                airflowEstimation = airflowEstimation
+                airflowEstimation = airflowEstimation,
+                initialLogSubTab = initialLogSubTab
             )
             1 -> OpenLoopMlhfmTab(correction = correction)
             2 -> OpenLoopCorrectionTab(
                 correction = correction,
-                onCorrectionUpdated = { correction = it }
+                onCorrectionUpdated = { correction = it },
+                initialSubTab = initialCorrectionSubTab,
+                autoFitDegree = autoFitDegree
             )
         }
     }
@@ -177,12 +185,13 @@ fun OpenLoopScreen() {
 private fun OpenLoopLogsTab(
     me7LogMap: Map<Me7LogFileContract.Header, List<Double>>?,
     afrLogMap: Map<String, List<Double>>?,
-    airflowEstimation: AirflowEstimation?
+    airflowEstimation: AirflowEstimation?,
+    initialLogSubTab: Int = 0
 ) {
     var me7FileName by remember { mutableStateOf<String?>(null) }
     var afrFileName by remember { mutableStateOf<String?>(null) }
     var showFilterDialog by remember { mutableStateOf(false) }
-    var logSubTab by remember { mutableStateOf(0) }
+    var logSubTab by remember { mutableStateOf(initialLogSubTab) }
     val logSubTabs = listOf("Fueling", "Airflow")
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -451,7 +460,9 @@ private fun OpenLoopFilterDialog(
 @Composable
 private fun OpenLoopCorrectionTab(
     correction: OpenLoopMlhfmCorrection?,
-    onCorrectionUpdated: (OpenLoopMlhfmCorrection) -> Unit
+    onCorrectionUpdated: (OpenLoopMlhfmCorrection) -> Unit,
+    initialSubTab: Int = 0,
+    autoFitDegree: Int? = null
 ) {
     if (correction == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -460,8 +471,16 @@ private fun OpenLoopCorrectionTab(
         return
     }
 
-    var polynomialDegree by remember { mutableStateOf(6) }
-    var correctionSubTab by remember { mutableStateOf(0) }
+    var polynomialDegree by remember { mutableStateOf(autoFitDegree ?: 6) }
+    var correctionSubTab by remember { mutableStateOf(initialSubTab) }
+
+    // Auto-fit for screenshot harness
+    LaunchedEffect(autoFitDegree, correction) {
+        if (autoFitDegree != null && correction.correctedMlhfm.yAxis.isNotEmpty()) {
+            val fitMlhfm = MlhfmFitter.fitMlhfm(correction.correctedMlhfm, autoFitDegree)
+            onCorrectionUpdated(correction.copy(fitMlhfm = fitMlhfm))
+        }
+    }
     val correctionSubTabs = listOf("MLHFM", "AFR Correction %")
 
     Column(modifier = Modifier.fillMaxSize()) {
