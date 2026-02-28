@@ -87,7 +87,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Package MSI and uber JAR
-        run: ./gradlew packageMsi packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
+        shell: bash
+        run: ./gradlew packageMsi packageUberJarForCurrentOS "-Papp.version=${{ needs.check-version.outputs.version }}"
 
       - name: Rename uber JAR
         shell: bash
