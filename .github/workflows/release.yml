@@ -137,10 +137,15 @@ jobs:
           merge-multiple: true
           path: artifacts
 
+      - name: Flatten artifacts
+        run: |
+          mkdir -p flat
+          find artifacts -type f \( -name '*.dmg' -o -name '*.msi' -o -name '*.deb' -o -name '*.jar' -o -name '*.tar.gz' \) -exec cp {} flat/ \;
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.check-version.outputs.version }}
           name: ME7Tuner ${{ needs.check-version.outputs.version }}
           generate_release_notes: true
-          files: artifacts/*
+          files: flat/*
