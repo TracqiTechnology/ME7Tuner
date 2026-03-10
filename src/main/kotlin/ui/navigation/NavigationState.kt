@@ -3,9 +3,14 @@ package ui.navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 
 class NavigationState {
     var railDestination by mutableStateOf(RailDestination.CONFIGURATION)
+        private set
+
+    var ecuPlatform by mutableStateOf(EcuPlatformPreference.platform)
         private set
 
     var calibrationTab by mutableStateOf(CalibrationTab.FUELING)
@@ -35,5 +40,12 @@ class NavigationState {
 
     fun selectCalibrationTab(tab: CalibrationTab) {
         calibrationTab = tab
+    }
+
+    fun selectPlatform(platform: EcuPlatform) {
+        ecuPlatform = platform
+        EcuPlatformPreference.platform = platform
+        // Reset to a safe tab that exists on both platforms
+        calibrationTab = CalibrationTab.FUELING
     }
 }

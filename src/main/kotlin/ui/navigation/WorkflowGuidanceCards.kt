@@ -69,9 +69,9 @@ fun WorkflowGuidanceCards(
                     }
 
                     Text(
-                        text = "Have you modified your engine hardware (bigger turbo, injectors, MAF housing, etc.)? " +
-                            "If so, calibrate your base MAF, fueling, torque, ignition, and boost maps first so " +
-                            "that LDRXN matches actual load and PSSOL matches actual pressure.",
+                        text = "Have you modified your engine hardware (bigger turbo, injectors, intake, etc.)? " +
+                            "If so, calibrate your base fueling, torque, ignition, and boost maps first so " +
+                            "that requested load matches actual load and requested pressure matches actual pressure.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)

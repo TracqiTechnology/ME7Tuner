@@ -7,7 +7,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import data.model.EcuPlatform
 import data.preferences.plsol.PlsolPreferences
+import data.preferences.platform.EcuPlatformPreference
 import domain.model.plsol.Airflow
 import domain.model.plsol.Horsepower
 import domain.model.plsol.Plsol
@@ -27,6 +29,7 @@ fun PlsolScreen(initialTab: Int = 0) {
 
     var selectedTab by remember { mutableStateOf(initialTab) }
     val tabTitles = listOf("Load", "Airflow", "Power")
+    val isMed17 = EcuPlatformPreference.platform == EcuPlatform.MED17
 
     // Calculate all chart data
     val chartData by remember(barometricPressure, intakeAirTemp, kfurl, displacement, maxRpm) {
@@ -157,10 +160,13 @@ fun PlsolScreen(initialTab: Int = 0) {
                     modifier = Modifier.weight(1f)
                 )
                 ColumnParameterField(
-                    label = "KFURL",
+                    label = if (isMed17) "fupsrl_w (≈KFURL)" else "KFURL",
                     value = kfurl,
                     unit = "%",
-                    tooltip = "Volumetric Efficiency slope constant from the KFURL map. Scales how much load (%) the ECU calculates per hPa of manifold pressure. Derived from engine displacement and measured VE.",
+                    tooltip = if (isMed17)
+                        "MED17 does not have a static KFURL map. The pressure→load conversion factor (fupsrl_w) is computed and adapted at runtime. Enter a representative value from your log data for approximate PLSOL predictions."
+                    else
+                        "Volumetric Efficiency slope constant from the KFURL map. Scales how much load (%) the ECU calculates per hPa of manifold pressure. Derived from engine displacement and measured VE.",
                     onValueChange = {
                         kfurl = it
                         it.toDoubleOrNull()?.let { v -> PlsolPreferences.kfurl = v }

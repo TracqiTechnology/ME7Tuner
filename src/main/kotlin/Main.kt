@@ -18,6 +18,7 @@ import data.preferences.filechooser.XdfFileChooserPreferences
 import data.preferences.kp.KpFileChooserPreferences
 import data.preferences.kp.KpFilePreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
+import data.preferences.platform.EcuPlatformPreference
 import data.preferences.xdf.XdfFilePreferences
 import data.profile.ProfileManager
 import ui.components.EulaDialog
@@ -67,9 +68,10 @@ fun main() {
         val csvFile by WinOlsCsvFilePreferences.file.collectAsState()
 
         val title = remember(binFile, xdfFile, kpFile, csvFile) {
+            val platformLabel = EcuPlatformPreference.platform.shortName
             val kpSuffix = if (kpFile.exists()) " | WinOLS KP - ${kpFile.name}" else ""
             val csvSuffix = if (csvFile.exists()) " | WinOLS CSV - ${csvFile.name}" else ""
-            "TracQi ME7Tuner - ${binFile.name} | XDF File - ${xdfFile.name}$kpSuffix$csvSuffix"
+            "TracQi ME7Tuner ($platformLabel) - ${binFile.name} | XDF File - ${xdfFile.name}$kpSuffix$csvSuffix"
         }
 
         Window(

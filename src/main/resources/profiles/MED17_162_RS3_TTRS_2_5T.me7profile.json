@@ -1,0 +1,84 @@
+{
+    "name": "Audi RS3 / TTRS 2.5T — MED17.1.62 (DS1)",
+    "description": "EA855 EVO 2.5 TFSI, 5-cylinder, MED17.1.62 ECU. Dual fuel: port + direct injection. Stock K16 turbo. DS1 flash via ScorpionEFI/DynoScorpion.",
+    "ecuPlatform": "MED17",
+    "ecuPartNumbers": [],
+    "mapDefinitions": {
+        "KRKTE_PFI": {
+            "tableName": "Conversion relative Fuel mass rk in effective Injection time te fairs. intake manifold injection (PFI)",
+            "tableDescription": "Port injector constant — ms/% conversion factor for PFI",
+            "unit": "ms/%"
+        },
+        "KRKTE_GDI": {
+            "tableName": "Conversion relative Fuel mass rk in effective Injection time te",
+            "tableDescription": "Direct injector constant — ms/% conversion factor for GDI",
+            "unit": "ms/%"
+        },
+        "TVUB_PFI": {
+            "tableName": "Battery Voltage-dependent delay time for injectors",
+            "tableDescription": "Port injector dead time vs battery voltage",
+            "unit": "ms"
+        },
+        "KFMIOP": {
+            "tableName": "Map optimum engine boost_vlmspec",
+            "tableDescription": "Optimal engine torque map (KFLMIOP equivalent)",
+            "unit": "%"
+        },
+        "KFMIRL": {
+            "tableName": "Map for Calculation Desired charge",
+            "tableDescription": "Target cylinder filling / load request (KFLMIRL equivalent)",
+            "unit": "%"
+        }
+    },
+    "primaryFueling": {
+        "airDensity": 1.2929,
+        "displacement": 0.496,
+        "numCylinders": 5,
+        "stoichiometricAfr": 14.7,
+        "gasolineGramsPerCcm": 0.7,
+        "fuelInjectorSize": 220.0
+    },
+    "plsol": {
+        "barometricPressure": 1013.0,
+        "intakeAirTemperature": 20.0,
+        "kfurl": 0.1037,
+        "displacement": 2.48,
+        "rpm": 7000
+    },
+    "kfmiop": {
+        "maxMapPressure": 3500.0,
+        "maxBoostPressure": 2800.0
+    },
+    "kfvpdksd": {
+        "maxWastegateCrackingPressure": 200.0
+    },
+    "wdkugdn": {
+        "displacement": 2.48
+    },
+    "closedLoopFueling": {
+        "minThrottleAngle": 0.0,
+        "minRpm": 0.0,
+        "maxDerivative": 50.0
+    },
+    "openLoopFueling": {
+        "minThrottleAngle": 80.0,
+        "minRpm": 2000.0,
+        "minMe7Points": 75,
+        "minAfrPoints": 150,
+        "maxAfr": 16.0,
+        "fuelInjectorSize": 220.0,
+        "gasolineGramsPerCcm": 0.7,
+        "numFuelInjectors": 5.0
+    },
+    "dualInjection": {
+        "portInjectorFlowRateCcMin": 220.0,
+        "portInjectorFuelPressureBar": 4.0,
+        "directInjectorFlowRateCcMin": 160.0,
+        "directInjectorFuelPressureBar": 200.0,
+        "portSharePercentDefault": 30.0,
+        "numPortInjectors": 5,
+        "numDirectInjectors": 5
+    },
+    "logHeaders": {}
+}
+

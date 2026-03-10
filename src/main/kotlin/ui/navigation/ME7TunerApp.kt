@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import data.model.EcuPlatform
 import data.preferences.bin.BinFilePreferences
 import data.preferences.xdf.XdfFilePreferences
 import ui.screens.configuration.ConfigurationScreen
@@ -45,10 +46,31 @@ fun ME7TunerApp(navState: NavigationState = remember { NavigationState() }) {
                             color = MaterialTheme.colorScheme.primaryContainer
                         )
                         Text(
-                            text = "ME7Tuner",
+                            text = if (navState.ecuPlatform == EcuPlatform.ME7) "ME7Tuner" else "MED17Tuner",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // ECU Platform toggle
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(horizontal = 4.dp)) {
+                            EcuPlatform.entries.forEachIndexed { index, platform ->
+                                SegmentedButton(
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = EcuPlatform.entries.size
+                                    ),
+                                    onClick = { navState.selectPlatform(platform) },
+                                    selected = navState.ecuPlatform == platform
+                                ) {
+                                    Text(
+                                        text = platform.shortName,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             ) {

@@ -16,6 +16,8 @@ import domain.model.injector.InjectorScalingSolver
 import domain.model.injector.InjectorSpec
 import domain.model.injector.KrkteScalingResult
 import domain.model.injector.TvubResult
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 import ui.components.ParameterField
 import ui.screens.krkte.KrkteScreen
 
@@ -52,6 +54,7 @@ fun FuelingScreen() {
 @Composable
 private fun InjectorScalingTab() {
     val scrollState = rememberScrollState()
+    val isMed17 = EcuPlatformPreference.platform == EcuPlatform.MED17
 
     // Old injector specs
     var oldFlowRate by remember { mutableStateOf("") }
@@ -89,13 +92,17 @@ private fun InjectorScalingTab() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Compute KRKTE scale factor and TVUB dead time table when swapping " +
-                        "injectors. In ME7, injection time is computed as:",
+                        "injectors. " + if (isMed17)
+                            "In MED17, injection time for port injectors is computed as:"
+                        else
+                            "In ME7, injection time is computed as:",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "te = rk_w × KRKTE + TVUB(ubat)",
+                    if (isMed17) "te_pfi = rk_w × KRKTE_PFI × portShare + TVUB_PFI(ubat)"
+                    else "te = rk_w × KRKTE + TVUB(ubat)",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace
                 )
@@ -135,7 +142,10 @@ private fun InjectorScalingTab() {
                         value = oldPressure,
                         onValueChange = { oldPressure = it },
                         label = "Fuel Pressure (bar)",
-                        tooltip = "Rail fuel pressure at which the stock injector flow rate was measured. ME7 typically runs 3.0 bar. Used for pressure-corrected flow scaling.",
+                        tooltip = if (isMed17)
+                            "Rail fuel pressure at which the stock injector flow rate was measured. MED17 port injectors typically run 4.0 bar. Used for pressure-corrected flow scaling."
+                        else
+                            "Rail fuel pressure at which the stock injector flow rate was measured. ME7 typically runs 3.0 bar. Used for pressure-corrected flow scaling.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -143,7 +153,10 @@ private fun InjectorScalingTab() {
                         value = oldDeadTime,
                         onValueChange = { oldDeadTime = it },
                         label = "Dead Time @ 14V (ms)",
-                        tooltip = "Injector opening delay at 14V battery voltage (ms). ME7 compensates for this via the TVUB map. Stock injectors are typically 0.7–1.0 ms.",
+                        tooltip = if (isMed17)
+                            "Injector opening delay at 14V battery voltage (ms). MED17 compensates for this via the TVUB map. Stock port injectors are typically 0.7–1.0 ms."
+                        else
+                            "Injector opening delay at 14V battery voltage (ms). ME7 compensates for this via the TVUB map. Stock injectors are typically 0.7–1.0 ms.",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -372,24 +385,41 @@ private fun InjectorScalingTab() {
 
                 Text("Important Notes", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    "• Changing injectors affects fueling, not air measurement (msdk_w / alpha-n)\n" +
-                        "• KRKTE is a scalar constant — ME7 does not have a 2D injection time map\n" +
-                        "• TVUB is the only injector-specific table besides KRKTE\n" +
-                        "• Always reset ECU adaptations after an injector change\n" +
-                        "• Drive with the MAF connected to re-learn msndko_w / fkmsdk_w adaptation values\n" +
-                        "• Use the Alpha-N Diagnostic (WDKUGDN tab) to verify msdk_w accuracy afterward",
+                    if (isMed17)
+                        "• Changing injectors affects fueling, not air measurement\n" +
+                            "• MED17 has separate KRKTE_PFI and KRKTE_GDI scalars — use the Dual Injection tab for separate bank scaling\n" +
+                            "• TVUB_PFI is the port injector dead time table\n" +
+                            "• Always reset ECU adaptations after an injector change"
+                    else
+                        "• Changing injectors affects fueling, not air measurement (msdk_w / alpha-n)\n" +
+                            "• KRKTE is a scalar constant — ME7 does not have a 2D injection time map\n" +
+                            "• TVUB is the only injector-specific table besides KRKTE\n" +
+                            "• Always reset ECU adaptations after an injector change\n" +
+                            "• Drive with the MAF connected to re-learn msndko_w / fkmsdk_w adaptation values\n" +
+                            "• Use the Alpha-N Diagnostic (WDKUGDN tab) to verify msdk_w accuracy afterward",
                     style = MaterialTheme.typography.bodySmall
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                Text("ME7 Injection Architecture", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    "ME7 computes injection time as: te = rk_w × KRKTE + TVUB(ubat)\n" +
-                        "• KRKTE — scalar injector constant [ms/%] (me7-raw.txt line 222175)\n" +
-                        "• TVUB — dead time vs battery voltage (me7-raw.txt line 183466)\n" +
-                        "• KFLF — NOT injector-related; it is 'Lambda map at partial load' (AFR target)\n" +
-                        "• There is no KFTI (2D injection time map) or KFLFW (linearization) in ME7",
+                    if (isMed17) "MED17 Injection Architecture" else "ME7 Injection Architecture",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    if (isMed17)
+                        "MED17 (dual fuel) computes injection time per injector bank:\n" +
+                            "• te_pfi = rk_w × KRKTE_PFI × portShare + TVUB_PFI(ubat)\n" +
+                            "• te_gdi = rk_w × KRKTE_GDI × (1 − portShare)\n" +
+                            "• KRKTE_PFI — port injector constant [ms/%] (XDF: 'Conversion relative Fuel mass rk → te for PFI')\n" +
+                            "• KRKTE_GDI — direct injector constant [ms/%] (XDF: 'Conversion relative Fuel mass rk → te')"
+                    else
+                        "ME7 computes injection time as: te = rk_w × KRKTE + TVUB(ubat)\n" +
+                            "• KRKTE — scalar injector constant [ms/%] (me7-raw.txt line 222175)\n" +
+                            "• TVUB — dead time vs battery voltage (me7-raw.txt line 183466)\n" +
+                            "• KFLF — NOT injector-related; it is 'Lambda map at partial load' (AFR target)\n" +
+                            "• There is no KFTI (2D injection time map) or KFLFW (linearization) in ME7",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
