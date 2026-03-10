@@ -41,8 +41,11 @@ jobs:
 
           # Display version for tags, JAR names, and GitHub release title
           DISPLAY_VERSION="${VERSION}-beta.${BETA_NUM}"
-          # Native package version — strictly numeric for DMG/MSI/DEB (jpackage requirement)
-          PKG_VERSION="${VERSION}.${BETA_NUM}"
+          # Native package version — strictly numeric, max 3 segments for DMG/MSI/DEB.
+          # Encode beta number into the patch segment: (PATCH+1)*1000 + BETA_NUM
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          PKG_PATCH=$(( PATCH * 1000 + BETA_NUM ))
+          PKG_VERSION="$(echo "$VERSION" | cut -d. -f1).$(echo "$VERSION" | cut -d. -f2).${PKG_PATCH}"
 
           echo "Next pre-release: v${DISPLAY_VERSION} (native packages: ${PKG_VERSION})"
           echo "version=${DISPLAY_VERSION}" >> "$GITHUB_OUTPUT"
