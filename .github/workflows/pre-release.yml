@@ -65,7 +65,7 @@ jobs:
 
       - name: Package DMG (numeric version) and uber JAR (display version)
         run: |
-          ./gradlew packageDmg -Papp.version=${{ needs.check-version.outputs.pkg_version }}
+          ./gradlew packageDmg -Papp.version=${{ needs.check-version.outputs.version }} -Ppkg.version=${{ needs.check-version.outputs.pkg_version }}
           ./gradlew packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
 
       - name: Rename uber JAR
@@ -96,7 +96,7 @@ jobs:
       - name: Package MSI (numeric version) and uber JAR (display version)
         shell: bash
         run: |
-          ./gradlew packageMsi "-Papp.version=${{ needs.check-version.outputs.pkg_version }}"
+          ./gradlew packageMsi "-Papp.version=${{ needs.check-version.outputs.version }}" "-Ppkg.version=${{ needs.check-version.outputs.pkg_version }}"
           ./gradlew packageUberJarForCurrentOS "-Papp.version=${{ needs.check-version.outputs.version }}"
 
       - name: Rename uber JAR
@@ -127,12 +127,12 @@ jobs:
 
       - name: Package DEB (numeric version) and uber JAR (display version)
         run: |
-          ./gradlew packageDeb -Papp.version=${{ needs.check-version.outputs.pkg_version }}
+          ./gradlew packageDeb -Papp.version=${{ needs.check-version.outputs.version }} -Ppkg.version=${{ needs.check-version.outputs.pkg_version }}
           ./gradlew packageUberJarForCurrentOS -Papp.version=${{ needs.check-version.outputs.version }}
 
       - name: Create portable tar.gz and rename uber JAR
         run: |
-          ./gradlew createDistributable -Papp.version=${{ needs.check-version.outputs.pkg_version }}
+          ./gradlew createDistributable -Papp.version=${{ needs.check-version.outputs.version }} -Ppkg.version=${{ needs.check-version.outputs.pkg_version }}
           VERSION=${{ needs.check-version.outputs.version }}
           tar -czf "ME7Tuner-${VERSION}-linux-x64.tar.gz" \
             -C build/compose/binaries/main/app .

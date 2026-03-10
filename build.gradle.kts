@@ -8,6 +8,8 @@ plugins {
 }
 
 val appVersion = project.property("app.version") as String
+val pkgVersion = project.findProperty("pkg.version") as String?
+    ?: appVersion.replace(Regex("-.*"), "")
 
 repositories {
     mavenCentral()
@@ -79,7 +81,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ME7Tuner"
-            packageVersion = appVersion
+            packageVersion = pkgVersion
             description = "ME7 M-box ECU Calibration Tool"
 
             includeAllModules = true
