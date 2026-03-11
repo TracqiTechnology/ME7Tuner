@@ -14,6 +14,7 @@ import domain.model.injector.InjectorScalingSolver
 import domain.model.injector.InjectorSpec
 import domain.model.injector.KrkteScalingResult
 import domain.model.injector.TvubResult
+import data.preferences.dualinjection.DualInjectionPreferences
 
 /**
  * MED17-only screen for dual injection (port + direct) calibration.
@@ -53,9 +54,9 @@ fun DualInjectionScreen() {
 private fun PortInjectorTab() {
     val scrollState = rememberScrollState()
 
-    var oldFlowRate by remember { mutableStateOf("") }
-    var oldPressure by remember { mutableStateOf("4.0") }
-    var oldDeadTime by remember { mutableStateOf("") }
+    var oldFlowRate by remember { mutableStateOf(DualInjectionPreferences.portInjectorFlowRateCcMin.let { if (it > 0) it.toString() else "" }) }
+    var oldPressure by remember { mutableStateOf(DualInjectionPreferences.portInjectorFuelPressureBar.toString()) }
+    var oldDeadTime by remember { mutableStateOf(DualInjectionPreferences.portInjectorDeadTimeMs.let { if (it > 0) it.toString() else "" }) }
     var newFlowRate by remember { mutableStateOf("") }
     var newPressure by remember { mutableStateOf("4.0") }
     var newDeadTime by remember { mutableStateOf("") }
@@ -143,14 +144,16 @@ private fun PortInjectorTab() {
                     deadTimeMs = newDeadTime.toDoubleOrNull() ?: 0.0
                 )
                 scalingResult = InjectorScalingSolver.computeKrkteScaling(oldSpec, newSpec)
+                // Persist port injector specs
+                oldFlowRate.toDoubleOrNull()?.let { DualInjectionPreferences.portInjectorFlowRateCcMin = it }
+                oldPressure.toDoubleOrNull()?.let { DualInjectionPreferences.portInjectorFuelPressureBar = it }
+                oldDeadTime.toDoubleOrNull()?.let { DualInjectionPreferences.portInjectorDeadTimeMs = it }
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Calculation error"
             }
         }) {
             Text("Calculate Port KRKTE Scale Factor")
         }
-
-        // Results
         errorMessage?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
@@ -191,8 +194,8 @@ private fun PortInjectorTab() {
 private fun DirectInjectorTab() {
     val scrollState = rememberScrollState()
 
-    var oldFlowRate by remember { mutableStateOf("") }
-    var oldPressure by remember { mutableStateOf("200.0") }
+    var oldFlowRate by remember { mutableStateOf(DualInjectionPreferences.directInjectorFlowRateCcMin.let { if (it > 0) it.toString() else "" }) }
+    var oldPressure by remember { mutableStateOf(DualInjectionPreferences.directInjectorFuelPressureBar.toString()) }
     var newFlowRate by remember { mutableStateOf("") }
     var newPressure by remember { mutableStateOf("200.0") }
 
@@ -284,6 +287,9 @@ private fun DirectInjectorTab() {
                     deadTimeMs = 0.0
                 )
                 scalingResult = InjectorScalingSolver.computeKrkteScaling(oldSpec, newSpec)
+                // Persist direct injector specs
+                oldFlowRate.toDoubleOrNull()?.let { DualInjectionPreferences.directInjectorFlowRateCcMin = it }
+                oldPressure.toDoubleOrNull()?.let { DualInjectionPreferences.directInjectorFuelPressureBar = it }
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Calculation error"
             }
@@ -334,7 +340,7 @@ private fun SplitCalculatorTab() {
 
     var portKrkte by remember { mutableStateOf("") }
     var diKrkte by remember { mutableStateOf("") }
-    var desiredPortShare by remember { mutableStateOf("30.0") }
+    var desiredPortShare by remember { mutableStateOf(DualInjectionPreferences.portSharePercentDefault.toString()) }
     var targetLoad by remember { mutableStateOf("150.0") }
 
     var portOnTime by remember { mutableStateOf<Double?>(null) }
@@ -412,6 +418,8 @@ private fun SplitCalculatorTab() {
 
                 portOnTime = load * share * pKrkte
                 diOnTime = load * (1.0 - share) * dKrkte
+                // Persist port share
+                desiredPortShare.toDoubleOrNull()?.let { DualInjectionPreferences.portSharePercentDefault = it }
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Calculation error"
             }

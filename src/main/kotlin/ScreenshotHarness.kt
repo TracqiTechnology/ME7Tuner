@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import data.parser.afrlog.AfrLogParser
+import data.model.EcuPlatform
 import data.parser.bin.BinParser
 import data.parser.me7log.*
 import data.parser.xdf.XdfParser
@@ -33,6 +34,7 @@ import data.preferences.kfzwop.KfzwopPreferences
 import data.preferences.krkte.KrktePreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.mlhfm.MlhfmPreferences
+import data.preferences.platform.EcuPlatformPreference
 import data.preferences.wdkugdn.WdkugdnPreferences
 import data.preferences.xdf.XdfFilePreferences
 import kotlinx.coroutines.flow.first
@@ -354,6 +356,92 @@ fun main() {
         navState.navigateToCalibration(CalibrationTab.PLSOL)
         ME7TunerApp(navState)
     }
+
+    println("All ME7 screenshots generated.\n")
+
+    // --- MED17 Screenshots ---
+    println("\n--- MED17 Screenshots ---")
+    EcuPlatformPreference.platform = EcuPlatform.MED17
+
+    // Load MED17 XDF+BIN
+    XdfFilePreferences.setFile(File("technical/med17/Audi_RS3vlmspec_Gv004.xdf"))
+    BinFilePreferences.setFile(File("technical/med17/OTS tunes/404J/MED17_1_62_STOCK.bin"))
+
+    // Wait for re-parse
+    println("Waiting for MED17 BIN parsing...")
+    runBlocking { BinParser.mapList.first { it.isNotEmpty() } }
+    println("MED17 BIN parsed: ${BinParser.mapList.value.size} maps loaded")
+
+    // Auto-select MED17 maps
+    autoSelectMap(KrktePreferences, "KRKTE")
+    autoSelectMap(KfmiopPreferences, "KFMIOP")
+    autoSelectMap(KfmirlPreferences, "KFMIRL")
+    autoSelectMap(KfzwopPreferences, "KFZWOP")
+    autoSelectMap(KfzwPreferences, "KFZW")
+    autoSelectMap(KfldrlPreferences, "KFLDRL")
+    autoSelectMap(KfldimxPreferences, "KFLDIMX")
+
+    val med17OutputDir = File("documentation/images/med17")
+    med17OutputDir.mkdirs()
+
+    // MED17 hero shot / overview
+    captureScreen("med17/me7Tuner_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.FUELING)
+        ME7TunerApp(navState)
+    }
+
+    // MED17 Configuration
+    captureScreen("med17/configuration_med17.png") {
+        val navState = NavigationState()
+        navState.navigateTo(RailDestination.CONFIGURATION)
+        ME7TunerApp(navState)
+    }
+
+    // Dual Injection (MED17-only tab)
+    captureScreen("med17/dual_injection.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.DUAL_INJECTION)
+        ME7TunerApp(navState)
+    }
+
+    // KFMIOP in MED17 mode
+    captureScreen("med17/kfmiop_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.KFMIOP)
+        ME7TunerApp(navState)
+    }
+
+    // KFMIRL in MED17 mode
+    captureScreen("med17/kfmirl_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.KFMIRL)
+        ME7TunerApp(navState)
+    }
+
+    // LDRPID in MED17 mode
+    captureScreen("med17/ldrpid_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.LDRPID)
+        ME7TunerApp(navState)
+    }
+
+    // PLSOL in MED17 mode
+    captureScreen("med17/plsol_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.PLSOL)
+        ME7TunerApp(navState)
+    }
+
+    // Optimizer in MED17 mode
+    captureScreen("med17/optimizer_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToOptimizer()
+        ME7TunerApp(navState)
+    }
+
+    // Restore ME7 platform
+    EcuPlatformPreference.platform = EcuPlatform.ME7
 
     println("All screenshots generated in documentation/images/")
 }

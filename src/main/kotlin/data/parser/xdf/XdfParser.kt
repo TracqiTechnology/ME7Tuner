@@ -85,16 +85,23 @@ object XdfParser {
     // ─────────────────────────────────────────────────────────────────────
 
     private fun parse(inputStream: InputStream) {
+        val (header, definitions) = parseToList(inputStream)
+        _xdfHeader.value = header
+        _tableDefinitions.value = definitions
+    }
+
+    /**
+     * Parses an XDF input stream and returns the header and sorted table definitions
+     * without touching singleton state.  Visible to tests.
+     */
+    internal fun parseToList(inputStream: InputStream): Pair<XdfHeader, List<TableDefinition>> {
         val definitions = mutableListOf<TableDefinition>()
         val saxBuilder = SAXBuilder()
         val document = saxBuilder.build(inputStream)
         val rootElement = document.rootElement
 
-        // ── 1. Parse XDFHEADER ────────────────────────────────────────────
         val header = parseHeader(rootElement.getChild(XDF_HEADER_TAG))
-        _xdfHeader.value = header
 
-        // ── 2. Parse tables and constants ─────────────────────────────────
         for (element in rootElement.children) {
             when (element.name) {
                 XDF_TABLE_TAG -> parseTable(element, header)?.let { definitions.add(it) }
@@ -103,7 +110,7 @@ object XdfParser {
         }
 
         definitions.sortBy { it.toString() }
-        _tableDefinitions.value = definitions
+        return header to definitions
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 package data.profile
 
 import data.contract.Me7LogFileContract
+import data.contract.Med17LogFileContract
 import data.parser.xdf.XdfParser
 import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences
 import data.preferences.kfldimx.KfldimxPreferences
@@ -18,12 +19,14 @@ import data.preferences.krkte.KrktePreferences
 import data.preferences.krkte.KrktePfiPreferences
 import data.preferences.krkte.KrkteGdiPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
+import data.preferences.logheaderdefinition.Med17LogHeaderPreference
 import data.preferences.MapPreference
 import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences
 import data.preferences.plsol.PlsolPreferences
 import data.preferences.primaryfueling.PrimaryFuelingPreferences
 import data.preferences.tvub.TvubPfiPreferences
+import data.preferences.dualinjection.DualInjectionPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -89,6 +92,11 @@ object ProfileManager {
             logHeaders[header.name] = LogHeaderPreference.getHeader(header)
         }
 
+        val med17LogHeaders = mutableMapOf<String, String>()
+        for (header in Med17LogFileContract.Header.entries) {
+            med17LogHeaders[header.name] = Med17LogHeaderPreference.getHeader(header)
+        }
+
         return ConfigurationProfile(
             name = name,
             description = "",
@@ -134,7 +142,17 @@ object ProfileManager {
                 gasolineGramsPerCcm = OpenLoopFuelingLogFilterPreferences.gasolineGramsPerCubicCentimeter,
                 numFuelInjectors = OpenLoopFuelingLogFilterPreferences.numFuelInjectors
             ),
-            logHeaders = logHeaders
+            dualInjection = DualInjectionConfig(
+                portInjectorFlowRateCcMin = DualInjectionPreferences.portInjectorFlowRateCcMin,
+                portInjectorFuelPressureBar = DualInjectionPreferences.portInjectorFuelPressureBar,
+                directInjectorFlowRateCcMin = DualInjectionPreferences.directInjectorFlowRateCcMin,
+                directInjectorFuelPressureBar = DualInjectionPreferences.directInjectorFuelPressureBar,
+                portSharePercentDefault = DualInjectionPreferences.portSharePercentDefault,
+                numPortInjectors = DualInjectionPreferences.numPortInjectors,
+                numDirectInjectors = DualInjectionPreferences.numDirectInjectors
+            ),
+            logHeaders = logHeaders,
+            med17LogHeaders = med17LogHeaders
         )
     }
 
@@ -192,6 +210,17 @@ object ProfileManager {
         // Apply WDKUGDN
         WdkugdnPreferences.displacement = profile.wdkugdn.displacement
 
+        // Apply dual injection
+        profile.dualInjection.let {
+            DualInjectionPreferences.portInjectorFlowRateCcMin = it.portInjectorFlowRateCcMin
+            DualInjectionPreferences.portInjectorFuelPressureBar = it.portInjectorFuelPressureBar
+            DualInjectionPreferences.directInjectorFlowRateCcMin = it.directInjectorFlowRateCcMin
+            DualInjectionPreferences.directInjectorFuelPressureBar = it.directInjectorFuelPressureBar
+            DualInjectionPreferences.portSharePercentDefault = it.portSharePercentDefault
+            DualInjectionPreferences.numPortInjectors = it.numPortInjectors
+            DualInjectionPreferences.numDirectInjectors = it.numDirectInjectors
+        }
+
         // Apply closed loop fueling
         profile.closedLoopFueling.let {
             ClosedLoopFuelingLogPreferences.minThrottleAngle = it.minThrottleAngle
@@ -215,6 +244,12 @@ object ProfileManager {
         for ((headerName, value) in profile.logHeaders) {
             val header = Me7LogFileContract.Header.entries.firstOrNull { it.name == headerName } ?: continue
             LogHeaderPreference.setHeader(header, value)
+        }
+
+        // Apply MED17 log headers
+        for ((headerName, value) in profile.med17LogHeaders) {
+            val header = Med17LogFileContract.Header.entries.firstOrNull { it.name == headerName } ?: continue
+            Med17LogHeaderPreference.setHeader(header, value)
         }
     }
 

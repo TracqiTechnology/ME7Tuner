@@ -79,6 +79,38 @@
         "numPortInjectors": 5,
         "numDirectInjectors": 5
     },
-    "logHeaders": {}
+    "logHeaders": {},
+    "med17LogHeaders": {
+        "START_TIME_HEADER": "start_time",
+        "TIME_STAMP_COLUMN_HEADER": "Time",
+        "RPM_COLUMN_HEADER": "nmot_w",
+        "ENGINE_LOAD_HEADER": "rl_w",
+        "REQUESTED_LOAD_HEADER": "rlsol_w",
+        "THROTTLE_PLATE_ANGLE_HEADER": "wdkba",
+        "WASTEGATE_DUTY_CYCLE_HEADER": "tvldste_w",
+        "LDR_DUTY_CYCLE_HEADER": "ldtvm_w",
+        "ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER": "psrg_w",
+        "REQUESTED_PRESSURE_HEADER": "pvds_w",
+        "REQUESTED_PRESSURE_MAX_HEADER": "pvdxs_w",
+        "BAROMETRIC_PRESSURE_HEADER": "pu_w",
+        "STFT_COLUMN_HEADER": "frm_w",
+        "LTFT_COLUMN_HEADER": "fra_w",
+        "LONG_TERM_FT_HEADER": "longft1_w",
+        "REQUESTED_LAMBDA_HEADER": "lamsbg_w",
+        "WIDE_BAND_O2_HEADER": "lamsoni_w",
+        "LAMBDA_CONTROL_ACTIVE_HEADER": "B_lr",
+        "FUEL_INJECTOR_FIRST_PULSE_HEADER": "ti1a_l",
+        "FUEL_INJECTOR_ON_TIME_HEADER": "ti_l",
+        "PFI_INJECTION_TIME_HEADER": "te_l",
+        "PORT_FUEL_MASS_REL_HEADER": "rkpfi_w",
+        "FUEL_MASS_REL_HEADER": "rk_w",
+        "PFI_SPLIT_FACTOR_HEADER": "InjSys_facPrtnPfiTar",
+        "PFI_SPLIT_FACTOR_UNLIM_HEADER": "InjSys_facPrtnPfiSpUnlimModNew",
+        "FUPSRLS_HEADER": "fupsrls_w",
+        "PBRINTS_HEADER": "pbrints_w",
+        "LOAD_FOR_INJECTION_HEADER": "rlp_w",
+        "SELECTED_GEAR_HEADER": "gangi",
+        "BATTERY_VOLTAGE_HEADER": "ubsq"
+    }
 }
 
