@@ -12,9 +12,9 @@
   <img src="https://img.shields.io/badge/Platform-macOS_|_Windows_|_Linux-lightgrey.svg" alt="Platform">
 </p>
 
-ME7Tuner is a calibration and optimization tool for Bosch ME7 and ME7.x ECUs. It provides calculators for fueling, MAF linearization, torque/load tables, ignition timing, throttle transition, and boost control — plus a log-analysis Optimizer that diagnoses and corrects boost control and volumetric efficiency errors from real-world data.
+ME7Tuner is a calibration and optimization tool for Bosch ME7 and MED17 ECUs. It provides calculators for fueling, injector scaling, torque/load tables, ignition timing, and boost control — plus a log-analysis Optimizer that diagnoses and corrects boost control and volumetric efficiency errors from real-world data. MED17 support adds dual injection (port + direct) calibration and ScorpionEFI log parsing for the Audi RS3/TTRS 2.5T and related platforms.
 
-ME7Tuner supports any ME7 variant that has a TunerPro XDF or WinOLS KP definition file. Bundled profiles are included for the Audi B5 S4/RS4 2.7T, B5/B6 A4 1.8T, Audi TT 1.8T, and VW Golf/Jetta 1.8T platforms.
+ME7Tuner supports any ME7 or MED17 variant that has a TunerPro XDF definition file. Bundled profiles are included for the Audi B5 S4/RS4 2.7T (ME7), B5/B6 A4 1.8T, Audi TT 1.8T, VW Golf/Jetta 1.8T, and Audi RS3/TTRS 2.5T TFSI (MED17.1.62) platforms.
 
 <img src="/documentation/images/me7Tuner.png" width="800">
 
@@ -100,6 +100,27 @@ Read [Fuel Injectors](https://s4wiki.com/wiki/Fuel_injectors)
 
 Note that a stock M-box has a maximum load request of 191%, but can be increased with the stock MAP sensor to ~215%.
 
+### MED17: Same story, different ECU
+
+If you're running MED17 — RS3, TTRS, or any of the EA855 EVO / EA888 Gen3 / 4.0T / 5.2 V10 DS1 cars — ME7Tuner has you covered. The workflow is the same: Calibration for hardware changes, Optimization for boost control and VE tuning. MED17 adds dual injection (port + direct) which means two injector banks to calibrate, two KRKTE scalars to compute, and a fuel split to manage. If that sounds like twice the work, it is. ME7Tuner does the math so you don't have to.
+
+The 2.5T cars make insane power very easily and get into high load territory fast. If you're running aftermarket turbos, you'll need to rescale KFMIOP/KFMIRL (called KFLMIOP/KFLMIRL in MED17) and redo the entire PID setup (KFLDRL + every table in the PID chain) because the stock PID was linearized for a turbo that doesn't exist on your car anymore.
+
+**What's different in MED17 vs ME7:**
+
+| Feature | ME7 | MED17 |
+|---------|-----|-------|
+| Injection | Single bank | Dual (port + direct) |
+| MAF Scaling | MLHFM linearization curve | Not applicable (adaptive VE model via `fupsrl_w`) |
+| VE Model | KFURL/KFPBRK (static maps) | Adaptive (`fupsrls_w` / `pbrint_w`) |
+| Throttle Model | KFVPDKSD + WDKUGDN | Different architecture (not calibratable here) |
+| Alpha-N | msdk_w vs mshfm_w diagnostic | Not applicable |
+| Torque Tables | KFMIOP / KFMIRL | KFLMIOP / KFLMIRL (same math, different names) |
+| Boost PID | KFLDRL / KFLDIMX | Same maps, same PID — but non-linear response with aftermarket hardware |
+| Log Format | ME7Logger CSV | ScorpionEFI CSV |
+
+ME7Tuner automatically shows only the tabs relevant to your platform. Switch between ME7 and MED17 in the Configuration tab.
+
 # How ME7 Actually Works (Read This First)
 
 Everything in ME7 revolves around requested load (or cylinder fill). Understand this and everything else makes sense. Skip it and you'll spend weeks chasing symptoms.
@@ -111,6 +132,12 @@ Here's the signal chain: the driver pushes the accelerator pedal, which makes a 
 Here's the part people miss: **no amount of hardware modifications will increase power if actual load already equals or exceeds requested load.** Bigger turbo, bigger intercooler, better exhaust — none of it matters if the ECU is already capping output. ME7 uses interventions to *decrease* actual load to match the request. You must calibrate the tune to *request more load* before you'll see more power.
 
 ME7Tuner provides the calculations that let you get airflow, pressure, and load measurements right — so the model works instead of fighting you.
+
+## How MED17 Works (Same Idea, Modern Execution)
+
+MED17 follows the same torque-based architecture as ME7 — torque request → load request → pressure target → boost control. The driver model, torque monitoring, and intervention logic are conceptually identical. The differences are in the details: MED17 uses an adaptive volumetric efficiency model instead of the static KFURL/KFPBRK maps, it has dual injection (port + direct) with separate injector characterization for each bank, and the logging ecosystem is ScorpionEFI instead of ME7Logger.
+
+If you understand ME7's signal chain, you understand MED17's. The map names change (KFMIOP → KFLMIOP, KFMIRL → KFLMIRL), the log signal names change (`pvdks_w` → `psrg_w`, `pssol_w` → `pvds_w`), but the physics doesn't.
 
 # Workflow Overview
 
@@ -133,20 +160,21 @@ Start with Configuration, calibrate if your hardware has changed, then optimize 
 
 **Calibration**
 4. [Fueling (KRKTE & Injector Scaling)](#fueling-krkte--injector-scaling)
-5. [MAF Scaling (MLHFM)](#maf-scaling-mlhfm)
-6. [Pressure to Load (PLSOL)](#pressure-to-load-plsol)
-7. [Torque & Load Tables (KFMIOP / KFMIRL)](#torque--load-tables-kfmiop--kfmirl)
-8. [Ignition Timing (KFZWOP / KFZW)](#ignition-timing-kfzwop--kfzw)
-9. [Throttle Transition (KFVPDKSD)](#throttle-transition-kfvpdksd)
-10. [Throttle Body Choke Point (WDKUGDN)](#throttle-body-choke-point-wdkugdn)
-11. [Alpha-N Calibration & Diagnostic](#alpha-n-calibration--diagnostic)
-12. [Boost PID Linearization (LDRPID)](#boost-pid-linearization-ldrpid)
+5. [Dual Injection (MED17 Only)](#dual-injection-med17-only)
+6. [MAF Scaling (MLHFM)](#maf-scaling-mlhfm)
+7. [Pressure to Load (PLSOL)](#pressure-to-load-plsol)
+8. [Torque & Load Tables (KFMIOP / KFMIRL)](#torque--load-tables-kfmiop--kfmirl)
+9. [Ignition Timing (KFZWOP / KFZW)](#ignition-timing-kfzwop--kfzw)
+10. [Throttle Transition (KFVPDKSD)](#throttle-transition-kfvpdksd)
+11. [Throttle Body Choke Point (WDKUGDN)](#throttle-body-choke-point-wdkugdn)
+12. [Alpha-N Calibration & Diagnostic](#alpha-n-calibration--diagnostic)
+13. [Boost PID Linearization (LDRPID)](#boost-pid-linearization-ldrpid)
 
 **Optimization**
-13. [Optimizer (Pressure/Load Optimizer)](#stage-3-optimization)
+14. [Optimizer (Pressure/Load Optimizer)](#stage-3-optimization)
 
 **Reference**
-14. [Technical Reference](#technical-reference)
+15. [Technical Reference](#technical-reference)
 
 ---
 
@@ -158,6 +186,12 @@ ME7Tuner works from a binary file and an XDF definition file. Load these using t
 * **XDF > Select XDF...** — select the matching XDF definition file
 
 See the example binary and XDF in the `example` directory as a starting point.
+
+### Platform Selection
+
+ME7Tuner supports both ME7 and MED17 ECU platforms. Select your platform in the Configuration tab — the UI will automatically show only the calibration tools that apply to your ECU. ME7 shows MAF scaling, throttle transition, and alpha-N tools. MED17 shows dual injection calibration. Shared tools (fueling, torque/load tables, ignition timing, boost PID, PLSOL, and the Optimizer) appear on both.
+
+When you switch platforms, map definitions are filtered to match. You won't accidentally pick an ME7 map definition when working on a MED17 binary.
 
 You will need to tell ME7Tuner what definition you want to use for *all* fields. This is necessary because many XDF files have multiple definitions for the same map using different units. ***Pay attention to the units!*** Seriously — picking the wrong unit definition is the single most common setup mistake, and ME7Tuner cannot save you from it.
 
@@ -178,6 +212,18 @@ ME7Tuner makes the following assumptions about units:
 * KFPBRKNW - unitless (multiplier)
 * KFPRG - hPa
 
+**MED17 unit assumptions:**
+
+* KRKTE (Port) - ms/%
+* KRKTE (Direct) - ms/%
+* TVUB (Port) - ms
+* KFLMIOP - %
+* KFLMIRL - %
+* KFZWOP - grad KW
+* KFZW - grad KW
+* KFLDRL - %
+* KFLDIMX - %
+
 ME7Tuner automatically filters map definitions based on what is in the editable text box.
 
 <img src="/documentation/images/configuration.png" width="800">
@@ -190,11 +236,32 @@ You *must* define the headers for the parameters that the log parser uses here.
 
 <img src="/documentation/images/configuration.png" width="800">
 
+#### MED17 Log Headers (ScorpionEFI)
+
+MED17 cars typically use ScorpionEFI for logging. The signal names differ from ME7Logger — configure these in the Log Headers section:
+
+| Parameter | ScorpionEFI Header | ME7 Equivalent | Description |
+|-----------|-------------------|----------------|-------------|
+| RPM | `nmot_w` | `nmot` | Engine speed |
+| Throttle Plate Angle | `wdkba` | `wdkba` | Throttle position (degrees) |
+| Wastegate Duty Cycle | `tvldste_w` | `ldtvm` | Final WGDC output (%) |
+| Barometric Pressure | `pu_w` | `pus_w` | Ambient barometric pressure (mbar) |
+| Absolute Pressure | `psrg_w` | `pvdks_w` | Actual absolute manifold pressure (mbar) |
+| Requested Pressure | `pvds_w` | `pssol_w` | ECU's requested manifold pressure (mbar) |
+| Requested Load | `rlsol_w` | `rlsol_w` | ECU's requested load (%) |
+| Engine Load | `rl_w` | `rl_w` | Actual measured engine load (%) |
+| Live VE | `fupsrls_w` | — | Live volumetric efficiency (MED17 only) |
+| Gear | `gangi` | `gangi` | Current gear |
+
+ME7Tuner's adapter layer maps these automatically — configure the headers once in the Configuration tab and the parsers handle the translation.
+
+<img src="/documentation/images/med17/configuration_med17.png" width="800">
+
 ## XDF Format Support
 
 ME7Tuner implements the **full** TunerPro XDF format. This means any ECU binary that has a valid XDF file can be loaded — the parser is not limited to the B5 S4 MBox format. We reverse-engineered every field, every flag, every stride mode. The XDF spec is not publicly documented, so we had to figure it out the hard way.
 
-See [`documentation/me7-xdf-format.md`](documentation/me7-xdf-format.md) for the complete technical deep-dive.
+See [`documentation/me7-xdf-format.md`](technical/me7/me7-xdf-format.md) for the complete technical deep-dive.
 
 ### Supported ECUs
 
@@ -205,10 +272,13 @@ See [`documentation/me7-xdf-format.md`](documentation/me7-xdf-format.md) for the
 | **ME7 RS4 (8D0907551R)** | Audi B5 RS4 2.7T | Higher boost maps; same VE model |
 | **ME7 1.8T (A4/TT/Golf)** | Various 1.8T platforms | Same ME7 software generation; maps compatible |
 | **ME7.1** | Later Audi/VW platforms | Compatible when XDF is available |
+| **MED17.1.62 (8S0907404x)** | Audi RS3 / TTRS 2.5T TFSI (EA855 EVO) | Full support — dual injection, ScorpionEFI logs |
+| **MED17.1 (4.0T)** | Audi RS6/RS7/S6/S7 4.0T TFSI | Compatible when XDF is available |
+| **MED17.1 (5.2 V10)** | Audi R8 / Lamborghini Huracán 5.2 V10 | Compatible when XDF is available |
 
 XDF files for many of these can be found at [files.s4wiki.com/defs/](https://files.s4wiki.com/defs/) and the [Nefarious Motorsports forums](http://nefariousmotorsports.com/forum).
 
-See [`documentation/me7-ecu-compatibility.md`](documentation/me7-ecu-compatibility.md) for ECU compatibility notes.
+See [`documentation/me7-ecu-compatibility.md`](technical/me7/me7-ecu-compatibility.md) for ECU compatibility notes.
 
 ### Supported XDF Features
 
@@ -266,7 +336,7 @@ WinOLS `.kp` files (EVC GmbH — https://www.evc.de) are **proprietary binary co
   └── intern             — proprietary binary record database
 ```
 
-The `intern` blob contains map definitions, but the binary layout of axes, dimensions, and scaling factors is **not publicly documented**. ME7Tuner reverse-engineered the record structure (see [`documentation/me7-kp-format.md`](documentation/me7-kp-format.md)) and can reliably extract map names and binary addresses, but not full axis/scaling data.
+The `intern` blob contains map definitions, but the binary layout of axes, dimensions, and scaling factors is **not publicly documented**. ME7Tuner reverse-engineered the record structure (see [`documentation/me7-kp-format.md`](technical/me7/me7-kp-format.md)) and can reliably extract map names and binary addresses, but not full axis/scaling data.
 
 ### How KP hint mode works
 
@@ -305,7 +375,7 @@ KP AR addresses and XDF addresses match perfectly for the `8D0907551M` ECU:
 
 ### Why not full KP parsing?
 
-The WinOLS binary format is proprietary and has no public specification. Axis dimensions, element sizes, and scaling factor offsets are at undocumented positions within each binary record. XDF files for the same ECU contain ~4x more definitions with full axis/scaling data. See [`documentation/me7-kp-format.md`](documentation/me7-kp-format.md) for the complete reverse-engineering analysis.
+The WinOLS binary format is proprietary and has no public specification. Axis dimensions, element sizes, and scaling factor offsets are at undocumented positions within each binary record. XDF files for the same ECU contain ~4x more definitions with full axis/scaling data. See [`documentation/me7-kp-format.md`](technical/me7/me7-kp-format.md) for the complete reverse-engineering analysis.
 
 KP files available from https://files.s4wiki.com/defs/ can be used alongside the XDF files from the same source.
 
@@ -318,6 +388,8 @@ If you've modified engine hardware, the base maps in your BIN no longer match re
 *It is critical that you calibrate primary fueling first.* This is not a suggestion. This is not a "best practice." If you skip this, everything downstream is built on a lie.
 
 Fueling is the ***one and only*** known constant to calibrate the MAF. It is highly recommended that you calibrate your fueling with an accurate specification of the fuel injectors. Once fueling is calibrated, you can take logs and have ME7Tuner suggest a MAF scaling. Once both fueling and MAF are calibrated, load request, ignition advance, and pressure (boost) can be calibrated.
+
+> **MED17 users:** The same calibration order applies. Fueling first (both port and direct injectors), then torque/load tables, then boost PID. The tools that don't apply to MED17 (MAF scaling, throttle transition, WDKUGDN, alpha-N) are automatically hidden when MED17 is selected.
 
 For detailed step-by-step instructions, screenshots, and algorithm descriptions for each tool, see the [Calibration Guide](documentation/calibration-guide.md).
 
@@ -387,7 +459,29 @@ KFLF exists in ME7 but is "Lambda map at partial load" — a partial-load AFR ta
 - **Always reset ECU adaptations** after flashing new injector calibration, then drive with the MAF connected to re-learn fuel trim adaptations
 - If the new injectors shift lambda enough to trigger O2 adaptation (KFKHFM), the MAF reading changes, which affects the msndko_w/fkmsdk_w learning — **verify alpha-n accuracy** with the Alpha-N Diagnostic (WDKUGDN tab) after re-learning
 
+## Dual Injection (MED17 Only)
+
+The 2.5T (and other MED17 dual-fuel platforms) run both port injection and direct injection simultaneously. This means two separate injector banks to characterize, two KRKTE scalars, two sets of dead times, and a fuel split ratio between them. Getting this wrong means one bank runs rich while the other runs lean, or worse, the ECU's fuel model diverges from reality and nothing downstream makes sense.
+
+The Dual Injection tab has three sub-tabs:
+
+### Port Injector Scaling
+
+Calculate KRKTE_PFI (port injector constant) using the same math as ME7 KRKTE, but for the port injectors specifically. Enter the stock and new port injector flow rates, fuel pressures, and dead times. The calculator handles the Bernoulli pressure correction and TVUB scaling.
+
+### Direct Injector Scaling
+
+Calculate KRKTE_GDI for the direct injectors. Direct injectors run at significantly higher fuel pressure (200+ bar vs 4 bar for port), so the pressure correction factor matters more here.
+
+### Split Calculator
+
+Given a load point and RPM, calculate the fuel share between port and direct injectors. The 2.5T runs varying split ratios depending on the operating point — at idle it's mostly port injection, at WOT it shifts toward direct injection. If you've changed injector sizes on one bank but not the other, the split ratio needs recalculating.
+
+<img src="/documentation/images/med17/dual_injection.png" width="800">
+
 ## MAF Scaling (MLHFM)
+
+> **MED17 note:** MAF scaling (MLHFM) is an ME7-only workflow. MED17 does not use a static MAF linearization curve — it has an adaptive volumetric efficiency model (`fupsrl_w` / `fupsrls_w`) that self-corrects. The Closed Loop and Open Loop MAF scaling tabs are hidden when MED17 is selected.
 
 With KRKTE dialed in, it's time to get your MAF telling the truth. This is where calibration starts to feel like actual tuning.
 
@@ -437,6 +531,8 @@ For detailed usage and screenshots see the [Calibration Guide — PLSOL](documen
 
 This is where the torque monitoring system lives, and getting it wrong means ME7 pulls power when you don't want it to.
 
+> **MED17 naming:** These maps are called **KFLMIOP** and **KFLMIRL** in MED17. The math is identical — ME7Tuner handles the naming automatically when MED17 is selected.
+
 ### KFMIOP (Load/Fill to Torque)
 
 KFMIOP describes optimal engine torque as a normalized value (0–100%) relative to the maximum load defined by the MAP sensor limit. When upgrading to a higher-pressure MAP sensor, KFMIOP must be rescaled so that the normalized torque requests remain rational for the new load range.
@@ -483,6 +579,8 @@ In a turbocharged application the throttle is controlled by a combination of the
 
 For detailed algorithm and usage see the [Calibration Guide — KFVPDKSD](documentation/calibration-guide.md#kfvpdksd-throttle-transition).
 
+> **MED17 note:** KFVPDKSD is ME7-only. MED17 uses a different throttle control architecture that doesn't expose this calibration point. This tab is hidden when MED17 is selected.
+
 ## Throttle Body Choke Point (WDKUGDN)
 
 Let's get something straight: **WDKUGDN is NOT an alpha-n calibration map.** We cannot stress this enough. We wrote an entire documentation file about it. We added warnings to the tool UI. We're putting it here in bold. And people will still adjust WDKUGDN to fix alpha-n. Please don't be that person.
@@ -494,6 +592,8 @@ Unless you have changed the throttle body or engine displacement, WDKUGDN should
 <img src="/documentation/images/wdkugdn.png" width="800">
 
 For the full choked flow algorithm, what WDKUGDN controls, and why changing it for alpha-n is wrong, see the [Calibration Guide — WDKUGDN](documentation/calibration-guide.md#wdkugdn-throttle-body-choke-point).
+
+> **MED17 note:** WDKUGDN and the Alpha-N diagnostic are ME7-only tools. MED17 does not use the same throttle-model-based load estimation — the adaptive VE model handles this internally. These tabs are hidden when MED17 is selected.
 
 ## Alpha-N Calibration & Diagnostic
 
@@ -535,7 +635,7 @@ Log across various RPM and load conditions (idle, cruise, part-throttle, WOT) wi
 
 For full background on main vs side load signals, the BGSRM VE model, the 6 calibratable components, and step-by-step usage with screenshots, see the [Calibration Guide — Alpha-N](documentation/calibration-guide.md#alpha-n-calibration--diagnostic-tool).
 
-For detailed technical documentation including me7-raw.txt line references, see [`documentation/me7-alpha-n-calibration.md`](documentation/me7-alpha-n-calibration.md).
+For detailed technical documentation including me7-raw.txt line references, see [`documentation/me7-alpha-n-calibration.md`](technical/me7/me7-alpha-n-calibration.md).
 
 ## Boost PID Linearization (LDRPID)
 
@@ -549,6 +649,17 @@ Get as many WOT pulls as possible across the full RPM range. Put all logs in a s
 
 <img src="/documentation/images/ldrpid.png" width="800">
 
+**MED17 users:** The LDRPID workflow is identical, but the log signal names differ. Log the following with ScorpionEFI:
+
+* `nmot_w` (RPM)
+* `psrg_w` (Actual MAP — maps to `pvdks_w`)
+* `pu_w` (Barometric — maps to `pus_w`)
+* `wdkba` (Throttle Angle)
+* `tvldste_w` (Final WGDC — maps to `ldtvm`)
+* `gangi` (Gear)
+
+ME7Tuner translates these automatically via the adapter layer.
+
 For the full algorithm and step-by-step usage see the [Calibration Guide — LDRPID](documentation/calibration-guide.md#ldrpid-feed-forward-pid).
 
 ---
@@ -561,7 +672,9 @@ It's a suggestion engine that analyzes WOT (Wide Open Throttle) logs and recomme
 
 The core philosophy is that ME7's internal physical model — converting between pressure and load via KFURL and KFPBRK — is mathematically sound. If the base maps are calibrated correctly, the ECU's requested values should match reality (barring mechanical limitations such as turbo overspooling, knock limiting, boost leaks, etc.). When there is a discrepancy, the Optimizer identifies exactly *where* the error is and suggests specific map changes to fix it. The model works — you just have to give it the right numbers.
 
-For detailed documentation on how the Optimizer works internally, see [`documentation/optimizer-architecture.md`](documentation/optimizer-architecture.md) and [`documentation/optimizer-algorithms.md`](documentation/optimizer-algorithms.md).
+For detailed documentation on how the Optimizer works internally, see [`documentation/optimizer-architecture.md`](technical/optimizer-architecture.md) and [`documentation/optimizer-algorithms.md`](technical/optimizer-algorithms.md).
+
+**MED17 users:** The Optimizer works identically on MED17 — same three-phase algorithm, same iterative workflow. The differences are in the log format (ScorpionEFI instead of ME7Logger) and the signal names. MED17 does not have a static KFPBRK VE model — the adaptive `fupsrls_w` replaces it — so Phase 2 (VE Model) focuses on boost control accuracy rather than KFPBRK corrections.
 
 ## Prerequisites
 
@@ -573,6 +686,14 @@ Before using the Optimizer, you should have already:
 4. **Calibrated LDRPID** (feed-forward PID / KFLDRL) with at least a rough baseline
 
 The Optimizer refines the boost control and VE model *after* these foundations are in place. Garbage in, garbage out — and the Optimizer will now tell you about the garbage.
+
+**MED17 prerequisites are similar but simpler:**
+
+1. **Calibrated KRKTE_PFI and KRKTE_GDI** (Dual Injection tab) for both injector banks
+2. **Defined KFLMIOP/KFLMIRL** (torque and load tables) scaled for your hardware
+3. **Rough KFLDRL baseline** from the LDRPID tool or manual tuning
+
+MED17's adaptive VE model (`fupsrls_w`) eliminates the need for manual MAF scaling — one less thing to worry about.
 
 ## Configuration
 
@@ -610,6 +731,21 @@ In the **Configuration** tab under Log Headers, ensure the following headers are
 | Engine Load | `rl_w` | Actual measured engine load (%) |
 | Actual Load | `rl` | Actual load (optional, alternative to rl_w) |
 
+#### MED17 Log Headers (ScorpionEFI)
+
+| Parameter | ScorpionEFI Header | Maps To | Description |
+|-----------|-------------------|---------|-------------|
+| RPM | `nmot_w` | `nmot` | Engine speed |
+| Throttle Plate Angle | `wdkba` | `wdkba` | Throttle position (degrees) |
+| Wastegate Duty Cycle | `tvldste_w` | `ldtvm` | Final WGDC output (%) |
+| Barometric Pressure | `pu_w` | `pus_w` | Ambient barometric pressure (mbar) |
+| Absolute Pressure | `psrg_w` | `pvdks_w` | Actual absolute manifold pressure (mbar) |
+| Requested Pressure | `pvds_w` | `pssol_w` | ECU's requested manifold pressure (mbar) |
+| Requested Load | `rlsol_w` | `rlsol_w` | ECU's requested load (%) |
+| Engine Load | `rl_w` | `rl_w` | Actual measured engine load (%) |
+
+ME7Tuner maps these ScorpionEFI signals to the internal ME7 equivalents automatically. Configure the headers once in the Configuration tab and the Optimizer handles the translation.
+
 ## How It Works
 
 The Optimizer operates in three phases. Each one builds on the last — don't skip ahead.
@@ -639,6 +775,8 @@ Once Phase 1 is complete (actual pressure tracks pssol), the Optimizer evaluates
 3. Multiply the current KFPBRK cell values by this ratio to produce the suggested KFPBRK
 
 **Interpretation:** A ratio of 1.05 means the ECU needs to request 5% more pressure to achieve the target load — KFPBRK is scaled up by 5% at that RPM.
+
+> **MED17 note:** MED17 does not use KFPBRK — it has an adaptive volumetric efficiency model (`fupsrls_w`). Phase 2 on MED17 still analyzes the load ratio but focuses on validating that the adaptive model is converging correctly. If the load ratio is persistently off, it may indicate a mechanical issue rather than a calibration problem.
 
 ### Phase 3: Intervention Check (Torque Limiters)
 
@@ -673,6 +811,19 @@ Log the following parameters with ME7Logger during WOT pulls:
 
 Get WOT pulls across the full RPM range. More data points produce better suggestions.
 
+**MED17 (ScorpionEFI):** Log the following parameters during WOT pulls:
+
+* `nmot_w` (RPM)
+* `wdkba` (Throttle Plate Angle)
+* `tvldste_w` (Final Wastegate Duty Cycle)
+* `pu_w` (Barometric Pressure)
+* `psrg_w` (Actual Absolute Manifold Pressure)
+* `pvds_w` (Requested Pressure)
+* `rlsol_w` (Requested Load)
+* `rl_w` (Actual Engine Load)
+
+Same rule: more WOT pulls across the full RPM range = better suggestions. ScorpionEFI logs work identically to ME7Logger logs — load a single file or a directory.
+
 ### Step 3: Load and Analyze
 
 1. Go to the **Optimizer** tab
@@ -682,6 +833,9 @@ Get WOT pulls across the full RPM range. More data points produce better suggest
    * **KFLDIMX Overhead (%):** How much headroom above KFLDRL to give the PID I-limiter (default: 8%)
    * **Min Throttle Angle:** Minimum throttle angle to qualify as WOT data (default: 80°)
 3. Click **"Load ME7 Log File"** for a single log, or **"Load ME7 Log Directory"** to process multiple logs at once
+
+> **MED17 users:** Click **"Load MED17 Log File"** or **"Load MED17 Log Directory"** instead. The Optimizer automatically detects the platform and uses the MED17 analyzer (`analyzeMed17`), which adapts the three-phase algorithm for MED17's signal names and adaptive VE model.
+
 4. Review the results across the four tabs:
 
 ### Step 4: Review Results
@@ -748,6 +902,8 @@ All ME7 analog sensors output 0–5 V. When a tuned engine pushes a sensor beyon
 #### Recommended Logging
 
 For optimal sensor saturation detection, include `uhfm_w` (MAF voltage) in your ME7Logger configuration alongside the standard optimizer channels. The MAP sensor saturation is detected from `pvdks_w` which is already a required channel.
+
+> **MED17 note:** Sensor saturation detection works on MED17 logs too. The MAP sensor auto-detection uses `psrg_w` (which maps to `pvdks_w` internally). MAF voltage saturation is less relevant on MED17 since the adaptive VE model reduces MAF dependency, but the Optimizer will still flag it if detected.
 
 ---
 

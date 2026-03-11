@@ -1,8 +1,10 @@
-# ME7Tuner Calibration Guide
+# ME7Tuner Calibration Guide (ME7 & MED17)
 
 This is the companion document to the [README](../README.md#stage-2-calibration). Where the README tells you *what* each tool does and *whether* you need it, this guide tells you *how* — step by step, with screenshots, algorithms, and the kind of detail that only matters when you're actually doing the work.
 
 It's organized in calibration order. Start at the top and work down. Skip sections that don't apply to your hardware. If you're not sure whether a section applies, it probably doesn't — but read it anyway, because understanding how ME7 models torque will save you from doing something regrettable later.
+
+**MED17 users:** This guide covers both ME7 and MED17 workflows. Where the workflow differs — dual injection, different signal names, adaptive VE model — it's called out explicitly. Where it doesn't differ — torque tables, ignition timing, LDRPID, PLSOL — the same instructions apply with the map names noted.
 
 ---
 
@@ -19,6 +21,7 @@ It's organized in calibration order. Start at the top and work down. Skip sectio
 9. [WDKUGDN (Throttle Body Choke Point)](#wdkugdn-throttle-body-choke-point)
 10. [Alpha-N Calibration & Diagnostic Tool](#alpha-n-calibration--diagnostic-tool)
 11. [LDRPID (Feed-Forward PID)](#ldrpid-feed-forward-pid)
+12. [Dual Injection — MED17 Only](#dual-injection--med17-only)
 
 ---
 
@@ -219,6 +222,8 @@ ME7Tuner calculates estimated airflow for a given load based on engine displacem
 ME7Tuner calculates estimated horsepower for a given load based on engine displacement (in liters) and RPM.
 
 <img src="/documentation/images/plsol_power.png" width="800">
+
+> **MED17 note:** PLSOL works identically on MED17. The key difference is that MED17's live VE value (`fupsrls_w`) is approximately 0.091 for the 2.5T TFSI at standard conditions — use this when estimating pressure-to-load conversions for the EA855 EVO platform.
 
 ---
 
@@ -605,7 +610,7 @@ where:
 | Error varies with intake air temperature | Temperature weighting is off | **FWFTBRTA** |
 | Error varies with altitude / barometric pressure | Barometric correction issue | Check baro sensor calibration |
 
-> **For detailed technical documentation** of each component, including me7-raw.txt line references, calibration methods, and solver algorithms, see [`documentation/me7-alpha-n-calibration.md`](me7-alpha-n-calibration.md).
+> **For detailed technical documentation** of each component, including me7-raw.txt line references, calibration methods, and solver algorithms, see [`documentation/me7-alpha-n-calibration.md`](../technical/me7/me7-alpha-n-calibration.md).
 
 ### Error Type Classification
 
@@ -688,3 +693,76 @@ The linearized duty cycle will be output in KFLDRL. It may not be perfect out of
 For feed-forward pre-control, ME7Tuner will also output a new KFLDIMX and x-axis based on estimations from the linearized boost table. This is a ballpark — a starting point for the feed-forward map, not a finished product. Expect to iterate.
 
 One practical tip: at RPM ranges where the turbo can't produce enough boost to crack the wastegates, request 95% duty cycle. There's no reason to be conservative when you're below the wastegate cracking pressure — you want the turbo spooling as hard as possible.
+
+### MED17 LDRPID Notes
+
+The LDRPID workflow is identical on MED17 — log WOT pulls, load them, and ME7Tuner generates the linearized KFLDRL and KFLDIMX tables. The signal names differ:
+
+| What to Log (ScorpionEFI) | ME7 Equivalent |
+|--------------------------|----------------|
+| `nmot_w` | `nmot` |
+| `psrg_w` | `pvdks_w` |
+| `pu_w` | `pus_w` |
+| `wdkba` | `wdkba` |
+| `tvldste_w` | `ldtvm` |
+| `gangi` | `gangi` |
+
+ME7Tuner's adapter layer handles the translation automatically — just configure the MED17 headers in the Configuration tab and load your ScorpionEFI logs.
+
+The 2.5T with aftermarket turbos is where LDRPID really earns its keep. The stock PID was linearized for a turbo that doesn't exist on your car anymore — the boost response is completely non-linear, the PID hunts and overshoots, and you're left chasing boost control issues across the entire RPM range. LDRPID rewrites the pre-control table from your actual logged data, giving the PID a known-good starting point at every RPM breakpoint. This alone can save you dozens of log-and-reflash iterations.
+
+---
+
+## Dual Injection — MED17 Only
+
+The 2.5T TFSI (and other MED17 dual-fuel platforms) fire both port injectors and direct injectors simultaneously. Each bank has its own injector constant (KRKTE_PFI / KRKTE_GDI) and its own dead time curve (TVUB_PFI / TVUB_GDI). If you upgrade injectors on either bank, you need to recalibrate that bank's constants independently.
+
+This is where ME7 tuners get tripped up: ME7 has one injector bank, one KRKTE, one TVUB. MED17 doubles everything. The math is the same, you just do it twice.
+
+### Port Injector Scaling
+
+The port injectors run at low fuel pressure (typically 4.0 bar on the 2.5T). The KRKTE_PFI calculation is identical to ME7's KRKTE formula:
+
+```
+KRKTE_PFI = 50.2624 × Vhzyl / Qstat_PFI
+```
+
+Where `Vhzyl` is the cylinder volume in cm³ and `Qstat_PFI` is the port injector's static flow rate in cm³/s at the rated pressure.
+
+When swapping port injectors:
+
+```
+KRKTE_PFI_new = KRKTE_PFI_old × (old_flow / new_flow) × √(P_new / P_old)
+```
+
+The Bernoulli pressure correction (`√(P_new / P_old)`) matters if you're changing fuel pressure. If both injectors are rated at 4.0 bar, this factor is 1.0.
+
+#### TVUB (Port Dead Time)
+
+Port injectors have opening delay (Ventilverzugszeit) that varies with battery voltage. Enter the manufacturer's dead time spec — if you only have the value at 14V, the calculator estimates the full curve using 1/V scaling. Same algorithm as ME7 TVUB.
+
+### Direct Injector Scaling
+
+The direct injectors run at much higher fuel pressure — 200 bar on the 2.5T. The KRKTE_GDI calculation is the same formula, but the fuel pressure correction is more significant because the operating pressure range is wider.
+
+```
+KRKTE_GDI_new = KRKTE_GDI_old × (old_flow / new_flow) × √(P_new / P_old)
+```
+
+On the 2.5T, the stock GDI pressure is typically 200 bar. If you're running upgraded high-pressure fuel pumps pushing 250+ bar, the `√(P_new / P_old)` correction becomes meaningful.
+
+### Fuel Split Calculator
+
+Given a load/RPM operating point, the split calculator shows the fuel share between port and direct injection. The 2.5T varies the split ratio across the operating map — at idle and cruise it's mostly port injection, at high load/RPM it shifts toward direct injection for charge cooling benefits.
+
+If you've changed injector sizes on one bank but not the other, or if you're running significantly different fuel pressures between banks, the effective fuel split changes. The calculator helps you verify that the total fuel delivery matches the commanded fuel mass at key operating points.
+
+#### Usage
+
+1. Open the **Dual Injection** tab (visible only in MED17 mode)
+2. **Port Injector** sub-tab: Enter stock and new port injector specs (flow rate, pressure, dead time at 14V)
+3. **Direct Injector** sub-tab: Enter stock and new direct injector specs
+4. **Split Calculator** sub-tab: Enter an RPM and load point to see the fuel share breakdown
+5. Apply the calculated KRKTE_PFI, KRKTE_GDI, and TVUB to your BIN
+
+<img src="/documentation/images/med17/dual_injection.png" width="800">

@@ -17,7 +17,8 @@ data class ConfigurationProfile(
     val closedLoopFueling: ClosedLoopFuelingConfig = ClosedLoopFuelingConfig(),
     val openLoopFueling: OpenLoopFuelingConfig = OpenLoopFuelingConfig(),
     val dualInjection: DualInjectionConfig = DualInjectionConfig(),
-    val logHeaders: Map<String, String> = emptyMap()
+    val logHeaders: Map<String, String> = emptyMap(),
+    val med17LogHeaders: Map<String, String> = emptyMap()
 )
 
 @Serializable
