@@ -35,6 +35,8 @@ object Med17LogFileContract {
     const val DIRECT_FUEL_SHARE_LABEL = "tqfuel_gdi_w"
     const val FUEL_PRESSURE_PORT_LABEL = "pfuel_pfi_w"
     const val FUEL_PRESSURE_DIRECT_LABEL = "pfuel_hde_w"
+    const val LDR_DUTY_CYCLE_LABEL = "ldtvm_w"
+    const val FUPSRLS_LABEL = "fupsrls_w"
 
     enum class Header(var header: String, val title: String) {
         START_TIME_HEADER(START_TIME_LABEL, "Start Time"),
@@ -59,7 +61,9 @@ object Med17LogFileContract {
         PORT_FUEL_SHARE_HEADER(PORT_FUEL_SHARE_LABEL, "Port Fuel Share"),
         DIRECT_FUEL_SHARE_HEADER(DIRECT_FUEL_SHARE_LABEL, "Direct Fuel Share"),
         FUEL_PRESSURE_PORT_HEADER(FUEL_PRESSURE_PORT_LABEL, "Port Fuel Rail Pressure"),
-        FUEL_PRESSURE_DIRECT_HEADER(FUEL_PRESSURE_DIRECT_LABEL, "Direct Fuel Rail Pressure")
+        FUEL_PRESSURE_DIRECT_HEADER(FUEL_PRESSURE_DIRECT_LABEL, "Direct Fuel Rail Pressure"),
+        LDR_DUTY_CYCLE_HEADER(LDR_DUTY_CYCLE_LABEL, "LDR Duty Cycle"),
+        FUPSRLS_HEADER(FUPSRLS_LABEL, "VE Correction Factor")
     }
 }
 
