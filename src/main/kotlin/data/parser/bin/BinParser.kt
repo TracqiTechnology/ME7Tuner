@@ -54,6 +54,18 @@ object BinParser {
     }
 
     private fun parse(inputStream: InputStream, tableDefinitions: List<TableDefinition>) {
+        _mapList.value = parseToList(inputStream, tableDefinitions)
+    }
+
+    /**
+     * Parses a BIN input stream using the given table definitions and returns
+     * the list of (TableDefinition, Map3d) pairs without touching singleton state.
+     * Visible to tests.
+     */
+    internal fun parseToList(
+        inputStream: InputStream,
+        tableDefinitions: List<TableDefinition>
+    ): List<Pair<TableDefinition, Map3d>> {
         val result = mutableListOf<Pair<TableDefinition, Map3d>>()
         val bytes: ByteArray
         BufferedInputStream(inputStream).use { bytes = it.readAllBytes() }
@@ -65,7 +77,7 @@ object BinParser {
             result.add(tableDefinition to Map3d(xAxis, yAxis, zAxis))
         }
 
-        _mapList.value = result
+        return result
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.contract.Me7LogFileContract
+import data.model.EcuPlatform
 import data.parser.xdf.XdfParser
 import data.preferences.MapPreference
 import data.preferences.MapPreferenceManager
@@ -41,8 +42,12 @@ import data.preferences.kfwdkmsn.KfwdkmsnPreferences
 import data.preferences.kfzw.KfzwPreferences
 import data.preferences.kfzwop.KfzwopPreferences
 import data.preferences.krkte.KrktePreferences
+import data.preferences.krkte.KrktePfiPreferences
+import data.preferences.krkte.KrkteGdiPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.mlhfm.MlhfmPreferences
+import data.preferences.platform.EcuPlatformPreference
+import data.preferences.tvub.TvubPfiPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
 import data.profile.ProfileManager
 import ui.components.MapPickerDialog
@@ -55,32 +60,46 @@ import javax.swing.SwingUtilities
 
 private data class MapDefinitionEntry(
     val title: String,
-    val preference: MapPreference
+    val preference: MapPreference,
+    val platforms: Set<EcuPlatform> = setOf(EcuPlatform.ME7, EcuPlatform.MED17)
 )
 
-private val mapDefinitions = listOf(
-    MapDefinitionEntry("KRKTE", KrktePreferences),
-    MapDefinitionEntry("MLHFM", MlhfmPreferences),
+private val allMapDefinitions = listOf(
+    // ME7-only
+    MapDefinitionEntry("KRKTE", KrktePreferences, platforms = setOf(EcuPlatform.ME7)),
+    MapDefinitionEntry("MLHFM", MlhfmPreferences, platforms = setOf(EcuPlatform.ME7)),
+    // MED17-only (dual injection)
+    MapDefinitionEntry("KRKTE (Port)", KrktePfiPreferences, platforms = setOf(EcuPlatform.MED17)),
+    MapDefinitionEntry("KRKTE (Direct)", KrkteGdiPreferences, platforms = setOf(EcuPlatform.MED17)),
+    MapDefinitionEntry("TVUB (Port)", TvubPfiPreferences, platforms = setOf(EcuPlatform.MED17)),
+    // Shared — torque/load/ignition/boost
     MapDefinitionEntry("KFMIOP", KfmiopPreferences),
     MapDefinitionEntry("KFMIRL", KfmirlPreferences),
     MapDefinitionEntry("KFZWOP", KfzwopPreferences),
     MapDefinitionEntry("KFZW", KfzwPreferences),
-    MapDefinitionEntry("KFVPDKSD", KfvpdksdPreferences),
-    MapDefinitionEntry("WDKUGDN", WdkugdnPreferences),
-    MapDefinitionEntry("KFWDKMSN", KfwdkmsnPreferences),
+    // ME7-only — boost transition & throttle body (not in MED17 Funktionsrahmen)
+    MapDefinitionEntry("KFVPDKSD", KfvpdksdPreferences, platforms = setOf(EcuPlatform.ME7)),
+    MapDefinitionEntry("WDKUGDN", WdkugdnPreferences, platforms = setOf(EcuPlatform.ME7)),
+    MapDefinitionEntry("KFWDKMSN", KfwdkmsnPreferences, platforms = setOf(EcuPlatform.ME7)),
+    // Shared — boost PID linearization
     MapDefinitionEntry("KFLDRL", KfldrlPreferences),
     MapDefinitionEntry("KFLDIMX", KfldimxPreferences),
-    MapDefinitionEntry("KFPBRK", KfpbrkPreferences),
-    MapDefinitionEntry("KFPBRKNW", KfpbrknwPreferences),
-    MapDefinitionEntry("KFPRG", KfprgPreferences),
+    // ME7-only — VE model maps (MED17 uses adaptive fupsrl_w / pbrint_w)
+    MapDefinitionEntry("KFPBRK", KfpbrkPreferences, platforms = setOf(EcuPlatform.ME7)),
+    MapDefinitionEntry("KFPBRKNW", KfpbrknwPreferences, platforms = setOf(EcuPlatform.ME7)),
+    MapDefinitionEntry("KFPRG", KfprgPreferences, platforms = setOf(EcuPlatform.ME7)),
     // v4: Environmental correction maps
     MapDefinitionEntry("KFLDIOPU", KfldioPuPreferences),
-    MapDefinitionEntry("KFFWTBR", KffwtbrPreferences),
+    MapDefinitionEntry("KFFWTBR", KffwtbrPreferences, platforms = setOf(EcuPlatform.ME7)),
     // v4: PID gain maps
     MapDefinitionEntry("KFLDRQ0", Kfldrq0Preferences),
     MapDefinitionEntry("KFLDRQ1", Kfldrq1Preferences),
     MapDefinitionEntry("KFLDRQ2", Kfldrq2Preferences),
 )
+
+/** Returns map definitions filtered for the active platform. */
+private fun mapDefinitionsForPlatform(platform: EcuPlatform): List<MapDefinitionEntry> =
+    allMapDefinitions.filter { platform in it.platforms }
 
 private val defaultHeaderValues = mapOf(
     Me7LogFileContract.Header.START_TIME_HEADER to Me7LogFileContract.START_TIME_LABEL,
@@ -281,9 +300,18 @@ private fun FilesNotLoadedPlaceholder() {
 
 @Composable
 private fun QuickSetupSection() {
-    val defaultProfiles by ProfileManager.defaultProfiles.collectAsState()
-    val userProfiles by ProfileManager.userProfiles.collectAsState()
+    val allDefaultProfiles by ProfileManager.defaultProfiles.collectAsState()
+    val allUserProfiles by ProfileManager.userProfiles.collectAsState()
     var statusMessage by remember { mutableStateOf<String?>(null) }
+
+    val platform = EcuPlatformPreference.platform
+    val platformName = platform.name // "ME7" or "MED17"
+    val defaultProfiles = remember(allDefaultProfiles, platform) {
+        allDefaultProfiles.filter { it.ecuPlatform == platformName }
+    }
+    val userProfiles = remember(allUserProfiles, platform) {
+        allUserProfiles.filter { it.ecuPlatform == platformName }
+    }
 
     Column {
         Text(
@@ -449,6 +477,8 @@ private fun ProfileRow(profile: data.profile.ConfigurationProfile, onApply: () -
 @Composable
 private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
     val tableDefinitions by XdfParser.tableDefinitions.collectAsState()
+    val platform = EcuPlatformPreference.platform
+    val mapDefinitions = remember(platform) { mapDefinitionsForPlatform(platform) }
 
     var pickerDialogEntry by remember { mutableStateOf<MapDefinitionEntry?>(null) }
 

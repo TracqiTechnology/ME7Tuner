@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class ConfigurationProfile(
     val name: String = "",
     val description: String = "",
+    val ecuPlatform: String = "ME7",
     val ecuPartNumbers: List<String> = emptyList(),
     val mapDefinitions: Map<String, MapDefinitionRef> = emptyMap(),
     val primaryFueling: PrimaryFuelingConfig = PrimaryFuelingConfig(),
@@ -15,7 +16,9 @@ data class ConfigurationProfile(
     val wdkugdn: WdkugdnConfig = WdkugdnConfig(),
     val closedLoopFueling: ClosedLoopFuelingConfig = ClosedLoopFuelingConfig(),
     val openLoopFueling: OpenLoopFuelingConfig = OpenLoopFuelingConfig(),
-    val logHeaders: Map<String, String> = emptyMap()
+    val dualInjection: DualInjectionConfig = DualInjectionConfig(),
+    val logHeaders: Map<String, String> = emptyMap(),
+    val med17LogHeaders: Map<String, String> = emptyMap()
 )
 
 @Serializable
@@ -78,3 +81,15 @@ data class OpenLoopFuelingConfig(
     val gasolineGramsPerCcm: Double = 0.7,
     val numFuelInjectors: Double = 6.0
 )
+
+@Serializable
+data class DualInjectionConfig(
+    val portInjectorFlowRateCcMin: Double = 220.0,
+    val portInjectorFuelPressureBar: Double = 4.0,
+    val directInjectorFlowRateCcMin: Double = 160.0,
+    val directInjectorFuelPressureBar: Double = 200.0,
+    val portSharePercentDefault: Double = 30.0,
+    val numPortInjectors: Int = 5,
+    val numDirectInjectors: Int = 5
+)
+

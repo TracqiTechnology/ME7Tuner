@@ -19,7 +19,7 @@ enum class RailDestination(
     CALIBRATION(
         label = "Calibration",
         icon = Icons.Default.Build,
-        description = "Calibrate base MAF, fueling, torque, ignition, and boost maps"
+        description = "Calibrate base fueling, torque, ignition, and boost maps"
     ),
     OPTIMIZER(
         label = "Optimizer",

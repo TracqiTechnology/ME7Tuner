@@ -1,0 +1,116 @@
+{
+    "name": "Audi RS3 / TTRS 2.5T — MED17.1.62 (DS1)",
+    "description": "EA855 EVO 2.5 TFSI, 5-cylinder, MED17.1.62 ECU. Dual fuel: port + direct injection. Stock K16 turbo. DS1 flash via ScorpionEFI/DynoScorpion.",
+    "ecuPlatform": "MED17",
+    "ecuPartNumbers": [],
+    "mapDefinitions": {
+        "KRKTE_PFI": {
+            "tableName": "Conversion relative Fuel mass rk in effective Injection time te fairs. intake manifold injection (PFI)",
+            "tableDescription": "Port injector constant — ms/% conversion factor for PFI",
+            "unit": "ms/%"
+        },
+        "KRKTE_GDI": {
+            "tableName": "Conversion relative Fuel mass rk in effective Injection time te",
+            "tableDescription": "Direct injector constant — ms/% conversion factor for GDI",
+            "unit": "ms/%"
+        },
+        "TVUB_PFI": {
+            "tableName": "Battery Voltage-dependent delay time for injectors",
+            "tableDescription": "Port injector dead time vs battery voltage",
+            "unit": "ms"
+        },
+        "KFMIOP": {
+            "tableName": "Map optimum engine boost_vlmspec",
+            "tableDescription": "Optimal engine torque map (KFLMIOP equivalent)",
+            "unit": "%"
+        },
+        "KFMIRL": {
+            "tableName": "Map for Calculation Desired charge",
+            "tableDescription": "Target cylinder filling / load request (KFLMIRL equivalent)",
+            "unit": "%"
+        }
+    },
+    "primaryFueling": {
+        "airDensity": 1.2929,
+        "displacement": 0.496,
+        "numCylinders": 5,
+        "stoichiometricAfr": 14.7,
+        "gasolineGramsPerCcm": 0.7,
+        "fuelInjectorSize": 220.0
+    },
+    "plsol": {
+        "barometricPressure": 1013.0,
+        "intakeAirTemperature": 20.0,
+        "kfurl": 0.1037,
+        "displacement": 2.48,
+        "rpm": 7000
+    },
+    "kfmiop": {
+        "maxMapPressure": 3500.0,
+        "maxBoostPressure": 2800.0
+    },
+    "kfvpdksd": {
+        "maxWastegateCrackingPressure": 200.0
+    },
+    "wdkugdn": {
+        "displacement": 2.48
+    },
+    "closedLoopFueling": {
+        "minThrottleAngle": 0.0,
+        "minRpm": 0.0,
+        "maxDerivative": 50.0
+    },
+    "openLoopFueling": {
+        "minThrottleAngle": 80.0,
+        "minRpm": 2000.0,
+        "minMe7Points": 75,
+        "minAfrPoints": 150,
+        "maxAfr": 16.0,
+        "fuelInjectorSize": 220.0,
+        "gasolineGramsPerCcm": 0.7,
+        "numFuelInjectors": 5.0
+    },
+    "dualInjection": {
+        "portInjectorFlowRateCcMin": 220.0,
+        "portInjectorFuelPressureBar": 4.0,
+        "directInjectorFlowRateCcMin": 160.0,
+        "directInjectorFuelPressureBar": 200.0,
+        "portSharePercentDefault": 30.0,
+        "numPortInjectors": 5,
+        "numDirectInjectors": 5
+    },
+    "logHeaders": {},
+    "med17LogHeaders": {
+        "START_TIME_HEADER": "start_time",
+        "TIME_STAMP_COLUMN_HEADER": "Time",
+        "RPM_COLUMN_HEADER": "nmot_w",
+        "ENGINE_LOAD_HEADER": "rl_w",
+        "REQUESTED_LOAD_HEADER": "rlsol_w",
+        "THROTTLE_PLATE_ANGLE_HEADER": "wdkba",
+        "WASTEGATE_DUTY_CYCLE_HEADER": "tvldste_w",
+        "LDR_DUTY_CYCLE_HEADER": "ldtvm_w",
+        "ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER": "psrg_w",
+        "REQUESTED_PRESSURE_HEADER": "pvds_w",
+        "REQUESTED_PRESSURE_MAX_HEADER": "pvdxs_w",
+        "BAROMETRIC_PRESSURE_HEADER": "pu_w",
+        "STFT_COLUMN_HEADER": "frm_w",
+        "LTFT_COLUMN_HEADER": "fra_w",
+        "LONG_TERM_FT_HEADER": "longft1_w",
+        "REQUESTED_LAMBDA_HEADER": "lamsbg_w",
+        "WIDE_BAND_O2_HEADER": "lamsoni_w",
+        "LAMBDA_CONTROL_ACTIVE_HEADER": "B_lr",
+        "FUEL_INJECTOR_FIRST_PULSE_HEADER": "ti1a_l",
+        "FUEL_INJECTOR_ON_TIME_HEADER": "ti_l",
+        "PFI_INJECTION_TIME_HEADER": "te_l",
+        "PORT_FUEL_MASS_REL_HEADER": "rkpfi_w",
+        "FUEL_MASS_REL_HEADER": "rk_w",
+        "PFI_SPLIT_FACTOR_HEADER": "InjSys_facPrtnPfiTar",
+        "PFI_SPLIT_FACTOR_UNLIM_HEADER": "InjSys_facPrtnPfiSpUnlimModNew",
+        "FUPSRLS_HEADER": "fupsrls_w",
+        "PBRINTS_HEADER": "pbrints_w",
+        "LOAD_FOR_INJECTION_HEADER": "rlp_w",
+        "SELECTED_GEAR_HEADER": "gangi",
+        "BATTERY_VOLTAGE_HEADER": "ubsq"
+    }
+}
+

@@ -7,8 +7,10 @@ import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import ui.screens.closedloop.ClosedLoopScreen
+import ui.screens.dualinjection.DualInjectionScreen
 import ui.screens.fueling.FuelingScreen
 import ui.screens.kfmiop.KfmiopScreen
 import ui.screens.kfmirl.KfmirlScreen
@@ -23,16 +25,22 @@ import ui.screens.wdkugdn.WdkugdnScreen
 @Composable
 fun CalibrationContent(navState: NavigationState) {
     val selectedTab = navState.calibrationTab
+    val platform = navState.ecuPlatform
+
+    // Filter calibration tabs to those available on the active platform
+    val visibleTabs = remember(platform) {
+        CalibrationTab.entries.filter { platform in it.platforms }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         SecondaryScrollableTabRow(
-            selectedTabIndex = selectedTab.ordinal
+            selectedTabIndex = visibleTabs.indexOf(selectedTab).coerceAtLeast(0)
         ) {
-            CalibrationTab.entries.forEach { tab ->
+            visibleTabs.forEach { tab ->
                 Tab(
                     selected = selectedTab == tab,
                     onClick = { navState.selectCalibrationTab(tab) },
-                    text = { Text(tab.label) }
+                    text = { Text(tab.labelFor(platform)) }
                 )
             }
         }
@@ -51,6 +59,7 @@ fun CalibrationContent(navState: NavigationState) {
                     initialCorrectionSubTab = navState.openLoopCorrectionSubTab,
                     autoFitDegree = navState.autoFitDegree
                 )
+                CalibrationTab.DUAL_INJECTION -> DualInjectionScreen()
                 CalibrationTab.PLSOL -> PlsolScreen(initialTab = navState.plsolTab)
                 CalibrationTab.KFMIOP -> KfmiopScreen()
                 CalibrationTab.KFMIRL -> KfmirlScreen()
