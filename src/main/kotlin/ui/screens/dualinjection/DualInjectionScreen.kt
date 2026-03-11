@@ -105,7 +105,7 @@ private fun PortInjectorTab() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = oldFlowRate, onValueChange = { oldFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = oldPressure, onValueChange = { oldPressure = it }, label = { Text("Fuel Pressure (bar)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = oldPressure, onValueChange = { oldPressure = it }, label = { Text("Fuel Pressure (bar, gauge)") }, modifier = Modifier.weight(1f), singleLine = true)
                     OutlinedTextField(value = oldDeadTime, onValueChange = { oldDeadTime = it }, label = { Text("Dead Time @ 14V (ms)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
@@ -122,7 +122,7 @@ private fun PortInjectorTab() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = newFlowRate, onValueChange = { newFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = newPressure, onValueChange = { newPressure = it }, label = { Text("Fuel Pressure (bar)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = newPressure, onValueChange = { newPressure = it }, label = { Text("Fuel Pressure (bar, gauge)") }, modifier = Modifier.weight(1f), singleLine = true)
                     OutlinedTextField(value = newDeadTime, onValueChange = { newDeadTime = it }, label = { Text("Dead Time @ 14V (ms)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
@@ -250,7 +250,7 @@ private fun DirectInjectorTab() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = oldFlowRate, onValueChange = { oldFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = oldPressure, onValueChange = { oldPressure = it }, label = { Text("Fuel Pressure (bar)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = oldPressure, onValueChange = { oldPressure = it }, label = { Text("Fuel Pressure (bar, absolute)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
         }
@@ -266,7 +266,7 @@ private fun DirectInjectorTab() {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = newFlowRate, onValueChange = { newFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = newPressure, onValueChange = { newPressure = it }, label = { Text("Fuel Pressure (bar)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = newPressure, onValueChange = { newPressure = it }, label = { Text("Fuel Pressure (bar, absolute)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
         }
