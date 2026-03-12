@@ -116,4 +116,17 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
 
         onNodeWithText("DS1 Note", substring = true).assertExists()
     }
+
+    @Test
+    fun kfmirlScreenShowsPlatformAwareLabel() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmirl.KfmirlScreen()
+        }
+
+        // MED17 platform should show KFLMIRL consistently
+        onAllNodesWithText("KFLMIRL", substring = true)
+            .fetchSemanticsNodes().isNotEmpty().let {
+                assertTrue(it, "MED17 KFMIRL screen should display KFLMIRL labels")
+            }
+    }
 }

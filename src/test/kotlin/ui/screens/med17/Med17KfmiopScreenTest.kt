@@ -114,4 +114,26 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
 
         onNodeWithText("DS1 Note", substring = true).assertExists()
     }
+
+    @Test
+    fun kfmiopScreenShowsPlatformAwareLabel() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        // MED17 platform should show KFLMIOP in multiple places
+        val nodes = onAllNodesWithText("KFLMIOP", substring = true)
+        nodes.assertCountEquals(5) // banner, title, scalar note, map label, write button
+    }
+
+    @Test
+    fun kfmiopScreenShowsBoostToLoadHelper() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        // Rlsol-based helper should be visible in scalar mode
+        onNodeWithText("Load Helper", substring = true).assertExists()
+        onNodeWithText("Boost (mbar abs)", substring = true).assertExists()
+    }
 }
