@@ -58,7 +58,26 @@ fun KfmiopScreen() {
     val kfmiopPair = remember(mapList, mapVersion) { findMap(mapList, KfmiopPreferences) }
     val inputKfmiop = kfmiopPair?.second
 
-    // Desired pressure inputs (editable)
+    // Detect scalar KFMIOP (MED17/DS1: 1×1 map with empty axes)
+    val isScalar = inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()
+
+    // --- Scalar mode state (MED17/DS1) ---
+    val currentScalarValue = if (isScalar) {
+        inputKfmiop!!.zAxis.firstOrNull()?.firstOrNull() ?: 0.0
+    } else 0.0
+
+    var editedScalarValue by remember(currentScalarValue) {
+        mutableStateOf(currentScalarValue.toString())
+    }
+
+    val scalarOutputMap = remember(editedScalarValue, kfmiopPair, isScalar) {
+        if (isScalar) {
+            val newValue = editedScalarValue.toDoubleOrNull() ?: currentScalarValue
+            Map3d(emptyArray(), emptyArray(), arrayOf(arrayOf(newValue)))
+        } else null
+    }
+
+    // --- 2D mode state (ME7 / non-DS1) ---
     var desiredMaxMapPressure by remember {
         mutableStateOf(KfmiopPreferences.maxMapPressure.toString())
     }
@@ -66,9 +85,8 @@ fun KfmiopScreen() {
         mutableStateOf(KfmiopPreferences.maxBoostPressure.toString())
     }
 
-    // Computed outputs
-    val kfmiopResult = remember(inputKfmiop, desiredMaxMapPressure, desiredMaxBoostPressure) {
-        if (inputKfmiop != null) {
+    val kfmiopResult = remember(inputKfmiop, desiredMaxMapPressure, desiredMaxBoostPressure, isScalar) {
+        if (!isScalar && inputKfmiop != null) {
             val maxMapPressureVal = desiredMaxMapPressure.toDoubleOrNull() ?: KfmiopPreferences.maxMapPressure
             val maxBoostPressureVal = desiredMaxBoostPressure.toDoubleOrNull() ?: KfmiopPreferences.maxBoostPressure
 
@@ -99,11 +117,14 @@ fun KfmiopScreen() {
         Pair(currentPeaks, targetPeaks)
     }
 
-    // Write prerequisites
+    // Write prerequisites — scalar mode uses scalarOutputMap, 2D uses kfmiopResult
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
     val kfmiopMapConfigured = kfmiopPair != null
-    val canWrite = binLoaded && kfmiopMapConfigured && kfmiopResult?.outputKfmiop != null
+    val canWrite = binLoaded && kfmiopMapConfigured && (
+        if (isScalar) scalarOutputMap != null
+        else kfmiopResult?.outputKfmiop != null
+    )
 
     var showWriteConfirmation by remember { mutableStateOf(false) }
     var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
@@ -135,7 +156,7 @@ fun KfmiopScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     showWriteConfirmation = false
-                    val outputMap = kfmiopResult?.outputKfmiop
+                    val outputMap = if (isScalar) scalarOutputMap else kfmiopResult?.outputKfmiop
                     val tableDef = kfmiopPair?.first
                     if (outputMap != null && tableDef != null) {
                         try {
@@ -179,32 +200,56 @@ fun KfmiopScreen() {
             }
         }
 
-        ConfigurationCard(
-            analyzedMaxMapPressure = kfmiopResult?.maxMapSensorPressure,
-            analyzedMaxBoostPressure = kfmiopResult?.maxBoostPressure,
-            desiredMaxMapPressure = desiredMaxMapPressure,
-            desiredMaxBoostPressure = desiredMaxBoostPressure,
-            onDesiredMaxMapPressureChange = {
-                desiredMaxMapPressure = it
-                it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxMapPressure = v }
-            },
-            onDesiredMaxBoostPressureChange = {
-                desiredMaxBoostPressure = it
-                it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxBoostPressure = v }
-            },
-            mapDefinitionName = kfmiopPair?.first?.tableName,
-            onSelectMap = { showMapPicker = true }
-        )
+        // Scalar mode: simplified UI for DS1 max load ceiling
+        if (isScalar) {
+            ScalarConfigurationCard(
+                currentValue = currentScalarValue,
+                editedValue = editedScalarValue,
+                onEditedValueChange = { editedScalarValue = it },
+                mapDefinitionName = kfmiopPair?.first?.tableName,
+                onSelectMap = { showMapPicker = true }
+            )
 
-        ComparisonArea(
-            modifier = Modifier.weight(1f),
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            inputKfmiop = inputKfmiop,
-            kfmiopResult = kfmiopResult,
-            currentPeakBoost = boostChartData.first,
-            targetPeakBoost = boostChartData.second
-        )
+            // Spacer fills the comparison area
+            Box(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "KFMIOP is a scalar on this ECU (DS1). " +
+                            "Edit the max load ceiling above and write to binary.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            // 2D mode: full pressure calculator (ME7 / non-DS1)
+            ConfigurationCard(
+                analyzedMaxMapPressure = kfmiopResult?.maxMapSensorPressure,
+                analyzedMaxBoostPressure = kfmiopResult?.maxBoostPressure,
+                desiredMaxMapPressure = desiredMaxMapPressure,
+                desiredMaxBoostPressure = desiredMaxBoostPressure,
+                onDesiredMaxMapPressureChange = {
+                    desiredMaxMapPressure = it
+                    it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxMapPressure = v }
+                },
+                onDesiredMaxBoostPressureChange = {
+                    desiredMaxBoostPressure = it
+                    it.toDoubleOrNull()?.let { v -> KfmiopPreferences.maxBoostPressure = v }
+                },
+                mapDefinitionName = kfmiopPair?.first?.tableName,
+                onSelectMap = { showMapPicker = true }
+            )
+
+            ComparisonArea(
+                modifier = Modifier.weight(1f),
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+                inputKfmiop = inputKfmiop,
+                kfmiopResult = kfmiopResult,
+                currentPeakBoost = boostChartData.first,
+                targetPeakBoost = boostChartData.second
+            )
+        }
 
         WriteToBinarySection(
             binLoaded = binLoaded,
@@ -215,6 +260,99 @@ fun KfmiopScreen() {
             writeStatus = writeStatus,
             onWriteClick = { showWriteConfirmation = true }
         )
+    }
+}
+
+@Composable
+private fun ScalarConfigurationCard(
+    currentValue: Double,
+    editedValue: String,
+    onEditedValueChange: (String) -> Unit,
+    mapDefinitionName: String?,
+    onSelectMap: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "KFMIOP — Max Load Ceiling",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "DS1 uses a single scalar value as the maximum load ceiling. " +
+                    "Adjust the target value to raise/lower the ceiling.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Current Value", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ParameterField(
+                        value = "%.2f".format(currentValue),
+                        onValueChange = {},
+                        label = "%",
+                        tooltip = "Current max load ceiling from the BIN (read-only).",
+                        readOnly = true,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.width(180.dp).height(56.dp)
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "transforms to",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Target Value", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary)
+                    ParameterField(
+                        value = editedValue,
+                        onValueChange = onEditedValueChange,
+                        label = "%",
+                        tooltip = "Target max load ceiling. DS1 OTS is typically ~400%. " +
+                            "High-power builds may need 450-470%.",
+                        readOnly = false,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.width(180.dp).height(56.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Map Definition:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = mapDefinitionName ?: "No Definition Selected",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(onClick = onSelectMap) {
+                    Text("Select Map")
+                }
+            }
+        }
     }
 }
 

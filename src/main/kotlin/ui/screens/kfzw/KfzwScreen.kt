@@ -29,6 +29,7 @@ import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
+import ui.components.ParameterField
 import ui.theme.ChartRed
 import ui.theme.Primary
 
@@ -61,12 +62,26 @@ fun KfzwScreen() {
     val kfmiopPair = remember(mapList, mapVersion) { findMap(mapList, KfmiopPreferences) }
 
     val inputKfzw = kfzwPair?.second
-    val kfmiopXAxis = kfmiopPair?.second?.xAxis
+    val inputKfmiop = kfmiopPair?.second
 
-    // Editable X-axis (from KFMIOP)
-    var editedXAxis by remember(kfmiopXAxis) {
+    // Detect scalar KFMIOP (DS1: 1×1 map with empty axes)
+    val kfmiopIsScalar = inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()
+
+    // --- DS1 scalar mode: target max load input ---
+    val kfmiopScalarValue = if (kfmiopIsScalar) {
+        inputKfmiop!!.zAxis.firstOrNull()?.firstOrNull() ?: 400.0
+    } else 0.0
+
+    var targetMaxLoad by remember(kfmiopScalarValue) {
+        mutableStateOf(kfmiopScalarValue.toString())
+    }
+
+    // --- ME7 / non-DS1 mode: editable KFMIOP xAxis ---
+    val kfmiopXAxis = inputKfmiop?.xAxis
+
+    var editedXAxis by remember(kfmiopXAxis, kfmiopIsScalar) {
         mutableStateOf(
-            if (kfmiopXAxis != null) arrayOf(kfmiopXAxis.copyOf())
+            if (!kfmiopIsScalar && kfmiopXAxis != null) arrayOf(kfmiopXAxis.copyOf())
             else arrayOf(emptyArray<Double>())
         )
     }
@@ -76,16 +91,28 @@ fun KfzwScreen() {
         mutableStateOf(inputKfzw?.let { Map3d(it) })
     }
 
-    // Calculate the rescaled KFZW output
-    val outputKfzw = remember(editedInputMap, editedXAxis) {
-        val input = editedInputMap
-        if (input != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
-            val newXAxis = editedXAxis[0]
-            val maxValue = newXAxis.last()
-            val rescaledXAxis = RescaleAxis.rescaleAxis(input.xAxis, maxValue)
-            val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, rescaledXAxis)
-            Map3d(rescaledXAxis, input.yAxis, newZAxis)
-        } else null
+    // Calculate the rescaled KFZW output — different path for scalar vs 2D KFMIOP
+    val outputKfzw = remember(editedInputMap, editedXAxis, kfmiopIsScalar, targetMaxLoad) {
+        val input = editedInputMap ?: return@remember null
+
+        if (kfmiopIsScalar) {
+            // DS1 path: use KFZW's own xAxis, rescale to target max load
+            val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
+            if (input.xAxis.size >= 2) {
+                val rescaledXAxis = RescaleAxis.rescaleAxis(input.xAxis, newMax)
+                val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, rescaledXAxis)
+                Map3d(rescaledXAxis, input.yAxis, newZAxis)
+            } else null
+        } else {
+            // ME7 path: use KFMIOP xAxis
+            if (editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
+                val newXAxis = editedXAxis[0]
+                val maxValue = newXAxis.last()
+                val rescaledXAxis = RescaleAxis.rescaleAxis(input.xAxis, maxValue)
+                val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, rescaledXAxis)
+                Map3d(rescaledXAxis, input.yAxis, newZAxis)
+            } else null
+        }
     }
 
     // Timing comparison chart data — peak timing per RPM
@@ -111,12 +138,13 @@ fun KfzwScreen() {
         Pair(originalPeaks, calculatedPeaks)
     }
 
-    // Write prerequisites
+    // Write prerequisites — scalar mode only needs KFZW configured
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
     val kfzwMapConfigured = kfzwPair != null
     val kfmiopMapConfigured = kfmiopPair != null
-    val canWrite = binLoaded && kfzwMapConfigured && kfmiopMapConfigured && outputKfzw != null
+    val canWrite = binLoaded && kfzwMapConfigured && outputKfzw != null &&
+        (kfmiopIsScalar || kfmiopMapConfigured)
 
     var showWriteConfirmation by remember { mutableStateOf(false) }
     var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
@@ -190,9 +218,13 @@ fun KfzwScreen() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "ℹ DS1 Note: DS1 overwrites native KFZW with map-switch ignition tables. " +
-                        "You can still use this tool to rescale the DS1 ignition map — select the " +
-                        "appropriate map-switch table from your XDF instead of the native KFZW.",
+                    if (kfmiopIsScalar)
+                        "ℹ DS1 Note: KFMIOP is a scalar on this ECU. " +
+                            "KFZW will be rescaled to the target max load using its own axis."
+                    else
+                        "ℹ DS1 Note: DS1 overwrites native KFZW with map-switch ignition tables. " +
+                            "You can still use this tool to rescale the DS1 ignition map — select the " +
+                            "appropriate map-switch table from your XDF instead of the native KFZW.",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -200,14 +232,26 @@ fun KfzwScreen() {
             }
         }
 
-        ConfigurationCard(
-            kfzwMapName = kfzwPair?.first?.tableName,
-            kfmiopMapName = kfmiopPair?.first?.tableName,
-            onSelectKfzw = { showKfzwPicker = true },
-            onSelectKfmiop = { showKfmiopPicker = true },
-            editedXAxis = editedXAxis,
-            onXAxisChanged = { newData -> editedXAxis = newData }
-        )
+        if (kfmiopIsScalar) {
+            // DS1 scalar mode: show target max load input
+            ScalarRescaleConfigCard(
+                kfzwMapName = kfzwPair?.first?.tableName,
+                onSelectKfzw = { showKfzwPicker = true },
+                currentMaxLoad = kfmiopScalarValue,
+                targetMaxLoad = targetMaxLoad,
+                onTargetMaxLoadChange = { targetMaxLoad = it }
+            )
+        } else {
+            // ME7 mode: full KFMIOP axis editor
+            ConfigurationCard(
+                kfzwMapName = kfzwPair?.first?.tableName,
+                kfmiopMapName = kfmiopPair?.first?.tableName,
+                onSelectKfzw = { showKfzwPicker = true },
+                onSelectKfmiop = { showKfmiopPicker = true },
+                editedXAxis = editedXAxis,
+                onXAxisChanged = { newData -> editedXAxis = newData }
+            )
+        }
 
         ComparisonArea(
             modifier = Modifier.weight(1f),
@@ -232,6 +276,78 @@ fun KfzwScreen() {
             writeStatus = writeStatus,
             onWriteClick = { showWriteConfirmation = true }
         )
+    }
+}
+
+@Composable
+private fun ScalarRescaleConfigCard(
+    kfzwMapName: String?,
+    onSelectKfzw: () -> Unit,
+    currentMaxLoad: Double,
+    targetMaxLoad: String,
+    onTargetMaxLoadChange: (String) -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "KFZW — Rescale Load Axis",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Rescale KFZW's load axis to match a new max load ceiling.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("KFZW:", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = kfzwMapName ?: "No Definition Selected",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(onClick = onSelectKfzw) { Text("Select Map") }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("KFMIOP Value (current):", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "%.2f%%".format(currentMaxLoad),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                Text("Target Max Load:", style = MaterialTheme.typography.bodySmall)
+                ParameterField(
+                    value = targetMaxLoad,
+                    onValueChange = onTargetMaxLoadChange,
+                    label = "%",
+                    tooltip = "Target max load for KFZW axis rescale. " +
+                        "Defaults to the KFMIOP scalar. Increase for higher-power builds.",
+                    readOnly = false,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.width(130.dp).height(56.dp)
+                )
+            }
+        }
     }
 }
 

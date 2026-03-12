@@ -19,6 +19,7 @@ import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
 import data.writer.BinWriter
 import domain.math.Inverse
+import domain.math.RescaleMap
 import domain.math.map.Map3d
 import data.model.EcuPlatform
 import data.preferences.platform.EcuPlatformPreference
@@ -28,6 +29,7 @@ import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
+import ui.components.ParameterField
 import ui.theme.ChartRed
 import ui.theme.Primary
 
@@ -61,34 +63,53 @@ fun KfmirlScreen() {
 
     val inputKfmiop = kfmiopPair?.second
 
-    // Editable X-axis for KFMIOP (user can change load breakpoints)
-    var editedXAxis by remember(inputKfmiop) {
+    // Detect scalar KFMIOP (DS1: 1×1 map with empty axes)
+    val kfmiopIsScalar = inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()
+
+    // --- DS1 scalar mode: target max load input ---
+    val kfmiopScalarValue = if (kfmiopIsScalar) {
+        inputKfmiop!!.zAxis.firstOrNull()?.firstOrNull() ?: 400.0
+    } else 0.0
+
+    var targetMaxLoad by remember(kfmiopScalarValue) {
+        mutableStateOf(kfmiopScalarValue.toString())
+    }
+
+    // --- ME7 / non-DS1 mode: editable KFMIOP xAxis ---
+    var editedXAxis by remember(inputKfmiop, kfmiopIsScalar) {
         mutableStateOf(
-            if (inputKfmiop != null) arrayOf(inputKfmiop.xAxis.copyOf())
+            if (!kfmiopIsScalar && inputKfmiop != null) arrayOf(inputKfmiop.xAxis.copyOf())
             else arrayOf(emptyArray<Double>())
         )
     }
 
-    // Editable input map (user can edit KFMIOP zAxis values)
-    var editedInputMap by remember(inputKfmiop) {
-        mutableStateOf(inputKfmiop?.let { Map3d(it) })
+    var editedInputMap by remember(inputKfmiop, kfmiopIsScalar) {
+        mutableStateOf(if (!kfmiopIsScalar) inputKfmiop?.let { Map3d(it) } else null)
     }
 
-    // Calculate KFMIRL as inverse of KFMIOP
-    val outputKfmirl = remember(editedInputMap, editedXAxis, kfmirlPair) {
-        val kfmiop = editedInputMap
+    // Calculate KFMIRL output — different path for scalar vs 2D KFMIOP
+    val outputKfmirl = remember(editedInputMap, editedXAxis, kfmirlPair, kfmiopIsScalar, targetMaxLoad) {
         val kfmirlBase = kfmirlPair?.second
-        if (kfmiop != null && kfmirlBase != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
-            val kfmiopWithNewXAxis = Map3d(editedXAxis[0], kfmiop.yAxis, kfmiop.zAxis)
-            val inverse = Inverse.calculateInverse(kfmiopWithNewXAxis, kfmirlBase)
-            // Preserve the first column from the original KFMIRL
-            for (i in inverse.zAxis.indices) {
-                if (inverse.zAxis[i].isNotEmpty() && kfmirlBase.zAxis[i].isNotEmpty()) {
-                    inverse.zAxis[i][0] = kfmirlBase.zAxis[i][0]
+
+        if (kfmiopIsScalar && kfmirlBase != null) {
+            // DS1 path: rescale KFMIRL's own xAxis to the target max load
+            val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
+            RescaleMap.rescaleMapXAxis(kfmirlBase, newMax)
+        } else {
+            // ME7 path: inverse of KFMIOP
+            val kfmiop = editedInputMap
+            if (kfmiop != null && kfmirlBase != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
+                val kfmiopWithNewXAxis = Map3d(editedXAxis[0], kfmiop.yAxis, kfmiop.zAxis)
+                val inverse = Inverse.calculateInverse(kfmiopWithNewXAxis, kfmirlBase)
+                // Preserve the first column from the original KFMIRL
+                for (i in inverse.zAxis.indices) {
+                    if (inverse.zAxis[i].isNotEmpty() && kfmirlBase.zAxis[i].isNotEmpty()) {
+                        inverse.zAxis[i][0] = kfmirlBase.zAxis[i][0]
+                    }
                 }
-            }
-            inverse
-        } else null
+                inverse
+            } else null
+        }
     }
 
     // Load comparison chart data — peak load per RPM
@@ -114,12 +135,13 @@ fun KfmirlScreen() {
         Pair(originalPeaks, calculatedPeaks)
     }
 
-    // Write prerequisites
+    // Write prerequisites — scalar mode only needs KFMIRL configured
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
     val kfmiopMapConfigured = kfmiopPair != null
     val kfmirlMapConfigured = kfmirlPair != null
-    val canWrite = binLoaded && kfmiopMapConfigured && kfmirlMapConfigured && outputKfmirl != null
+    val canWrite = binLoaded && kfmirlMapConfigured && outputKfmirl != null &&
+        (kfmiopIsScalar || kfmiopMapConfigured)
 
     var showWriteConfirmation by remember { mutableStateOf(false) }
     var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
@@ -193,9 +215,13 @@ fun KfmirlScreen() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "ℹ DS1 Note: DS1 reduces KFMIOP/KFMIRL to scalar values and bypasses " +
-                        "the native torque model. KFMIRL here works as a simple inverse calculator " +
-                        "to convert between load and torque values.",
+                    if (kfmiopIsScalar)
+                        "ℹ DS1 Note: KFMIOP is a scalar on this ECU. " +
+                            "KFMIRL will be rescaled to the target max load using its own axis."
+                    else
+                        "ℹ DS1 Note: DS1 reduces KFMIOP/KFMIRL to scalar values and bypasses " +
+                            "the native torque model. KFMIRL here works as a simple inverse calculator " +
+                            "to convert between load and torque values.",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -203,19 +229,31 @@ fun KfmirlScreen() {
             }
         }
 
-        ConfigurationCard(
-            kfmiopMapName = kfmiopPair?.first?.tableName,
-            kfmirlMapName = kfmirlPair?.first?.tableName,
-            onSelectKfmiop = { showKfmiopPicker = true },
-            onSelectKfmirl = { showKfmirlPicker = true },
-            editedXAxis = editedXAxis,
-            onXAxisChanged = { newData ->
-                editedXAxis = newData
-                editedInputMap?.let { currentMap ->
-                    editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
+        if (kfmiopIsScalar) {
+            // DS1 scalar mode: show target max load input
+            ScalarRescaleConfigCard(
+                kfmirlMapName = kfmirlPair?.first?.tableName,
+                onSelectKfmirl = { showKfmirlPicker = true },
+                currentMaxLoad = kfmiopScalarValue,
+                targetMaxLoad = targetMaxLoad,
+                onTargetMaxLoadChange = { targetMaxLoad = it }
+            )
+        } else {
+            // ME7 mode: full KFMIOP axis editor
+            ConfigurationCard(
+                kfmiopMapName = kfmiopPair?.first?.tableName,
+                kfmirlMapName = kfmirlPair?.first?.tableName,
+                onSelectKfmiop = { showKfmiopPicker = true },
+                onSelectKfmirl = { showKfmirlPicker = true },
+                editedXAxis = editedXAxis,
+                onXAxisChanged = { newData ->
+                    editedXAxis = newData
+                    editedInputMap?.let { currentMap ->
+                        editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
+                    }
                 }
-            }
-        )
+            )
+        }
 
         ComparisonArea(
             modifier = Modifier.weight(1f),
@@ -240,6 +278,69 @@ fun KfmirlScreen() {
             writeStatus = writeStatus,
             onWriteClick = { showWriteConfirmation = true }
         )
+    }
+}
+
+@Composable
+private fun ScalarRescaleConfigCard(
+    kfmirlMapName: String?,
+    onSelectKfmirl: () -> Unit,
+    currentMaxLoad: Double,
+    targetMaxLoad: String,
+    onTargetMaxLoadChange: (String) -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "KFMIRL — Rescale Load Axis",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Rescale KFMIRL's load axis to match a new max load ceiling.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            MapSelectorRow(
+                label = "KFMIRL:",
+                mapName = kfmirlMapName,
+                onSelectMap = onSelectKfmirl
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("KFMIOP Value (current):", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "%.2f%%".format(currentMaxLoad),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                Text("Target Max Load:", style = MaterialTheme.typography.bodySmall)
+                ParameterField(
+                    value = targetMaxLoad,
+                    onValueChange = onTargetMaxLoadChange,
+                    label = "%",
+                    tooltip = "Target max load for KFMIRL axis rescale. " +
+                        "Defaults to the KFMIOP scalar. Increase for higher-power builds.",
+                    readOnly = false,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.width(130.dp).height(56.dp)
+                )
+            }
+        }
     }
 }
 

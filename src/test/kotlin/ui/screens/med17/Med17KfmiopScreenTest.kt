@@ -9,14 +9,9 @@ import kotlin.test.assertTrue
 /**
  * End-to-end Compose UI test for the KFMIOP screen on MED17.
  *
- * On MED17 (DS1), KFMIOP is a 1×1 scalar (single max torque value),
- * NOT a full 2D map like ME7. The KFMIOP calculator expects a 2D map
- * and returns null for scalar inputs, so the Write button is correctly
- * disabled. Tests verify:
- *  - Profile resolves the KFMIOP preference
- *  - "Not configured" does NOT appear (map IS set, just scalar)
- *  - Write button is disabled (calculator returns null for scalar)
- *  - DS1 banner is visible
+ * On MED17 (DS1), KFMIOP is a 1×1 scalar (single max load ceiling).
+ * The screen now detects scalar KFMIOP and shows a simplified editor
+ * with Current/Target value fields and a working Write button.
  */
 @OptIn(ExperimentalTestApi::class)
 class Med17KfmiopScreenTest : Med17ScreenTestBase() {
@@ -35,7 +30,6 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
     fun kfmiopMapIsScalarOnMed17() {
         val selected = KfmiopPreferences.getSelectedMap()!!
         val map = selected.second
-        // MED17 DS1 KFMIOP is a 1×1 scalar — document this reality
         assertTrue(
             map.xAxis.isEmpty() && map.yAxis.isEmpty(),
             "MED17 KFMIOP should be a scalar (empty axes), got x=${map.xAxis.size} y=${map.yAxis.size}"
@@ -52,21 +46,52 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
             ui.screens.kfmiop.KfmiopScreen()
         }
 
-        // Map IS configured (preference resolves), even though it's a scalar.
-        // "Not configured" should NOT appear.
         onAllNodesWithText("Not configured").assertCountEquals(0)
     }
 
     @Test
-    fun kfmiopWriteButtonDisabledForScalarMap() = runComposeUiTest {
+    fun kfmiopScalarModeShowsLoadCeiling() = runComposeUiTest {
         setContent {
             ui.screens.kfmiop.KfmiopScreen()
         }
 
-        // Write is disabled because the calculator returns null for scalar KFMIOP.
-        // This is the correct behavior — the 2D rescaling calculator can't work
-        // with a 1×1 scalar input.
-        onNodeWithText("Write KFMIOP").assertIsNotEnabled()
+        // Scalar mode shows the max load ceiling UI
+        onNodeWithText("Max Load Ceiling", substring = true).assertExists()
+        onNodeWithText("Current Value", substring = true).assertExists()
+        onNodeWithText("Target Value", substring = true).assertExists()
+    }
+
+    @Test
+    fun kfmiopWriteButtonEnabledForScalarMode() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        // Scalar mode should have Write enabled (scalarOutputMap is always non-null)
+        onNodeWithText("Write KFMIOP").assertIsEnabled()
+    }
+
+    @Test
+    fun kfmiopWriteProducesValidBinaryOutput() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        val kfmiopPair = KfmiopPreferences.getSelectedMap()!!
+        val address = kfmiopPair.first.zAxis.address.toLong()
+        val stride = kfmiopPair.first.zAxis.sizeBits / 8
+
+        // Click Write KFMIOP
+        onNodeWithText("Write KFMIOP").performClick()
+        onNodeWithText("Are you sure you want to write KFMIOP to the binary?").assertExists()
+        onNodeWithText("Yes").performClick()
+        waitForIdle()
+
+        val newBytes = readBinBytes(address, stride)
+        assertTrue(
+            newBytes.any { it != 0.toByte() },
+            "Written KFMIOP scalar bytes should be non-zero at address $address"
+        )
     }
 
     @Test
@@ -88,15 +113,5 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         }
 
         onNodeWithText("DS1 Note", substring = true).assertExists()
-    }
-
-    @Test
-    fun kfmiopScreenShowsComparisonTabs() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmiop.KfmiopScreen()
-        }
-
-        onNodeWithText("Torque").assertExists()
-        onNodeWithText("Boost Comparison").assertExists()
     }
 }

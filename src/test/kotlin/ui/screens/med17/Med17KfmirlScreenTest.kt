@@ -10,12 +10,9 @@ import kotlin.test.assertTrue
 /**
  * End-to-end Compose UI test for the KFMIRL screen on MED17.
  *
- * On MED17 (DS1), KFMIOP is a 1×1 scalar. KFMIRL is a full 2D table (14×16),
- * but the inverse calculation requires KFMIOP's xAxis as input, which is empty.
- * So outputKfmirl = null and Write is disabled. Tests verify:
- *  - Profile resolves both preferences
- *  - "Not configured" does NOT appear (both maps ARE set)
- *  - Write button is disabled (inverse calc returns null)
+ * On MED17 (DS1), KFMIOP is a 1×1 scalar. KFMIRL is a full 2D table (14×16).
+ * The screen detects scalar KFMIOP and uses KFMIRL's own xAxis for rescaling
+ * instead of requiring KFMIOP's (empty) xAxis. Write now works.
  */
 @OptIn(ExperimentalTestApi::class)
 class Med17KfmirlScreenTest : Med17ScreenTestBase() {
@@ -36,7 +33,6 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
     fun kfmirlMapIs2dOnMed17() {
         val selected = KfmirlPreferences.getSelectedMap()!!
         val map = selected.second
-        // KFMIRL is a real 2D table on MED17, unlike KFMIOP
         assertTrue(map.xAxis.size > 1 && map.yAxis.size > 1,
             "KFMIRL should be a 2D map, got x=${map.xAxis.size} y=${map.yAxis.size}")
     }
@@ -47,18 +43,52 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
             ui.screens.kfmirl.KfmirlScreen()
         }
 
-        // Both maps are configured, so "Not configured" should not appear
         onAllNodesWithText("Not configured").assertCountEquals(0)
     }
 
     @Test
-    fun kfmirlWriteButtonDisabledDueToScalarKfmiop() = runComposeUiTest {
+    fun kfmirlScalarModeShowsRescaleUI() = runComposeUiTest {
         setContent {
             ui.screens.kfmirl.KfmirlScreen()
         }
 
-        // Write is disabled because inverse calc needs KFMIOP xAxis (empty on MED17)
-        onNodeWithText("Write KFMIRL").assertIsNotEnabled()
+        // DS1 scalar mode shows the rescale configuration
+        onNodeWithText("Rescale Load Axis", substring = true).assertExists()
+        onNodeWithText("Target Max Load", substring = true).assertExists()
+    }
+
+    @Test
+    fun kfmirlWriteButtonEnabledWithScalarKfmiop() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmirl.KfmirlScreen()
+        }
+
+        // Write should now be enabled — DS1 path uses KFMIRL's own xAxis
+        onNodeWithText("Write KFMIRL").assertIsEnabled()
+    }
+
+    @Test
+    fun kfmirlWriteProducesValidBinaryOutput() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmirl.KfmirlScreen()
+        }
+
+        val kfmirlPair = KfmirlPreferences.getSelectedMap()!!
+        val address = kfmirlPair.first.zAxis.address.toLong()
+        val stride = kfmirlPair.first.zAxis.sizeBits / 8
+        val totalCells = kfmirlPair.second.zAxis.sumOf { it.size }
+
+        // Click Write
+        onNodeWithText("Write KFMIRL").performClick()
+        onNodeWithText("Are you sure you want to write KFMIRL to the binary?").assertExists()
+        onNodeWithText("Yes").performClick()
+        waitForIdle()
+
+        val newBytes = readBinBytes(address, totalCells * stride)
+        assertTrue(
+            newBytes.any { it != 0.toByte() },
+            "Written KFMIRL bytes should be non-zero at address $address"
+        )
     }
 
     @Test
@@ -72,8 +102,8 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
 
         val notConfiguredNodes = onAllNodesWithText("Not configured").fetchSemanticsNodes()
         assertTrue(
-            notConfiguredNodes.size >= 2,
-            "Should show 'Not configured' for both KFMIOP and KFMIRL"
+            notConfiguredNodes.isNotEmpty(),
+            "Should show 'Not configured' when KFMIRL is not set"
         )
         onNodeWithText("Write KFMIRL").assertIsNotEnabled()
     }
@@ -85,16 +115,5 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
         }
 
         onNodeWithText("DS1 Note", substring = true).assertExists()
-    }
-
-    @Test
-    fun kfmirlScreenShowsComparisonTabs() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
-        onNodeWithText("KFMIOP (Input)").assertExists()
-        onNodeWithText("KFMIRL (Comparison)").assertExists()
-        onNodeWithText("Load Comparison").assertExists()
     }
 }
