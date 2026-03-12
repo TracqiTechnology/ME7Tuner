@@ -121,7 +121,7 @@ class LdrpidMed17E2ETest {
         assertEquals(med17Rpms, me7Rpms, "RPM values should be identical after adaptation")
     }
 
-    // ── 4. KFLDRL output has monotonic rows ─────────────────────────
+    // ── 4. KFLDRL output has monotonic rows and sane values ─────────
 
     @Test
     fun `KFLDRL rows are monotonically non-decreasing`() {
@@ -135,6 +135,33 @@ class LdrpidMed17E2ETest {
             for (i in 1 until row.size) {
                 assertTrue(row[i] >= row[i - 1],
                     "Non-linear row $rowIdx should be non-decreasing: ${row.contentToString()}")
+            }
+        }
+    }
+
+    @Test
+    fun `KFLDRL z-values are within 0-100 duty cycle range`() {
+        val parser = Med17LogParser()
+        val med17Data = parser.parseLogFile(LogType.LDRPID, logFile("2025-01-21_16.24.32_log(1).csv"))
+        val me7Data = Med17LogAdapter.toMe7LdrpidFormat(med17Data)
+
+        val result = LdrpidCalculator.calculateLdrpid(me7Data, buildKfldrlMap(), buildKfldimxMap())
+
+        // Print non-linear (raw boost) output for inspection
+        println("Non-linear output (boost PSI × 0.0145):")
+        for ((rowIdx, row) in result.nonLinearOutput.zAxis.withIndex()) {
+            println("  RPM=${rpmAxis[rowIdx]}: ${row.map { "%.2f".format(it) }}")
+        }
+
+        // Print KFLDRL output for inspection
+        println("KFLDRL (linearized duty correction):")
+        for ((rowIdx, row) in result.kfldrl.zAxis.withIndex()) {
+            println("  RPM=${rpmAxis[rowIdx]}: ${row.map { "%.2f".format(it) }}")
+            for (c in row.indices) {
+                assertTrue(row[c] >= 0.0,
+                    "KFLDRL z[$rowIdx][$c]=${row[c]} should be >= 0")
+                assertTrue(row[c] <= 100.0,
+                    "KFLDRL z[$rowIdx][$c]=${row[c]} should be <= 100")
             }
         }
     }

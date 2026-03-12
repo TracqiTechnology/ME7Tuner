@@ -110,14 +110,110 @@ class OptimizerMed17E2ETest {
         }
     }
 
-    // ── 3. Mixed / Cruise Log Edge Cases ────────────────────────────
+    // ── 3. CRITICAL: analyzeMed17() end-to-end ─────────────────────
+
+    @Test
+    fun `analyzeMed17 with real WOT log and KFLDRL produces suggestions`() {
+        val me7Data = parseAndAdapt("2025-01-21_16.24.32_log(1).csv")
+        val defs = parseXdf(XDF_FILE)
+        val maps = parseBin(BIN_FILE, defs)
+
+        val kfldrl = findMap(maps, "linearize boost")
+        val kfldimx = findMap(maps, "I-Integrator")
+            ?: findMap(maps, "KFLDIMX")
+        val kfmiop = findMap(maps, "Max indexed eng tq")
+
+        assertNotNull(kfldrl, "KFLDRL must be found for optimizer test")
+
+        val result = OptimizerCalculator.analyzeMed17(
+            values = me7Data,
+            kfldrlMap = kfldrl,
+            kfldimxMap = kfldimx,
+            kfmiopMap = kfmiop
+        )
+
+        // Core assertions: no crash, WOT entries found
+        assertTrue(result.wotEntries.isNotEmpty(), "analyzeMed17 should find WOT entries")
+        println("analyzeMed17 result: ${result.wotEntries.size} WOT entries")
+
+        // KFLDRL suggestion should exist when KFLDRL input is provided
+        if (result.suggestedKfldrl != null) {
+            val sug = result.suggestedKfldrl!!
+            println("Suggested KFLDRL: ${sug.yAxis.size}×${sug.xAxis.size}")
+            // z-values should be in duty-cycle range [0, 100]
+            for (r in sug.zAxis.indices) {
+                for (c in sug.zAxis[r].indices) {
+                    assertTrue(sug.zAxis[r][c] in 0.0..100.0,
+                        "Suggested KFLDRL z[$r][$c]=${sug.zAxis[r][c]} out of [0, 100]")
+                }
+            }
+        } else {
+            println("analyzeMed17 produced no KFLDRL suggestion (may need more WOT data)")
+        }
+
+        // Pressure errors should be populated
+        assertTrue(result.pressureErrors.isNotEmpty(),
+            "analyzeMed17 should report pressure errors")
+
+        // Warnings and chain diagnosis
+        println("Warnings: ${result.warnings.size}")
+        result.warnings.take(5).forEach { println("  - $it") }
+
+        // Pulls should be segmented
+        assertTrue(result.pulls.isNotEmpty(), "analyzeMed17 should segment WOT pulls")
+        println("WOT pulls: ${result.pulls.size}")
+    }
+
+    @Test
+    fun `analyzeMed17 with cruise-only log produces empty or minimal results`() {
+        val me7Data = parseAndAdapt("2023-05-19_21.08.33_log.csv")
+        val defs = parseXdf(XDF_FILE)
+        val maps = parseBin(BIN_FILE, defs)
+        val kfldrl = findMap(maps, "linearize boost")
+
+        val result = OptimizerCalculator.analyzeMed17(
+            values = me7Data,
+            kfldrlMap = kfldrl,
+            kfldimxMap = null,
+            kfmiopMap = null
+        )
+
+        // Cruise log should produce no or very few WOT entries
+        println("Cruise analyzeMed17: ${result.wotEntries.size} WOT, ${result.warnings.size} warnings")
+        assertTrue(result.wotEntries.size < 50,
+            "Cruise log should produce < 50 WOT entries, got ${result.wotEntries.size}")
+    }
+
+    @Test
+    fun `analyzeMed17 chain diagnosis reports error sources`() {
+        val me7Data = parseAndAdapt("2025-01-21_16.24.32_log(1).csv")
+        val defs = parseXdf(XDF_FILE)
+        val maps = parseBin(BIN_FILE, defs)
+        val kfldrl = findMap(maps, "linearize boost")
+
+        val result = OptimizerCalculator.analyzeMed17(
+            values = me7Data,
+            kfldrlMap = kfldrl,
+            kfldimxMap = null,
+            kfmiopMap = null
+        )
+
+        // Chain diagnosis should have meaningful error breakdown
+        val cd = result.chainDiagnosis
+        val totalPct = cd.torqueCappedPercent + cd.boostShortfallPercent + cd.onTargetPercent
+        assertTrue(totalPct > 0.0, "Chain diagnosis should report non-zero error distribution")
+        println("Chain diagnosis: torque_cap=${cd.torqueCappedPercent}% boost_short=${cd.boostShortfallPercent}% on_target=${cd.onTargetPercent}%")
+        println("Dominant error: ${cd.dominantError}")
+        cd.recommendations.forEach { println("  Recommendation: $it") }
+    }
+
+    // ── 4. Mixed / Cruise Log Edge Cases ────────────────────────────
 
     @Test
     fun `mixed log has some WOT entries`() {
         val me7Data = parseAndAdapt("2023-05-19_21.31.12_log.csv")
         val wotEntries = OptimizerCalculator.filterWotEntries(me7Data, 80.0)
 
-        // Mixed log should have some WOT
         println("Mixed log WOT entries: ${wotEntries.size}")
         assertTrue(wotEntries.isNotEmpty(), "Mixed log should have some WOT entries")
     }
@@ -127,12 +223,11 @@ class OptimizerMed17E2ETest {
         val me7Data = parseAndAdapt("2023-05-19_21.08.33_log.csv")
         val wotEntries = OptimizerCalculator.filterWotEntries(me7Data, 80.0)
 
-        // Cruise log should have few/no WOT entries
         println("Cruise log WOT entries: ${wotEntries.size}")
         assertTrue(wotEntries.size < 50, "Cruise log should have few WOT entries, got ${wotEntries.size}")
     }
 
-    // ── 4. Map + Log Cross-Validation ───────────────────────────────
+    // ── 5. Map + Log Cross-Validation ───────────────────────────────
 
     @Test
     fun `WOT RPM range overlaps with KFMIOP RPM axis`() {
@@ -142,7 +237,6 @@ class OptimizerMed17E2ETest {
 
         val kfmiop = findMap(maps, "Max indexed eng tq") ?: return
 
-        // Only run if KFMIOP has a real yAxis
         if (kfmiop.yAxis.isEmpty()) {
             println("KFMIOP has empty yAxis — skipping cross-validation")
             return

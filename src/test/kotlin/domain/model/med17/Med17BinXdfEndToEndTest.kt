@@ -162,6 +162,12 @@ class Med17BinXdfEndToEndTest {
                     "KFLDRL z[$r][$c] = ${map.zAxis[r][c]} out of [0, 100] range")
             }
         }
+
+        // Print actual z-values for manual inspection
+        println("KFLDRL z-values from 404E BIN:")
+        for (r in map.zAxis.indices) {
+            println("  RPM=${map.yAxis[r]}: ${map.zAxis[r].map { "%.2f".format(it) }}")
+        }
     }
 
     // ── 3. Wastegate Precontrol ──────────────────────────────────────
