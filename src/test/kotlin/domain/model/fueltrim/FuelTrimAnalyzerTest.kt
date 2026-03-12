@@ -343,4 +343,48 @@ class FuelTrimAnalyzerTest {
             }
         }
     }
+
+    // ── Map3d conversion ────────────────────────────────────────────
+
+    @Test
+    fun `toAvgTrimsMap3d produces correct Map3d`() {
+        val result = FuelTrimResult(
+            rpmBins = doubleArrayOf(1000.0, 2000.0),
+            loadBins = doubleArrayOf(10.0, 20.0, 30.0),
+            avgTrims = arrayOf(
+                doubleArrayOf(1.0, 2.0, 3.0),
+                doubleArrayOf(4.0, 5.0, 6.0)
+            ),
+            corrections = arrayOf(
+                doubleArrayOf(0.0, 0.0, 0.0),
+                doubleArrayOf(0.0, 0.0, 0.0)
+            ),
+            warnings = emptyList()
+        )
+
+        val map = result.toAvgTrimsMap3d()
+        assertContentEquals(arrayOf(10.0, 20.0, 30.0), map.xAxis)
+        assertContentEquals(arrayOf(1000.0, 2000.0), map.yAxis)
+        assertEquals(2, map.zAxis.size)
+        assertEquals(3, map.zAxis[0].size)
+        assertEquals(1.0, map.zAxis[0][0])
+        assertEquals(6.0, map.zAxis[1][2])
+    }
+
+    @Test
+    fun `toCorrectionsMap3d produces correct Map3d`() {
+        val result = FuelTrimResult(
+            rpmBins = doubleArrayOf(750.0),
+            loadBins = doubleArrayOf(10.0, 20.0),
+            avgTrims = arrayOf(doubleArrayOf(0.0, 0.0)),
+            corrections = arrayOf(doubleArrayOf(5.5, -2.3)),
+            warnings = emptyList()
+        )
+
+        val map = result.toCorrectionsMap3d()
+        assertContentEquals(arrayOf(10.0, 20.0), map.xAxis)
+        assertContentEquals(arrayOf(750.0), map.yAxis)
+        assertEquals(5.5, map.zAxis[0][0])
+        assertEquals(-2.3, map.zAxis[0][1])
+    }
 }

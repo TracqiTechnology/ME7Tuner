@@ -1,5 +1,7 @@
 package domain.model.fueltrim
 
+import domain.math.map.Map3d
+
 /**
  * Result of analyzing MED17 fuel trim logs.
  *
@@ -20,6 +22,20 @@ data class FuelTrimResult(
     /** True when every correction bin is zero (nothing to adjust). */
     val isEmpty: Boolean
         get() = corrections.all { row -> row.all { it == 0.0 } }
+
+    /** Average combined fuel trim as a Map3d (xAxis=load, yAxis=RPM). */
+    fun toAvgTrimsMap3d(): Map3d = Map3d(
+        loadBins.toTypedArray(),
+        rpmBins.toTypedArray(),
+        avgTrims.map { it.toTypedArray() }.toTypedArray()
+    )
+
+    /** Suggested rk_w corrections as a Map3d (xAxis=load, yAxis=RPM). */
+    fun toCorrectionsMap3d(): Map3d = Map3d(
+        loadBins.toTypedArray(),
+        rpmBins.toTypedArray(),
+        corrections.map { it.toTypedArray() }.toTypedArray()
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

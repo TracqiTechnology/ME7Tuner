@@ -1,6 +1,5 @@
 package ui.screens.fueltrim
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import data.contract.Med17LogFileContract
@@ -18,10 +16,10 @@ import domain.model.fueltrim.FuelTrimResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ui.components.MapTable
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
-import kotlin.math.abs
 
 /**
  * MED17 fuel trim analysis screen.
@@ -160,23 +158,39 @@ fun FuelTrimScreen() {
         // Results
         result?.let { fuelTrimResult ->
             // Average Trims Grid
-            TrimGrid(
-                title = "Average Combined Fuel Trim (%)",
-                rpmBins = fuelTrimResult.rpmBins,
-                loadBins = fuelTrimResult.loadBins,
-                values = fuelTrimResult.avgTrims,
-                highlightThreshold = 3.0
-            )
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Average Combined Fuel Trim (%)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MapTable(map = fuelTrimResult.toAvgTrimsMap3d(), editable = false)
+                }
+            }
 
             // Corrections Grid
             if (!fuelTrimResult.isEmpty) {
-                TrimGrid(
-                    title = "Suggested rk_w Corrections (%)",
-                    rpmBins = fuelTrimResult.rpmBins,
-                    loadBins = fuelTrimResult.loadBins,
-                    values = fuelTrimResult.corrections,
-                    highlightThreshold = 0.1
-                )
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Suggested rk_w Corrections (%)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        MapTable(map = fuelTrimResult.toCorrectionsMap3d(), editable = false)
+                    }
+                }
             }
 
             // Warnings
@@ -202,85 +216,6 @@ fun FuelTrimScreen() {
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TrimGrid(
-    title: String,
-    rpmBins: DoubleArray,
-    loadBins: DoubleArray,
-    values: Array<DoubleArray>,
-    highlightThreshold: Double
-) {
-    val hScrollState = rememberScrollState()
-
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "RPM ↓  /  Load % →",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box(modifier = Modifier.horizontalScroll(hScrollState)) {
-                Column {
-                    // Header row: load bins
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            "",
-                            modifier = Modifier.width(56.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        for (load in loadBins) {
-                            Text(
-                                "%.0f".format(load),
-                                modifier = Modifier.width(48.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    // Data rows
-                    for (r in rpmBins.indices) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                "%.0f".format(rpmBins[r]),
-                                modifier = Modifier.width(56.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold
-                            )
-                            for (l in loadBins.indices) {
-                                val v = values[r][l]
-                                val color = when {
-                                    abs(v) < highlightThreshold -> MaterialTheme.colorScheme.onSurface
-                                    v > 0 -> MaterialTheme.colorScheme.error  // Rich (adding fuel)
-                                    else -> MaterialTheme.colorScheme.primary  // Lean (removing fuel)
-                                }
-                                Text(
-                                    if (abs(v) < 0.01) "·" else "%+.1f".format(v),
-                                    modifier = Modifier.width(48.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = color
-                                )
-                            }
                         }
                     }
                 }
