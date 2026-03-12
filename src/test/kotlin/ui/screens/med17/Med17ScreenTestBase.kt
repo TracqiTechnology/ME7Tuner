@@ -6,7 +6,10 @@ import data.parser.xdf.TableDefinition
 import data.parser.xdf.XdfParser
 import data.preferences.bin.BinFilePreferences
 import data.preferences.platform.EcuPlatformPreference
+import data.profile.ConfigurationProfile
+import data.profile.ProfileManager
 import domain.math.map.Map3d
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
 import kotlin.test.BeforeTest
@@ -17,8 +20,8 @@ import kotlin.test.assertTrue
  * Shared base for MED17 Compose UI screen tests.
  *
  * Parses the real 404E XDF + stock BIN, sets EcuPlatform to MED17,
- * and populates BinParser / XdfParser singletons so screens can render
- * with real data.
+ * populates BinParser / XdfParser singletons, applies the MED17 profile,
+ * and sets up a temp BIN copy for write verification.
  */
 abstract class Med17ScreenTestBase {
 
@@ -29,15 +32,23 @@ abstract class Med17ScreenTestBase {
 
         // 404E Normal XDF map titles
         const val KFMIOP_TITLE = "Max indexed eng tq"
+        const val KFMIRL_TITLE = "Tgt filling"
         const val KFLDRL_TITLE = "KF to linearize boost pressure = fTV"
+        const val KFLDIMX_TITLE = "LDR I controller limitation map"
+        const val KFZWOP_TITLE = "Opt model ref ignition"
+        const val KFZW_TITLE = "Delta ignition during warm-up"
         const val KRKTE_GDI_TITLE = "Conv rel fuel mass rk into effective inj time te"
         const val KRKTE_PFI_TITLE = "Conv rel fuel mass rk to effective inj time te or intake man inj PFI"
         const val WASTEGATE_TITLE = "Precontrol wastegate for LDR inactive"
+
+        private val profileJson = Json { ignoreUnknownKeys = true }
     }
 
     protected lateinit var savedPlatform: EcuPlatform
     protected lateinit var tableDefs: List<TableDefinition>
     protected lateinit var allMaps: List<Pair<TableDefinition, Map3d>>
+    protected lateinit var tempBinFile: File
+    protected lateinit var profile: ConfigurationProfile
 
     @BeforeTest
     open fun setUp() {
@@ -57,13 +68,27 @@ abstract class Med17ScreenTestBase {
         XdfParser.setTableDefinitionsForTesting(tableDefs)
         BinParser.setMapListForTesting(allMaps)
 
-        // Set BIN file preference so screens see a "loaded" binary
-        BinFilePreferences.setFile(BIN_FILE)
+        // Create a temp BIN copy for write verification
+        tempBinFile = File.createTempFile("med17_test_", ".bin")
+        BIN_FILE.copyTo(tempBinFile, overwrite = true)
+        BinFilePreferences.setFile(tempBinFile)
+
+        // Load and apply MED17 profile
+        val stream = ProfileManager::class.java.getResourceAsStream(
+            "/profiles/MED17_162_RS3_TTRS_2_5T.me7profile.json"
+        ) ?: error("MED17 profile not found on classpath")
+        profile = profileJson.decodeFromString(
+            ConfigurationProfile.serializer(), stream.bufferedReader().readText()
+        )
+        ProfileManager.applyProfile(profile)
     }
 
     @AfterTest
     open fun tearDown() {
         EcuPlatformPreference.platform = savedPlatform
+        if (::tempBinFile.isInitialized && tempBinFile.exists()) {
+            tempBinFile.delete()
+        }
     }
 
     /** Find a map by exact table name. */
@@ -82,4 +107,14 @@ abstract class Med17ScreenTestBase {
         allMaps
             .filter { it.first.tableName.contains(keyword, ignoreCase = true) }
             .maxByOrNull { it.second.xAxis.size * it.second.yAxis.size }
+
+    /** Read raw bytes from the temp BIN at a given address. */
+    protected fun readBinBytes(address: Long, length: Int): ByteArray {
+        val bytes = ByteArray(length)
+        java.io.RandomAccessFile(tempBinFile, "r").use { raf ->
+            raf.seek(address)
+            raf.readFully(bytes)
+        }
+        return bytes
+    }
 }

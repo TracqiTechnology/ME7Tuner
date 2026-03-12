@@ -14,8 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import data.model.EcuPlatform
 import data.preferences.bin.BinFilePreferences
 import data.preferences.krkte.KrktePreferences
+import data.preferences.krkte.KrktePfiPreferences
+import data.preferences.platform.EcuPlatformPreference
 import data.preferences.primaryfueling.PrimaryFuelingPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
@@ -66,9 +69,12 @@ fun KrkteScreen() {
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
 
+    val krktePreference = if (EcuPlatformPreference.platform == EcuPlatform.MED17)
+        KrktePfiPreferences else KrktePreferences
+
     var mapVersion by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) { KrktePreferences.mapChanged.collect { mapVersion++ } }
-    val krkteMap = remember(mapVersion) { KrktePreferences.getSelectedMap() }
+    LaunchedEffect(Unit) { krktePreference.mapChanged.collect { mapVersion++ } }
+    val krkteMap = remember(mapVersion) { krktePreference.getSelectedMap() }
     val krkteMapConfigured = krkteMap != null
     val krkteMapName = krkteMap?.first?.tableName
 
@@ -163,7 +169,7 @@ fun KrkteScreen() {
                 TextButton(
                     onClick = {
                         showWriteConfirmation = false
-                        val krkteTable = KrktePreferences.getSelectedMap()
+                        val krkteTable = krktePreference.getSelectedMap()
                         if (krkteTable != null) {
                             try {
                                 val tableDefinition = krkteTable.first

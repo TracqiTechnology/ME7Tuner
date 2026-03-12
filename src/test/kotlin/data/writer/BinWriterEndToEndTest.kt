@@ -23,7 +23,7 @@ import kotlin.test.*
  *     - Unmodified tables are byte-identical to the original
  *     - Bytes outside any known table are untouched
  *
- * Uses ME7 platform — BIN writing is intentionally blocked for MED17 (CRC32).
+ * Uses ME7 platform — BIN writing is supported for both ME7 and MED17.
  */
 class BinWriterEndToEndTest {
 
@@ -486,19 +486,18 @@ class BinWriterEndToEndTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Test: MED17 platform guard still blocks writes
+    // Test: MED17 platform allows writes (no CRC32 gate)
     // ─────────────────────────────────────────────────────────────────────
 
     @Test
-    fun `MED17 platform blocks write with exception`() {
+    fun `MED17 platform allows write successfully`() {
         EcuPlatformPreference.platform = EcuPlatform.MED17
         val tmpBin = copyBin()
         val def = findDef(KFZW)
         val map = findOriginalMap(KFZW)
 
-        assertFailsWith<UnsupportedOperationException> {
-            BinWriter.write(tmpBin, def, map)
-        }
+        // Should NOT throw — MED17 writes are now supported
+        BinWriter.write(tmpBin, def, map)
         tmpBin.delete()
     }
 
