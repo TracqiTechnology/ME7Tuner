@@ -145,6 +145,24 @@ fun ConfigurationScreen(
     ) {
         FileLoadSection(xdfFile, xdfLoaded, binFile, binLoaded)
 
+        // Show XDF parse error if present
+        val xdfParseError by XdfParser.parseError.collectAsState()
+        xdfParseError?.let { error ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "⚠ XDF parse error: $error",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!filesLoaded) {

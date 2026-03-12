@@ -54,15 +54,39 @@ object XdfParser {
     private val _xdfHeader = MutableStateFlow(XdfHeader())
     val xdfHeader: StateFlow<XdfHeader> = _xdfHeader.asStateFlow()
 
+    /** Non-null when the last XDF parse attempt failed. */
+    private val _parseError = MutableStateFlow<String?>(null)
+    val parseError: StateFlow<String?> = _parseError.asStateFlow()
+
     fun init() {
         scope.launch {
             XdfFilePreferences.file.collect { file ->
                 if (file.exists() && file.isFile) {
                     try {
-                        BufferedInputStream(FileInputStream(file)).use { inputStream ->
-                            parse(inputStream)
+                        _parseError.value = null
+                        val bytes = file.readBytes()
+                        try {
+                            parse(ByteArrayInputStream(bytes))
+                        } catch (e: Exception) {
+                            val isEncodingError = e.cause is org.xml.sax.SAXParseException ||
+                                e is org.xml.sax.SAXParseException
+                            if (isEncodingError) {
+                                // TunerPro XDF files are often Windows-1252 encoded;
+                                // retry with ISO-8859-1 which accepts every byte value.
+                                val reader = InputStreamReader(
+                                    ByteArrayInputStream(bytes),
+                                    charset("ISO-8859-1")
+                                )
+                                parse(reader)
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: Exception) { e.printStackTrace() }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        _parseError.value = e.message ?: "Unknown error parsing XDF"
+                        _tableDefinitions.value = emptyList()
+                    }
                 }
             }
         }
@@ -86,6 +110,16 @@ object XdfParser {
 
     private fun parse(inputStream: InputStream) {
         val (header, definitions) = parseToList(inputStream)
+        _parseError.value = null
+        _xdfHeader.value = header
+        _tableDefinitions.value = definitions
+    }
+
+    private fun parse(reader: Reader) {
+        val saxBuilder = SAXBuilder()
+        val document = saxBuilder.build(reader)
+        val (header, definitions) = parseDocument(document)
+        _parseError.value = null
         _xdfHeader.value = header
         _tableDefinitions.value = definitions
     }
@@ -102,6 +136,10 @@ object XdfParser {
     internal fun parseToList(inputStream: InputStream): Pair<XdfHeader, List<TableDefinition>> {
         val saxBuilder = SAXBuilder()
         val document = saxBuilder.build(inputStream)
+        return parseDocument(document)
+    }
+
+    private fun parseDocument(document: Document): Pair<XdfHeader, List<TableDefinition>> {
         val rootElement = document.rootElement
 
         val header = parseHeader(rootElement.getChild(XDF_HEADER_TAG))
