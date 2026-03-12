@@ -129,4 +129,14 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
                 assertTrue(it, "MED17 KFMIRL screen should display KFLMIRL labels")
             }
     }
+
+    @Test
+    fun kfmirlScalarModeHidesSelectMap() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmirl.KfmirlScreen()
+        }
+
+        // DS1 scalar mode: map is auto-applied from config, no manual selection needed
+        onAllNodesWithText("Select Map").assertCountEquals(0)
+    }
 }

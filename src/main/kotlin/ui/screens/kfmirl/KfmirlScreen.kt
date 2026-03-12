@@ -239,8 +239,6 @@ fun KfmirlScreen() {
             ScalarRescaleConfigCard(
                 kfmiopLabel = kfmiopLabel,
                 kfmirlLabel = kfmirlLabel,
-                kfmirlMapName = kfmirlPair?.first?.tableName,
-                onSelectKfmirl = { showKfmirlPicker = true },
                 currentMaxLoad = kfmiopScalarValue,
                 targetMaxLoad = targetMaxLoad,
                 onTargetMaxLoadChange = { targetMaxLoad = it }
@@ -298,8 +296,6 @@ fun KfmirlScreen() {
 private fun ScalarRescaleConfigCard(
     kfmiopLabel: String = "KFMIOP",
     kfmirlLabel: String = "KFMIRL",
-    kfmirlMapName: String?,
-    onSelectKfmirl: () -> Unit,
     currentMaxLoad: Double,
     targetMaxLoad: String,
     onTargetMaxLoadChange: (String) -> Unit
@@ -320,14 +316,6 @@ private fun ScalarRescaleConfigCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-
-            MapSelectorRow(
-                label = "$kfmirlLabel:",
-                mapName = kfmirlMapName,
-                onSelectMap = onSelectKfmirl
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -152,10 +152,16 @@ fun KfmiopScreen() {
     }
 
     if (showWriteConfirmation) {
+        val writeDialogTitle = if (isScalar) "Write Max Load Ceiling" else "Write $mapLabel"
+        val writeDialogText = if (isScalar) {
+            "Are you sure you want to write the max load ceiling to the binary?"
+        } else {
+            "Are you sure you want to write $mapLabel to the binary?"
+        }
         AlertDialog(
             onDismissRequest = { showWriteConfirmation = false },
-            title = { Text("Write $mapLabel") },
-            text = { Text("Are you sure you want to write $mapLabel to the binary?") },
+            title = { Text(writeDialogTitle) },
+            text = { Text(writeDialogText) },
             confirmButton = {
                 TextButton(onClick = {
                     showWriteConfirmation = false
@@ -209,8 +215,6 @@ fun KfmiopScreen() {
                 currentValue = currentScalarValue,
                 editedValue = editedScalarValue,
                 onEditedValueChange = { editedScalarValue = it },
-                mapDefinitionName = kfmiopPair?.first?.tableName,
-                onSelectMap = { showMapPicker = true },
                 mapLabel = mapLabel
             )
 
@@ -263,7 +267,8 @@ fun KfmiopScreen() {
             canWrite = canWrite,
             writeStatus = writeStatus,
             onWriteClick = { showWriteConfirmation = true },
-            mapLabel = mapLabel
+            mapLabel = mapLabel,
+            isScalar = isScalar
         )
     }
 }
@@ -273,8 +278,6 @@ private fun ScalarConfigurationCard(
     currentValue: Double,
     editedValue: String,
     onEditedValueChange: (String) -> Unit,
-    mapDefinitionName: String?,
-    onSelectMap: () -> Unit,
     mapLabel: String = "KFMIOP"
 ) {
     Surface(
@@ -391,28 +394,6 @@ private fun ScalarConfigurationCard(
                     }) {
                         Text("Apply")
                     }
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Map Definition:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = mapDefinitionName ?: "No Definition Selected",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedButton(onClick = onSelectMap) {
-                    Text("Select Map")
                 }
             }
         }
@@ -739,8 +720,11 @@ private fun WriteToBinarySection(
     canWrite: Boolean,
     writeStatus: WriteStatus,
     onWriteClick: () -> Unit,
-    mapLabel: String = "KFMIOP"
+    mapLabel: String = "KFMIOP",
+    isScalar: Boolean = false
 ) {
+    val writeButtonText = if (isScalar) "Write Max Load Ceiling" else "Write $mapLabel"
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 1.dp,
@@ -772,7 +756,7 @@ private fun WriteToBinarySection(
                     onClick = onWriteClick,
                     enabled = canWrite
                 ) {
-                    Text("Write $mapLabel")
+                    Text(writeButtonText)
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))

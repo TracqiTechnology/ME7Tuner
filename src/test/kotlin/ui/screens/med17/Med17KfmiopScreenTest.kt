@@ -55,8 +55,8 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
             ui.screens.kfmiop.KfmiopScreen()
         }
 
-        // Scalar mode shows the max load ceiling UI
-        onNodeWithText("Max Load Ceiling", substring = true).assertExists()
+        // Scalar mode shows the max load ceiling UI (title card contains it)
+        onNodeWithText("KFLMIOP — Max Load Ceiling", substring = true).assertExists()
         onNodeWithText("Current Value", substring = true).assertExists()
         onNodeWithText("Target Value", substring = true).assertExists()
     }
@@ -68,7 +68,7 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         }
 
         // Scalar mode should have Write enabled (scalarOutputMap is always non-null)
-        onNodeWithText("Write KFLMIOP").assertIsEnabled()
+        onNodeWithText("Write Max Load Ceiling").assertIsEnabled()
     }
 
     @Test
@@ -81,9 +81,9 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         val address = kfmiopPair.first.zAxis.address.toLong()
         val stride = kfmiopPair.first.zAxis.sizeBits / 8
 
-        // Click Write KFLMIOP
-        onNodeWithText("Write KFLMIOP").performClick()
-        onNodeWithText("Are you sure you want to write KFLMIOP to the binary?").assertExists()
+        // Click Write Max Load Ceiling
+        onNodeWithText("Write Max Load Ceiling").performClick()
+        onNodeWithText("Are you sure you want to write the max load ceiling to the binary?").assertExists()
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
@@ -103,6 +103,7 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         }
 
         onNodeWithText("Not configured").assertExists()
+        // When unconfigured, isScalar=false so button says "Write KFLMIOP"
         onNodeWithText("Write KFLMIOP").assertIsNotEnabled()
     }
 
@@ -123,7 +124,7 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
 
         // MED17 platform should show KFLMIOP in multiple places
         val nodes = onAllNodesWithText("KFLMIOP", substring = true)
-        nodes.assertCountEquals(5) // banner, title, scalar note, map label, write button
+        nodes.assertCountEquals(4) // banner, title, scalar note, write prereq
     }
 
     @Test
@@ -135,5 +136,26 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         // Rlsol-based helper should be visible in scalar mode
         onNodeWithText("Load Helper", substring = true).assertExists()
         onNodeWithText("Boost (mbar abs)", substring = true).assertExists()
+    }
+
+    @Test
+    fun kfmiopScalarModeHidesSelectMap() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        // DS1 scalar mode: map is auto-applied from config, no manual selection needed
+        onAllNodesWithText("Select Map").assertCountEquals(0)
+    }
+
+    @Test
+    fun kfmiopScalarModeShowsWriteMaxLoadCeiling() = runComposeUiTest {
+        setContent {
+            ui.screens.kfmiop.KfmiopScreen()
+        }
+
+        // DS1 scalar mode: button says "Write Max Load Ceiling" not "Write KFLMIOP"
+        onNode(hasText("Write Max Load Ceiling") and hasClickAction()).assertExists()
+        onAllNodesWithText("Write KFLMIOP").assertCountEquals(0)
     }
 }
