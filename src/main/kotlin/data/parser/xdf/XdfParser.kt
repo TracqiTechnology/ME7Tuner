@@ -139,6 +139,11 @@ object XdfParser {
         return parseDocument(document)
     }
 
+    /** Sets the singleton tableDefinitions directly — for UI tests that need to populate state without file I/O. */
+    internal fun setTableDefinitionsForTesting(defs: List<TableDefinition>) {
+        _tableDefinitions.value = defs
+    }
+
     private fun parseDocument(document: Document): Pair<XdfHeader, List<TableDefinition>> {
         val rootElement = document.rootElement
 

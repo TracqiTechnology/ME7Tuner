@@ -57,6 +57,11 @@ object BinParser {
         _mapList.value = parseToList(inputStream, tableDefinitions)
     }
 
+    /** Sets the singleton mapList directly — for UI tests that need to populate state without file I/O. */
+    internal fun setMapListForTesting(list: List<Pair<TableDefinition, Map3d>>) {
+        _mapList.value = list
+    }
+
     /**
      * Parses a BIN input stream using the given table definitions and returns
      * the list of (TableDefinition, Map3d) pairs without touching singleton state.
