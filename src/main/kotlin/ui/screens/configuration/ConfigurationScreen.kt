@@ -169,6 +169,10 @@ fun ConfigurationScreen(
         if (!filesLoaded) {
             FilesNotLoadedPlaceholder()
         } else {
+            // Auto-apply the matching default profile when both files are loaded
+            // and no map definitions have been configured yet.
+            AutoApplyProfile()
+
             QuickSetupSection()
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -314,6 +318,35 @@ private fun FilesNotLoadedPlaceholder() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+/**
+ * Automatically applies the matching default profile when both XDF and BIN
+ * are loaded (mapList is non-empty) and no map definitions are configured yet.
+ * Fires at most once per composition lifecycle — switching files or platform
+ * resets the guard via the key parameters.
+ */
+@Composable
+private fun AutoApplyProfile() {
+    val mapList by BinParser.mapList.collectAsState()
+    val allDefaultProfiles by ProfileManager.defaultProfiles.collectAsState()
+    val platform = EcuPlatformPreference.platform
+
+    val matchingProfiles = remember(allDefaultProfiles, platform) {
+        allDefaultProfiles.filter { it.ecuPlatform == platform.name }
+    }
+    val mapDefinitions = remember(platform) { mapDefinitionsForPlatform(platform) }
+
+    LaunchedEffect(mapList, matchingProfiles) {
+        if (mapList.isEmpty()) return@LaunchedEffect
+        if (matchingProfiles.isEmpty()) return@LaunchedEffect
+
+        // Only auto-apply when no maps are currently configured
+        val configuredCount = mapDefinitions.count { it.preference.getSelectedMap() != null }
+        if (configuredCount > 0) return@LaunchedEffect
+
+        ProfileManager.applyProfile(matchingProfiles.first())
     }
 }
 
