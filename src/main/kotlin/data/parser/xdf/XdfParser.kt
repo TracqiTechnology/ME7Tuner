@@ -134,9 +134,26 @@ object XdfParser {
      *     into the referencing table's x or y axis.
      */
     internal fun parseToList(inputStream: InputStream): Pair<XdfHeader, List<TableDefinition>> {
-        val saxBuilder = SAXBuilder()
-        val document = saxBuilder.build(inputStream)
-        return parseDocument(document)
+        val bytes = inputStream.readAllBytes()
+        return try {
+            val saxBuilder = SAXBuilder()
+            val document = saxBuilder.build(java.io.ByteArrayInputStream(bytes))
+            parseDocument(document)
+        } catch (e: Exception) {
+            val isEncodingError = e.cause is org.xml.sax.SAXParseException ||
+                e is org.xml.sax.SAXParseException
+            if (isEncodingError) {
+                val reader = java.io.InputStreamReader(
+                    java.io.ByteArrayInputStream(bytes),
+                    charset("ISO-8859-1")
+                )
+                val saxBuilder = SAXBuilder()
+                val document = saxBuilder.build(reader)
+                parseDocument(document)
+            } else {
+                throw e
+            }
+        }
     }
 
     /** Sets the singleton tableDefinitions directly — for UI tests that need to populate state without file I/O. */

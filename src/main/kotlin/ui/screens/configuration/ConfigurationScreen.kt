@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.contract.Me7LogFileContract
 import data.model.EcuPlatform
+import data.parser.bin.BinParser
 import data.parser.xdf.XdfParser
 import data.preferences.MapPreference
 import data.preferences.MapPreferenceManager
@@ -495,6 +496,7 @@ private fun ProfileRow(profile: data.profile.ConfigurationProfile, onApply: () -
 @Composable
 private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
     val tableDefinitions by XdfParser.tableDefinitions.collectAsState()
+    val mapList by BinParser.mapList.collectAsState()
     val platform = EcuPlatformPreference.platform
     val mapDefinitions = remember(platform) { mapDefinitionsForPlatform(platform) }
 
@@ -511,7 +513,7 @@ private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
         }
     }
 
-    val configuredCount = remember(version, tableDefinitions) {
+    val configuredCount = remember(version, tableDefinitions, mapList) {
         mapDefinitions.count { it.preference.getSelectedMap() != null }
     }
 
@@ -533,7 +535,7 @@ private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
                 version
 
                 for (entry in mapDefinitions) {
-                    val selectedMap = remember(version, tableDefinitions) {
+                    val selectedMap = remember(version, tableDefinitions, mapList) {
                         entry.preference.getSelectedMap()
                     }
                     val isConfigured = selectedMap != null
