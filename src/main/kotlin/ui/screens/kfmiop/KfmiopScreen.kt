@@ -82,13 +82,17 @@ fun KfmiopScreen() {
         val inputBoost = result.inputBoost
         val outputBoost = result.outputBoost
 
-        val currentPeaks = inputBoost.yAxis.mapIndexed { i, rpm ->
-            val peakBoost = inputBoost.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakBoost)
+        val currentPeaks = inputBoost.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < inputBoost.zAxis.size) {
+                val peakBoost = inputBoost.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakBoost)
+            } else null
         }
-        val targetPeaks = outputBoost.yAxis.mapIndexed { i, rpm ->
-            val peakBoost = outputBoost.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakBoost)
+        val targetPeaks = outputBoost.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < outputBoost.zAxis.size) {
+                val peakBoost = outputBoost.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakBoost)
+            } else null
         }
         Pair(currentPeaks, targetPeaks)
     }

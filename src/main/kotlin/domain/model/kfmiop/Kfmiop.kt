@@ -12,10 +12,14 @@ data class Kfmiop(
     val maxBoostPressure: Double
 ) {
     companion object {
-        fun calculateKfmiop(baseKfmiop: Map3d, maxMapSensorLoad: Double, maxBoostPressureLoad: Double): Kfmiop {
+        fun calculateKfmiop(baseKfmiop: Map3d, maxMapSensorLoad: Double, maxBoostPressureLoad: Double): Kfmiop? {
             val xAxis = baseKfmiop.xAxis
             val yAxis = baseKfmiop.yAxis
             val zAxis = baseKfmiop.zAxis
+
+            if (xAxis.isEmpty() || yAxis.isEmpty() || zAxis.isEmpty() || zAxis[0].isEmpty()) {
+                return null
+            }
 
             val optimalLoad = Array(yAxis.size) { Array(xAxis.size) { 0.0 } }
 

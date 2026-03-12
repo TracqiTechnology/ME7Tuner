@@ -93,24 +93,98 @@ object XdfParser {
     /**
      * Parses an XDF input stream and returns the header and sorted table definitions
      * without touching singleton state.  Visible to tests.
+     *
+     * Two-pass approach for linked axes (embedinfo type="3"):
+     *  1. Parse all XDFTABLE/XDFCONSTANT elements, track uniqueid and axis links.
+     *  2. Resolve type-3 linked axes by copying the linked table's z-axis definition
+     *     into the referencing table's x or y axis.
      */
     internal fun parseToList(inputStream: InputStream): Pair<XdfHeader, List<TableDefinition>> {
-        val definitions = mutableListOf<TableDefinition>()
         val saxBuilder = SAXBuilder()
         val document = saxBuilder.build(inputStream)
         val rootElement = document.rootElement
 
         val header = parseHeader(rootElement.getChild(XDF_HEADER_TAG))
 
+        // ── Pass 1: parse all tables ─────────────────────────────────────
+        val parsedTables = mutableListOf<ParsedTable>()
+        val constants    = mutableListOf<TableDefinition>()
+        val uniqueIdMap  = mutableMapOf<String, TableDefinition>()
+
         for (element in rootElement.children) {
             when (element.name) {
-                XDF_TABLE_TAG -> parseTable(element, header)?.let { definitions.add(it) }
-                XDF_CONSTANT_TAG -> parseConstant(element, header)?.let { definitions.add(it) }
+                XDF_TABLE_TAG -> {
+                    val parsed = parseTable(element, header) ?: continue
+                    parsedTables.add(parsed)
+                    if (parsed.uniqueId != "0x0" && parsed.uniqueId.isNotBlank()) {
+                        uniqueIdMap[parsed.uniqueId] = parsed.definition
+                    }
+                }
+                XDF_CONSTANT_TAG -> parseConstant(element, header)?.let { constants.add(it) }
             }
         }
 
+        // ── Pass 2: resolve type-3 linked axes ──────────────────────────
+        val definitions = mutableListOf<TableDefinition>()
+        for (parsed in parsedTables) {
+            var def = parsed.definition
+            if (parsed.axisLinks.isNotEmpty()) {
+                var xAxis = def.xAxis
+                var yAxis = def.yAxis
+                for ((axisId, linkId) in parsed.axisLinks) {
+                    val linkedTable = uniqueIdMap[linkId] ?: continue
+                    val linkedZ = linkedTable.zAxis
+                    val originalAxis = if (axisId == "x") def.xAxis else def.yAxis
+                    val resolvedAxis = resolveLinkedAxis(axisId, originalAxis, linkedZ)
+                    when (axisId) {
+                        "x" -> xAxis = resolvedAxis
+                        "y" -> yAxis = resolvedAxis
+                    }
+                }
+                def = def.copy(xAxis = xAxis, yAxis = yAxis)
+            }
+            definitions.add(def)
+        }
+        definitions.addAll(constants)
+
         definitions.sortBy { it.toString() }
         return header to definitions
+    }
+
+    /**
+     * Creates an axis definition for a linked (type-3) axis by using the linked
+     * table's z-axis for address, encoding, equation, and units.  The original
+     * axis provides the indexCount (number of breakpoints).
+     */
+    private fun resolveLinkedAxis(
+        axisId: String,
+        originalAxis: AxisDefinition?,
+        linkedZ: AxisDefinition
+    ): AxisDefinition {
+        val indexCount = originalAxis?.indexCount
+            ?: if (linkedZ.rowCount > 0) linkedZ.rowCount else linkedZ.columnCount
+        return AxisDefinition(
+            id              = axisId,
+            type            = linkedZ.type,
+            address         = linkedZ.address,
+            indexCount      = indexCount,
+            sizeBits        = linkedZ.sizeBits,
+            rowCount        = linkedZ.rowCount,
+            columnCount     = linkedZ.columnCount,
+            unit            = linkedZ.unit,
+            equation        = linkedZ.equation,
+            varId           = linkedZ.varId,
+            axisValues      = linkedZ.axisValues,
+            majorStrideBits = 0,   // NOT virtual — we want BinParser to read from address
+            minorStrideBits = linkedZ.minorStrideBits,
+            lsbFirst        = linkedZ.lsbFirst,
+            isFloat         = linkedZ.isFloat,
+            isColumnMajor   = linkedZ.isColumnMajor,
+            decimalPl       = linkedZ.decimalPl,
+            min             = linkedZ.min,
+            max             = linkedZ.max,
+            categories      = originalAxis?.categories ?: linkedZ.categories
+        )
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -241,7 +315,9 @@ object XdfParser {
         var decimalPl: Int = 2,
         var min: Double = Double.NaN,
         var max: Double = Double.NaN,
-        val axisValues: MutableList<Pair<Int, Float>> = mutableListOf()
+        val axisValues: MutableList<Pair<Int, Float>> = mutableListOf(),
+        /** embedinfo type="3" linkobjid — axis data comes from another table's z-axis */
+        var linkedObjectId: String? = null
     )
 
     private fun parseAxisElement(axisEl: Element, header: XdfHeader): Pair<String, AxisAccumulator> {
@@ -280,6 +356,12 @@ object XdfParser {
                     val index = parseInt(child.getAttributeValue(XDF_INDEX_TAG))
                     val value = runCatching { child.getAttributeValue(XDF_VALUE_TAG)?.toFloat() ?: 0f }.getOrElse { 0f }
                     acc.axisValues.add(index to value)
+                }
+                XDF_EMBED_INFO_TAG -> {
+                    val linkType = child.getAttributeValue("type")?.toIntOrNull() ?: 0
+                    if (linkType == 3) {
+                        acc.linkedObjectId = child.getAttributeValue("linkobjid")
+                    }
                 }
             }
         }
@@ -326,7 +408,16 @@ object XdfParser {
     // XDFTABLE
     // ─────────────────────────────────────────────────────────────────────
 
-    private fun parseTable(el: Element, header: XdfHeader): TableDefinition? {
+    /** Intermediate result from parsing a single XDFTABLE element. */
+    private data class ParsedTable(
+        val definition: TableDefinition,
+        val uniqueId: String,
+        /** axisId ("x" or "y") → linkobjid for type-3 linked axes */
+        val axisLinks: Map<String, String>
+    )
+
+    private fun parseTable(el: Element, header: XdfHeader): ParsedTable? {
+        val uniqueId         = el.getAttributeValue("uniqueid") ?: "0x0"
         var tableName        = ""
         var tableDescription = ""
         val tableCategories  = mutableListOf<Int>()
@@ -353,7 +444,13 @@ object XdfParser {
         val yAxisDef = yAcc?.let { accToAxisDef("y", it, header, cats) }
         val zAxisDef = accToAxisDef("z", zAcc, header, cats)
 
-        return TableDefinition(tableName, tableDescription, xAxisDef, yAxisDef, zAxisDef)
+        // Collect type-3 axis links
+        val links = mutableMapOf<String, String>()
+        xAcc?.linkedObjectId?.let { links["x"] = it }
+        yAcc?.linkedObjectId?.let { links["y"] = it }
+
+        val def = TableDefinition(tableName, tableDescription, xAxisDef, yAxisDef, zAxisDef)
+        return ParsedTable(def, uniqueId, links)
     }
 
     // ─────────────────────────────────────────────────────────────────────

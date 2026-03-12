@@ -58,6 +58,15 @@ dependencies {
     implementation("org.jdom:jdom2:2.0.6.1")
 
     // Removed: jfreechart, rxjava, flatlaf, flatlaf-intellij-themes
+
+    // Testing
+    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit5"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 tasks.register<JavaExec>("screenshots") {

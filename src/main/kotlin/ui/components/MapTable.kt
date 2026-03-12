@@ -46,7 +46,7 @@ fun MapTable(
     onMapChanged: ((Map3d) -> Unit)? = null
 ) {
     val zAxis = map.zAxis
-    if (zAxis.isEmpty()) return
+    if (zAxis.isEmpty() || zAxis[0].isEmpty()) return
 
     val rowCount = zAxis.size
     val colCount = zAxis[0].size
@@ -130,6 +130,7 @@ fun MapTable(
 
     Column(
         modifier = Modifier
+            .fillMaxSize()
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
                     val meta = event.isMetaPressed || event.isCtrlPressed

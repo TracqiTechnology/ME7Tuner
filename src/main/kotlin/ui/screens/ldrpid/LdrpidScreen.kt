@@ -12,12 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.Me7LogParser
+import data.parser.med17log.Med17LogAdapter
+import data.parser.med17log.Med17LogParser
 import data.parser.xdf.TableDefinition
 import data.preferences.MapPreference
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
 import data.preferences.ldrpid.LdrpidPreferences
+import data.preferences.platform.EcuPlatformPreference
+import data.model.EcuPlatform
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.ldrpid.LdrpidCalculator
@@ -63,13 +67,15 @@ fun LdrpidScreen() {
         if (kfldrlPair != null) {
             val kfldrl = kfldrlPair.second
             kfldrlMap = kfldrl
-            val emptyZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-            if (nonLinearMap == null) {
-                nonLinearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyZ)
-            }
-            val emptyLZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-            if (linearMap == null) {
-                linearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyLZ)
+            if (kfldrl.zAxis.isNotEmpty() && kfldrl.zAxis[0].isNotEmpty()) {
+                val emptyZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
+                if (nonLinearMap == null) {
+                    nonLinearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyZ)
+                }
+                val emptyLZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
+                if (linearMap == null) {
+                    linearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyLZ)
+                }
             }
         }
         if (kfldimxPair != null) {
@@ -195,13 +201,25 @@ fun LdrpidScreen() {
                     progressValue = 0
                     scope.launch {
                         withContext(Dispatchers.IO) {
-                            val parser = Me7LogParser()
-                            val values = parser.parseLogDirectory(
-                                Me7LogParser.LogType.LDRPID, selectedDir
-                            ) { value, max ->
-                                progressValue = value
-                                progressMax = max
-                                showProgress = value < max - 1
+                            val values = if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+                                val med17Parser = Med17LogParser()
+                                val med17Values = med17Parser.parseLogDirectory(
+                                    Med17LogParser.LogType.LDRPID, selectedDir
+                                ) { value, max ->
+                                    progressValue = value
+                                    progressMax = max
+                                    showProgress = value < max - 1
+                                }
+                                Med17LogAdapter.toMe7LdrpidFormat(med17Values)
+                            } else {
+                                val parser = Me7LogParser()
+                                parser.parseLogDirectory(
+                                    Me7LogParser.LogType.LDRPID, selectedDir
+                                ) { value, max ->
+                                    progressValue = value
+                                    progressMax = max
+                                    showProgress = value < max - 1
+                                }
                             }
                             val kfldimxDef = KfldimxPreferences.getSelectedMap()
                             val kfldrlDef = KfldrlPreferences.getSelectedMap()

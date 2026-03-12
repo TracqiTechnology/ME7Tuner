@@ -60,7 +60,7 @@ class ProfileManagerTest {
     }
 
     @Test
-    fun `MED17 profile has exactly 30 med17LogHeaders`() {
+    fun `MED17 profile has med17LogHeaders matching enum size`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         assertEquals(
             Med17LogFileContract.Header.entries.size,
@@ -88,6 +88,16 @@ class ProfileManagerTest {
     fun `MED17 profile ecuPlatform is MED17`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         assertEquals("MED17", profile.ecuPlatform)
+    }
+
+    @Test
+    fun `MED17 profile has critical map definitions`() {
+        val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
+        val maps = profile.mapDefinitions.keys
+        val required = listOf("KFMIOP", "KFMIRL", "KFZWOP", "KFZW", "KFLDRL", "KFLDIMX")
+        for (key in required) {
+            assertTrue(key in maps, "Missing critical map definition: $key")
+        }
     }
 
     // ── 3. ME7 MBox profile regression ──────────────────────────────

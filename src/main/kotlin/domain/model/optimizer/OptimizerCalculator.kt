@@ -819,6 +819,112 @@ object OptimizerCalculator {
         )
     }
 
+    /**
+     * MED17-specific chain diagnosis. Unlike [buildChainDiagnosis] which uses mutually
+     * exclusive SimulationResult.dominantError counts, this computes percentages
+     * independently from the raw WOT entries. Torque-cap and boost-shortfall conditions
+     * can overlap (an entry can be both capped AND short on boost).
+     *
+     * MED17 always reports pssolErrorPercent = 0 and veMismatchPercent = 0 because
+     * MED17 uses adaptive fupsrl_w / pbrints_w, not static KFPBRK / KFURL.
+     */
+    fun buildMed17ChainDiagnosis(
+        wotEntries: List<WotLogEntry>,
+        ldrxnTarget: Double,
+        toleranceMbar: Double
+    ): ChainDiagnosis {
+        val med17InfoRec = "INFO: MED17 mode — PSSOL and VE model diagnostics are skipped. " +
+            "MED17 uses adaptive fupsrl_w/pbrints_w, not static KFPBRK/KFURL."
+
+        if (wotEntries.isEmpty()) return ChainDiagnosis(
+            recommendations = listOf(med17InfoRec)
+        )
+
+        val total = wotEntries.size.toDouble()
+
+        val torqueCapped = wotEntries.count {
+            it.rpm >= 3500.0 && it.requestedLoad < ldrxnTarget * 0.95
+        }
+        val boostShort = wotEntries.count {
+            abs(it.requestedMap - it.actualMap) > toleranceMbar
+        }
+
+        val torquePct = torqueCapped / total * 100
+        val boostPct = boostShort / total * 100
+        val okPct = maxOf(100.0 - torquePct - boostPct, 0.0)
+
+        val dominant = when {
+            torquePct > boostPct && torquePct > 20 -> Me7Simulator.ErrorSource.TORQUE_CAPPED
+            boostPct > torquePct && boostPct > 10 -> Me7Simulator.ErrorSource.BOOST_SHORTFALL
+            torquePct > 20 -> Me7Simulator.ErrorSource.TORQUE_CAPPED
+            boostPct > 10 -> Me7Simulator.ErrorSource.BOOST_SHORTFALL
+            else -> Me7Simulator.ErrorSource.ON_TARGET
+        }
+
+        val avgDeficit = wotEntries.map { ldrxnTarget - it.actualLoad }.average()
+
+        val recs = mutableListOf<String>()
+
+        val lowRpmBelowLdrxn = wotEntries.count {
+            it.rpm < 3500.0 && it.requestedLoad < ldrxnTarget * 0.95
+        }
+
+        if (torquePct > 20) {
+            val torqueLimitedEntries = wotEntries.filter {
+                it.rpm >= 3500.0 && it.requestedLoad < ldrxnTarget * 0.95
+            }
+            val avgHeadroom = if (torqueLimitedEntries.isNotEmpty()) {
+                torqueLimitedEntries.map { ldrxnTarget - it.requestedLoad }.average()
+            } else 0.0
+            recs.add(
+                "WARNING: Torque structure is capping load in ${String.format("%.0f", torquePct)}% of WOT samples (above 3500 RPM). " +
+                    "rlsol averages ${String.format("%.1f", avgHeadroom)}% below LDRXN (${ldrxnTarget.format()}%). " +
+                    "Increase KFMIOP/KFMIRL ranges to support the target load."
+            )
+        }
+
+        if (lowRpmBelowLdrxn > 0) {
+            val lowRpmPct = lowRpmBelowLdrxn / total * 100
+            recs.add(
+                "INFO: ${lowRpmBelowLdrxn} samples (${String.format("%.0f", lowRpmPct)}%) are below 3500 RPM where " +
+                    "rlsol < LDRXN is expected (KFMIOP torque ramp limits load at low RPM). " +
+                    "This is normal ECU behavior, not a calibration issue."
+            )
+        }
+
+        if (boostPct > 10) {
+            val boostErrors = wotEntries
+                .filter { abs(it.requestedMap - it.actualMap) > toleranceMbar }
+                .map { maxOf(it.requestedMap - it.actualMap, 0.0) }
+            val avgBoostError = if (boostErrors.isNotEmpty()) boostErrors.average() else 0.0
+            recs.add(
+                "BOOST: Boost shortfall in ${String.format("%.0f", boostPct)}% of WOT samples. " +
+                    "Actual pressure falls short of pssol by avg ${String.format("%.0f", avgBoostError)} mbar. " +
+                    "Apply suggested KFLDRL corrections to increase base duty cycle."
+            )
+        }
+
+        if (recs.isEmpty() && okPct > 80) {
+            recs.add(
+                "OK: Signal chain is healthy: ${String.format("%.0f", okPct)}% of WOT samples are on-target. " +
+                    "LDRXN=${ldrxnTarget.format()}% is being achieved."
+            )
+        }
+
+        recs.add(med17InfoRec)
+
+        return ChainDiagnosis(
+            torqueCappedPercent = torquePct,
+            pssolErrorPercent = 0.0,
+            boostShortfallPercent = boostPct,
+            veMismatchPercent = 0.0,
+            onTargetPercent = okPct,
+            dominantError = dominant,
+            avgTotalLoadDeficit = avgDeficit,
+            recommendations = recs
+        )
+    }
+
     // ── Top-level entry point ─────────────────────────────────────────
 
     fun analyze(
@@ -1076,4 +1182,186 @@ object OptimizerCalculator {
     }
 
     private fun Double.format(): String = String.format("%.2f", this)
+
+    /**
+     * MED17 analysis path. Skips ME7-specific components (VE simulator, MAF-based
+     * mechanical limit detection, KFPBRK, KfurlSolver, KfprgSolver, iterative
+     * convergence) and uses synthetic torque-cap detection instead.
+     *
+     * MED17 (speed-density, no MAF) can only diagnose:
+     * - Link 1: Torque structure capping (KFMIOP/KFMIRL)
+     * - Link 3: Boost shortfall (KFLDRL)
+     * Links 2 and 4 (VE model via KFURL/KFPBRK) are always 0%.
+     */
+    fun analyzeMed17(
+        values: Map<Me7LogFileContract.Header, List<Double>>,
+        kfldrlMap: Map3d?,
+        kfldimxMap: Map3d?,
+        kfmiopMap: Map3d? = null,
+        kfmirlMap: Map3d? = null,
+        ldrxnTarget: Double = 191.0,
+        toleranceMbar: Double = 30.0,
+        minThrottleAngle: Double = 80.0,
+        kfldimxOverheadPercent: Double = 8.0,
+        logSummaries: List<LogSummary> = emptyList(),
+        kfldrq0Map: Map3d? = null,
+        kfldrq1Map: Map3d? = null,
+        kfldrq2Map: Map3d? = null
+    ): OptimizerResult {
+        val filteredData = filterWotEntriesWithOptionalData(values, minThrottleAngle)
+        val wotEntries = filteredData.wotEntries
+
+        // ── KFLDRL / KFLDIMX suggestions (shared with ME7) ──────────
+        val kfldrlDelta = if (kfldrlMap != null) {
+            suggestKfldrlDelta(wotEntries, kfldrlMap, toleranceMbar)
+        } else null
+
+        val kfldimxDelta = if (kfldrlDelta != null && kfldimxMap != null) {
+            suggestKfldimxDelta(kfldrlDelta, kfldimxMap, kfldimxOverheadPercent)
+        } else null
+
+        // ── Synthetic torque-cap detection (MED17 — no ME7 simulator) ──
+        // Detect entries where rlsol < ldrxn*0.95 above 3500 RPM
+        val syntheticTorqueLimited = wotEntries.filter {
+            it.rpm >= 3500.0 && it.requestedLoad < ldrxnTarget * 0.95
+        }
+
+        // Build synthetic SimulationResults for KFMIOP suggestion
+        val syntheticSimResults = wotEntries.map { entry ->
+            val isCapped = entry.rpm >= 3500.0 && entry.requestedLoad < ldrxnTarget * 0.95
+            Me7Simulator.SimulationResult(
+                rpm = entry.rpm,
+                ldrxnTarget = ldrxnTarget,
+                rlsol = entry.requestedLoad,
+                torqueLimited = isCapped,
+                torqueHeadroom = if (isCapped) ldrxnTarget - entry.requestedLoad else 0.0,
+                simulatedPssol = 0.0,
+                actualPssol = entry.requestedMap,
+                pssolError = 0.0,
+                simulatedPlsol = 0.0,
+                actualPvdks = entry.actualMap,
+                boostError = maxOf(entry.requestedMap - entry.actualMap, 0.0),
+                predictedWgdc = 0.0,
+                actualWgdc = entry.wgdc,
+                kfldrlCorrection = 0.0,
+                simulatedRlFromPressure = 0.0,
+                actualRl = entry.actualLoad,
+                kfpbrkCorrectionFactor = 1.0,
+                dominantError = when {
+                    isCapped -> Me7Simulator.ErrorSource.TORQUE_CAPPED
+                    abs(entry.requestedMap - entry.actualMap) > toleranceMbar -> Me7Simulator.ErrorSource.BOOST_SHORTFALL
+                    else -> Me7Simulator.ErrorSource.ON_TARGET
+                },
+                totalLoadDeficit = if (isCapped) ldrxnTarget - entry.requestedLoad else 0.0
+            )
+        }
+
+        val kfmiopDelta = if (kfmiopMap != null && syntheticSimResults.any { it.torqueLimited }) {
+            suggestKfmiopDelta(syntheticSimResults, kfmiopMap, ldrxnTarget)
+        } else null
+
+        val kfmirlDelta = if (kfmiopDelta != null && kfmirlMap != null) {
+            suggestKfmirlDelta(kfmiopDelta.suggested, kfmirlMap)
+        } else null
+
+        val suggestedMaps = SuggestedMaps(
+            kfldrl = kfldrlDelta,
+            kfldimx = kfldimxDelta,
+            kfpbrk = null,
+            kfmiop = kfmiopDelta,
+            kfmirl = kfmirlDelta
+        )
+
+        val suggestedKfldrl = kfldrlDelta?.suggested
+        val suggestedKfldimx = kfldimxDelta?.suggested
+
+        val pressureErrors = computePressureErrors(wotEntries)
+        val loadErrors = computeLoadErrors(wotEntries)
+
+        // ── Simplified chain diagnosis (2-link: torque + boost only) ─
+        val chainDiagnosis = buildMed17ChainDiagnosis(wotEntries, ldrxnTarget, toleranceMbar)
+
+        // ── Per-RPM analysis ────────────────────────────────────────
+        val rpmBreakpoints = kfldrlMap?.yAxis
+        val perRpmAnalysis = buildPerRpmAnalysis(syntheticSimResults, rpmBreakpoints)
+
+        // ── Warnings ────────────────────────────────────────────────
+        val interventionWarnings = checkInterventions(wotEntries, ldrxnTarget)
+
+        // ── v4: Advanced analysis ─────────────────────────────────
+        val pulls = PullSegmenter.segmentPulls(wotEntries, ldrxnTarget = ldrxnTarget)
+        val pullConsistency = PullSegmenter.checkConsistency(pulls)
+        val safetyModes = SafetyModeDetector.detect(wotEntries)
+        val transients = TransientDetector.detect(wotEntries, ldrxnTarget)
+        val environmental = EnvironmentalCorrector.analyzeSummary(wotEntries)
+        val throttleCheck = ThrottleBodyChecker.check(wotEntries, turboMaxed = false)
+
+        // PID dynamics (if gain maps available)
+        val pidSimulation = if (kfldrq0Map != null || kfldrq1Map != null || kfldrq2Map != null) {
+            val bestPull = pulls.filter { it.quality == PullSegmenter.PullQuality.GOOD }
+                .maxByOrNull { it.sampleCount }
+                ?: pulls.maxByOrNull { it.sampleCount }
+
+            if (bestPull != null && bestPull.sampleCount >= 10) {
+                val pullEntries = wotEntries.subList(
+                    bestPull.startIdx,
+                    (bestPull.endIdx + 1).coerceAtMost(wotEntries.size)
+                )
+                PidSimulator.simulate(
+                    pullEntries = pullEntries,
+                    kfldrq0 = kfldrq0Map,
+                    kfldrq1 = kfldrq1Map,
+                    kfldrq2 = kfldrq2Map,
+                    kfldrl = kfldrlMap,
+                    kfldimx = kfldimxMap
+                )
+            } else null
+        } else null
+
+        // ── Collect warnings ────────────────────────────────────────
+        val v4Warnings = mutableListOf<String>()
+        v4Warnings.addAll(safetyModes.warnings)
+        v4Warnings.addAll(transients.warnings)
+        v4Warnings.addAll(environmental.warnings)
+        if (throttleCheck.restricted) {
+            v4Warnings.add("WARNING: Throttle restriction: ${throttleCheck.detail}")
+        }
+        pullConsistency.forEach { (pullIdx, note) ->
+            v4Warnings.add("INFO: Pull ${pullIdx + 1}: $note")
+        }
+        pidSimulation?.diagnosis?.recommendations?.forEach { rec ->
+            v4Warnings.add("INFO: PID: $rec")
+        }
+
+        val allWarnings = interventionWarnings + v4Warnings
+
+        return OptimizerResult(
+            suggestedKfldrl = suggestedKfldrl,
+            suggestedKfldimx = suggestedKfldimx,
+            kfpbrkMultipliers = null,
+            pressureErrors = pressureErrors,
+            loadErrors = loadErrors,
+            warnings = allWarnings,
+            wotEntries = wotEntries,
+            simulationResults = syntheticSimResults,
+            mechanicalLimits = MechanicalLimitDetector.MechanicalLimits(),
+            simulatedPressureSeries = emptyList(),
+            simulatedLoadSeries = emptyList(),
+            chainDiagnosis = chainDiagnosis,
+            suggestedMaps = suggestedMaps,
+            perRpmAnalysis = perRpmAnalysis,
+            prediction = null,
+            logSummaries = logSummaries,
+            pulls = pulls,
+            pullConsistency = pullConsistency,
+            safetyModes = safetyModes,
+            transients = transients,
+            environmental = environmental,
+            throttleCheck = throttleCheck,
+            convergenceHistory = null,
+            kfurlSolverResult = null,
+            pidSimulation = pidSimulation,
+            kfprgSolverResult = null
+        )
+    }
 }
