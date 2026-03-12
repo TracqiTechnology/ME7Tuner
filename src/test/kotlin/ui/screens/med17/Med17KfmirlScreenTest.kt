@@ -10,9 +10,13 @@ import kotlin.test.assertTrue
 /**
  * End-to-end Compose UI test for the KFMIRL screen on MED17.
  *
- * On MED17 (DS1), KFMIOP is a 1×1 scalar. KFMIRL is a full 2D table (14×16).
- * The screen detects scalar KFMIOP and uses KFMIRL's own xAxis for rescaling
- * instead of requiring KFMIOP's (empty) xAxis. Write now works.
+ * With the corrected profile (KFMIOP → "Opt eng tq"), KFMIOP is a full 14×16
+ * 2D table on standard (non-DS1) XDFs.  KFMIRL uses the ME7-style inverse
+ * calculator path: it reads KFMIOP's x-axis (load axis) and computes the
+ * inverse relationship to generate output KFMIRL values.
+ *
+ * When a DS1 XDF is loaded where KFMIOP is collapsed to a 1×1 scalar,
+ * the scalar detection automatically switches to the self-axis rescale path.
  */
 @OptIn(ExperimentalTestApi::class)
 class Med17KfmirlScreenTest : Med17ScreenTestBase() {
@@ -39,39 +43,30 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
 
     @Test
     fun kfmirlScreenConfiguredShowsNoNotConfigured() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
         onAllNodesWithText("Not configured").assertCountEquals(0)
     }
 
     @Test
-    fun kfmirlScalarModeShowsRescaleUI() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
-        // DS1 scalar mode shows the rescale configuration
-        onNodeWithText("Rescale Load Axis", substring = true).assertExists()
-        onNodeWithText("Target Max Load", substring = true).assertExists()
+    fun kfmirlScreenShowsSelectMap() = runComposeUiTest {
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
+        // 2D mode: Select Map buttons are visible for KFMIOP and KFMIRL
+        val selectMapNodes = onAllNodesWithText("Select Map").fetchSemanticsNodes()
+        assertTrue(
+            selectMapNodes.size >= 1,
+            "Expected at least 1 'Select Map' button, got ${selectMapNodes.size}"
+        )
     }
 
     @Test
-    fun kfmirlWriteButtonEnabledWithScalarKfmiop() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
-        // Write should now be enabled — DS1 path uses KFMIRL's own xAxis
+    fun kfmirlWriteButtonEnabled() = runComposeUiTest {
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
         onNodeWithText("Write KFLMIRL").assertIsEnabled()
     }
 
     @Test
     fun kfmirlWriteProducesValidBinaryOutput() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
 
         val kfmirlPair = KfmirlPreferences.getSelectedMap()!!
         val address = kfmirlPair.first.zAxis.address.toLong()
@@ -95,10 +90,7 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
     fun kfmirlScreenUnconfiguredShowsNotConfigured() = runComposeUiTest {
         KfmiopPreferences.setSelectedMap(null)
         KfmirlPreferences.setSelectedMap(null)
-
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
 
         val notConfiguredNodes = onAllNodesWithText("Not configured").fetchSemanticsNodes()
         assertTrue(
@@ -110,33 +102,17 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
 
     @Test
     fun kfmirlScreenShowsDs1Banner() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
         onNodeWithText("DS1 Note", substring = true).assertExists()
     }
 
     @Test
     fun kfmirlScreenShowsPlatformAwareLabel() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
+        setContent { ui.screens.kfmirl.KfmirlScreen() }
         // MED17 platform should show KFLMIRL consistently
         onAllNodesWithText("KFLMIRL", substring = true)
             .fetchSemanticsNodes().isNotEmpty().let {
                 assertTrue(it, "MED17 KFMIRL screen should display KFLMIRL labels")
             }
-    }
-
-    @Test
-    fun kfmirlScalarModeHidesSelectMap() = runComposeUiTest {
-        setContent {
-            ui.screens.kfmirl.KfmirlScreen()
-        }
-
-        // DS1 scalar mode: map is auto-applied from config, no manual selection needed
-        onAllNodesWithText("Select Map").assertCountEquals(0)
     }
 }

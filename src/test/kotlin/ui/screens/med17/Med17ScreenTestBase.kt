@@ -31,7 +31,7 @@ abstract class Med17ScreenTestBase {
         val BIN_FILE = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
 
         // 404E Normal XDF map titles
-        const val KFMIOP_TITLE = "Max indexed eng tq"
+        const val KFMIOP_TITLE = "Opt eng tq"
         const val KFMIRL_TITLE = "Tgt filling"
         const val KFLDRL_TITLE = "KF to linearize boost pressure = fTV"
         const val KFLDIMX_TITLE = "LDR I controller limitation map"

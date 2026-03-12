@@ -20,8 +20,8 @@
             "unit": "ms"
         },
         "KFMIOP": {
-            "tableName": "Max indexed eng tq",
-            "tableDescription": "MDIMX %",
+            "tableName": "Opt eng tq",
+            "tableDescription": "KFMIOP rlmdzs_w(%) vs nmot_w(1/min) = %",
             "unit": "%"
         },
         "KFMIRL": {

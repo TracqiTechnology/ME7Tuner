@@ -10,9 +10,10 @@ import kotlin.test.assertTrue
 /**
  * End-to-end Compose UI test for the KFZW screen on MED17.
  *
- * On MED17 (DS1), KFMIOP is a 1×1 scalar. KFZW is a full 2D table (10×10).
- * The screen detects scalar KFMIOP and uses KFZW's own xAxis for rescaling
- * instead of requiring KFMIOP's (empty) xAxis. Write now works.
+ * With the corrected profile (KFMIOP → "Opt eng tq"), KFMIOP is a full 14×16
+ * 2D table on standard (non-DS1) XDFs.  KFZW uses the ME7-style calculator
+ * path: it reads KFMIOP's x-axis (load axis) and computes rescaled ignition
+ * timing values for the new load range.
  */
 @OptIn(ExperimentalTestApi::class)
 class Med17KfzwScreenTest : Med17ScreenTestBase() {
@@ -39,39 +40,30 @@ class Med17KfzwScreenTest : Med17ScreenTestBase() {
 
     @Test
     fun kfzwScreenConfiguredShowsNoNotConfigured() = runComposeUiTest {
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
-
+        setContent { ui.screens.kfzw.KfzwScreen() }
         onAllNodesWithText("Not configured").assertCountEquals(0)
     }
 
     @Test
-    fun kfzwScalarModeShowsRescaleUI() = runComposeUiTest {
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
-
-        // DS1 scalar mode shows the rescale configuration
-        onNodeWithText("Rescale Load Axis", substring = true).assertExists()
-        onNodeWithText("Target Max Load", substring = true).assertExists()
+    fun kfzwScreenShowsSelectMap() = runComposeUiTest {
+        setContent { ui.screens.kfzw.KfzwScreen() }
+        // 2D mode: Select Map buttons are visible for KFZW and KFMIOP
+        val selectMapNodes = onAllNodesWithText("Select Map").fetchSemanticsNodes()
+        assertTrue(
+            selectMapNodes.size >= 1,
+            "Expected at least 1 'Select Map' button, got ${selectMapNodes.size}"
+        )
     }
 
     @Test
-    fun kfzwWriteButtonEnabledWithScalarKfmiop() = runComposeUiTest {
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
-
-        // Write should now be enabled — DS1 path uses KFZW's own xAxis
+    fun kfzwWriteButtonEnabled() = runComposeUiTest {
+        setContent { ui.screens.kfzw.KfzwScreen() }
         onNodeWithText("Write KFZW").assertIsEnabled()
     }
 
     @Test
     fun kfzwWriteProducesValidBinaryOutput() = runComposeUiTest {
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
+        setContent { ui.screens.kfzw.KfzwScreen() }
 
         val kfzwPair = KfzwPreferences.getSelectedMap()!!
         val address = kfzwPair.first.zAxis.address.toLong()
@@ -95,10 +87,7 @@ class Med17KfzwScreenTest : Med17ScreenTestBase() {
     fun kfzwScreenUnconfiguredShowsNotConfigured() = runComposeUiTest {
         KfzwPreferences.setSelectedMap(null)
         KfmiopPreferences.setSelectedMap(null)
-
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
+        setContent { ui.screens.kfzw.KfzwScreen() }
 
         val notConfiguredNodes = onAllNodesWithText("Not configured").fetchSemanticsNodes()
         assertTrue(
@@ -110,10 +99,7 @@ class Med17KfzwScreenTest : Med17ScreenTestBase() {
 
     @Test
     fun kfzwScreenShowsDs1Banner() = runComposeUiTest {
-        setContent {
-            ui.screens.kfzw.KfzwScreen()
-        }
-
+        setContent { ui.screens.kfzw.KfzwScreen() }
         onNodeWithText("DS1 Note", substring = true).assertExists()
     }
 }
