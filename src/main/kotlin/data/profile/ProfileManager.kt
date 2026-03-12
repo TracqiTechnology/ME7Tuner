@@ -4,6 +4,10 @@ import data.contract.Me7LogFileContract
 import data.contract.Med17LogFileContract
 import data.parser.xdf.XdfParser
 import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences
+import data.preferences.kfldiopu.KfldioPuPreferences
+import data.preferences.kfldrq0.Kfldrq0Preferences
+import data.preferences.kfldrq1.Kfldrq1Preferences
+import data.preferences.kfldrq2.Kfldrq2Preferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
 import data.preferences.kfmiop.KfmiopPreferences
@@ -67,6 +71,11 @@ object ProfileManager {
         "KRKTE_PFI" to KrktePfiPreferences,
         "KRKTE_GDI" to KrkteGdiPreferences,
         "TVUB_PFI" to TvubPfiPreferences,
+        // MED17 boost control maps
+        "KFLDIOPU" to KfldioPuPreferences,
+        "KFLDRQ0" to Kfldrq0Preferences,
+        "KFLDRQ1" to Kfldrq1Preferences,
+        "KFLDRQ2" to Kfldrq2Preferences,
     )
 
     init {
@@ -157,9 +166,9 @@ object ProfileManager {
     }
 
     fun applyProfile(profile: ConfigurationProfile) {
-        // Apply map definitions — try exact 3-way match first, then fuzzy tableName-only fallback.
+        // Apply map definitions — try exact 3-way match first, then fuzzy fallbacks.
         // Fuzzy fallback enables profiles to work across XDF variants that use slightly different
-        // descriptions or units for the same map (e.g. MBox vs ABox XDFs).
+        // descriptions or units for the same map (e.g. MBox vs ABox XDFs, vlmspec vs Normal).
         val tableDefs = XdfParser.tableDefinitions.value
         for ((key, ref) in profile.mapDefinitions) {
             val pref = mapPreferencesByKey[key] ?: continue
@@ -169,14 +178,26 @@ object ProfileManager {
                     ref.tableDescription == def.tableDescription &&
                     ref.unit == def.zAxis.unit
             }
-            // 2. Fuzzy fallback: tableName-only (case-insensitive prefix match)
-            val fuzzy = if (exact == null) {
+            // 2. Fuzzy: tableName-only (case-insensitive prefix match)
+            val fuzzyName = if (exact == null) {
                 tableDefs.firstOrNull { def ->
                     def.tableName.startsWith(ref.tableName, ignoreCase = true) ||
                         ref.tableName.startsWith(def.tableName, ignoreCase = true)
                 }
             } else null
-            pref.setSelectedMap(exact ?: fuzzy)
+            // 3. Description prefix: XDF descriptions start with Bosch identifiers
+            //    (e.g., "KFLDRL ldtvr_w(%) vs ..."), match the description prefix token
+            val fuzzyDesc = if (exact == null && fuzzyName == null) {
+                val refDescPrefix = ref.tableDescription.split(" ").firstOrNull()?.trim() ?: ""
+                if (refDescPrefix.length >= 3) {
+                    tableDefs.firstOrNull { def ->
+                        val defDescPrefix = def.tableDescription.split(" ").firstOrNull()?.trim() ?: ""
+                        refDescPrefix.equals(defDescPrefix, ignoreCase = true) &&
+                            (ref.unit.isEmpty() || def.zAxis.unit.isEmpty() || ref.unit.equals(def.zAxis.unit, ignoreCase = true))
+                    }
+                } else null
+            } else null
+            pref.setSelectedMap(exact ?: fuzzyName ?: fuzzyDesc)
         }
 
         // Apply primary fueling

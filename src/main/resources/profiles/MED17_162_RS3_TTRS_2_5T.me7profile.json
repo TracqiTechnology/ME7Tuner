@@ -5,49 +5,69 @@
     "ecuPartNumbers": [],
     "mapDefinitions": {
         "KRKTE_PFI": {
-            "tableName": "Conversion relative Fuel mass rk in effective Injection time te fairs. intake manifold injection (PFI)",
-            "tableDescription": "Port injector constant \u2014 ms/% conversion factor for PFI",
+            "tableName": "Conv rel fuel mass rk to effective inj time te or intake man inj PFI",
+            "tableDescription": "KRKATEPFI ms/%",
             "unit": "ms/%"
         },
         "KRKTE_GDI": {
-            "tableName": "Conversion relative Fuel mass rk in effective Injection time te",
-            "tableDescription": "Direct injector constant \u2014 ms/% conversion factor for GDI",
+            "tableName": "Conv rel fuel mass rk into effective inj time te",
+            "tableDescription": "KRKATE ms/%",
             "unit": "ms/%"
         },
         "TVUB_PFI": {
-            "tableName": "Battery Voltage-dependent delay time for injectors",
-            "tableDescription": "Port injector dead time vs battery voltage",
+            "tableName": "Batt V-dependent delay time for inj valves",
+            "tableDescription": "TVUBAT ubsq(V) vs - = ms",
             "unit": "ms"
         },
         "KFMIOP": {
-            "tableName": "Map optimum engine boost_vlmspec",
-            "tableDescription": "Optimal engine torque map (KFLMIOP equivalent)",
+            "tableName": "Max indexed eng tq",
+            "tableDescription": "MDIMX %",
             "unit": "%"
         },
         "KFMIRL": {
-            "tableName": "Map for Calculation Desired charge",
-            "tableDescription": "Target cylinder filling / load request (KFLMIRL equivalent)",
+            "tableName": "Tgt filling",
+            "tableDescription": "KFMIRL milsol_w(%) vs nmot_w(1/min) = %",
             "unit": "%"
         },
         "KFZWOP": {
-            "tableName": "KFZWOP",
-            "tableDescription": "Optimal ignition angle map (MED17 equivalent)",
-            "unit": "grad KW"
+            "tableName": "Opt model ref ignition",
+            "tableDescription": "ZWOPTL1_CL.TrqMod_agOpt.TrqMod_agOpt_GM rlmdzs_w(%) vs nmot_w(1/min) = Grad KW",
+            "unit": "Grad KW"
         },
         "KFZW": {
-            "tableName": "KFZW",
-            "tableDescription": "Ignition angle map (MED17 equivalent)",
-            "unit": "grad KW"
+            "tableName": "Delta ignition during warm-up",
+            "tableDescription": "KFZWWLNM tyzwwlnm(Grad C) vs nmot(1/min) = Grad KW",
+            "unit": "Grad KW"
         },
         "KFLDRL": {
-            "tableName": "KFLDRL",
-            "tableDescription": "Map for linearization of boost pressure = f (TV)",
+            "tableName": "KF to linearize boost pressure = fTV",
+            "tableDescription": "KFLDRL ldtvr_w(%) vs nmot_w(1/min) = %",
             "unit": "%"
         },
         "KFLDIMX": {
-            "tableName": "KFLDIMX",
-            "tableDescription": "Map: LDR I-Regulator limit",
+            "tableName": "LDR I controller limitation map",
+            "tableDescription": "KFLDIMX plsolr_w(hPa) vs nmot_w(1/min) = %",
             "unit": "%"
+        },
+        "KFLDIOPU": {
+            "tableName": "Correction of the TV values by the influence of altitude",
+            "tableDescription": "KFLDIOPU pu(hPa) vs nmot(1/min) = %",
+            "unit": "%"
+        },
+        "KFLDRQ0": {
+            "tableName": "LDR control parameter Q0",
+            "tableDescription": "KFLDRQ0 lde(hPa) vs nmot(1/min) =",
+            "unit": "-"
+        },
+        "KFLDRQ1": {
+            "tableName": "LDR controller parameter Q1 integrator coefficient",
+            "tableDescription": "KFLDRQ1 lde(hPa) vs nmot(1/min) =",
+            "unit": "-"
+        },
+        "KFLDRQ2": {
+            "tableName": "Characteristic map LDR controller parameters Q2",
+            "tableDescription": "KFLDRQ2 lde(hPa) vs nmot(1/min) =",
+            "unit": "-"
         }
     },
     "primaryFueling": {
