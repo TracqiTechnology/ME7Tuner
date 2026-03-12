@@ -88,13 +88,17 @@ fun KfzwopScreen() {
             return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
         }
 
-        val originalPeaks = originalKfzwop.yAxis.mapIndexed { i, rpm ->
-            val peakTiming = originalKfzwop.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakTiming)
+        val originalPeaks = originalKfzwop.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < originalKfzwop.zAxis.size) {
+                val peakTiming = originalKfzwop.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakTiming)
+            } else null
         }
-        val calculatedPeaks = calculatedKfzwop.yAxis.mapIndexed { i, rpm ->
-            val peakTiming = calculatedKfzwop.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakTiming)
+        val calculatedPeaks = calculatedKfzwop.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < calculatedKfzwop.zAxis.size) {
+                val peakTiming = calculatedKfzwop.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakTiming)
+            } else null
         }
         Pair(originalPeaks, calculatedPeaks)
     }

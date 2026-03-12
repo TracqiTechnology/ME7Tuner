@@ -310,7 +310,10 @@ private fun LdrpidConfigCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Button(onClick = onLoadLogs) {
-                        Text("Load ME7 Logs")
+                        Text(
+                            if (EcuPlatformPreference.platform == EcuPlatform.MED17)
+                                "Load ScorpionEFI Logs" else "Load ME7 Logs"
+                        )
                     }
                     if (showProgress) {
                         Spacer(Modifier.height(4.dp))
@@ -386,7 +389,7 @@ private fun BoostTablesTab(
                         Text("No boost data loaded", style = MaterialTheme.typography.titleSmall)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Click 'Load ME7 Logs' above to load WOT log data",
+                            "Click the load button above to load WOT log data",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

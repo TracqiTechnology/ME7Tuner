@@ -112,6 +112,9 @@ object LdrpidCalculator {
         if (linearTable.isEmpty() || linearTable[0].isEmpty() || nonLinearTable.isEmpty()) {
             return Map3d(kfldimxMap.xAxis, kfldimxMap.yAxis, emptyArray())
         }
+        if (kfldimxMap.xAxis.size < 2) {
+            return Map3d(kfldimxMap.xAxis, kfldimxMap.yAxis, emptyArray())
+        }
         val linearBoostMax = Array(linearTable[0].size) { i ->
             val linearBoost = linearTable.map { it[i] * 68.9476 }
             Collections.max(linearBoost)

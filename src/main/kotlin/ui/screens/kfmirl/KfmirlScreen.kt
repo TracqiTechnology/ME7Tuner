@@ -99,13 +99,17 @@ fun KfmirlScreen() {
             return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
         }
 
-        val originalPeaks = originalKfmirl.yAxis.mapIndexed { i, rpm ->
-            val peakLoad = originalKfmirl.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakLoad)
+        val originalPeaks = originalKfmirl.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < originalKfmirl.zAxis.size) {
+                val peakLoad = originalKfmirl.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakLoad)
+            } else null
         }
-        val calculatedPeaks = calculatedKfmirl.yAxis.mapIndexed { i, rpm ->
-            val peakLoad = calculatedKfmirl.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakLoad)
+        val calculatedPeaks = calculatedKfmirl.yAxis.mapIndexedNotNull { i, rpm ->
+            if (i < calculatedKfmirl.zAxis.size) {
+                val peakLoad = calculatedKfmirl.zAxis[i].maxOrNull() ?: 0.0
+                Pair(rpm, peakLoad)
+            } else null
         }
         Pair(originalPeaks, calculatedPeaks)
     }
