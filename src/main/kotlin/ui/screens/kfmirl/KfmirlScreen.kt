@@ -20,6 +20,8 @@ import data.preferences.kfmirl.KfmirlPreferences
 import data.writer.BinWriter
 import domain.math.Inverse
 import domain.math.map.Map3d
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
 import ui.components.ChartSeries
 import ui.components.LineChart
@@ -178,6 +180,25 @@ fun KfmirlScreen() {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // DS1 note for MED17 users
+        if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "ℹ DS1 Note: DS1 reduces KFMIOP/KFMIRL to scalar values and bypasses " +
+                        "the native torque model. KFMIRL here works as a simple inverse calculator " +
+                        "to convert between load and torque values.",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+
         ConfigurationCard(
             kfmiopMapName = kfmiopPair?.first?.tableName,
             kfmirlMapName = kfmirlPair?.first?.tableName,

@@ -20,6 +20,8 @@ import data.preferences.primaryfueling.PrimaryFuelingPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.krkte.KrkteCalculator
+import domain.model.presets.EnginePresets
+import domain.model.presets.FuelPresets
 import kotlinx.coroutines.delay
 import ui.components.LabeledParameterRow
 import java.text.DecimalFormat
@@ -237,6 +239,8 @@ private fun EngineParametersSection(
     onNumCylindersChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var engineDropdownExpanded by remember { mutableStateOf(false) }
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 1.dp,
@@ -253,6 +257,26 @@ private fun EngineParametersSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            // Engine preset dropdown
+            Box {
+                OutlinedButton(onClick = { engineDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Apply Engine Preset")
+                }
+                DropdownMenu(expanded = engineDropdownExpanded, onDismissRequest = { engineDropdownExpanded = false }) {
+                    EnginePresets.all.forEach { preset ->
+                        DropdownMenuItem(
+                            text = { Text(preset.name) },
+                            onClick = {
+                                onDisplacementChange((preset.displacementCc / 1000.0).toString())
+                                onNumCylindersChange(preset.cylinderCount.toString())
+                                engineDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             DerivedRow(
                 label = "Air Density",
@@ -294,6 +318,10 @@ private fun FuelPropertiesSection(
     onGasolineDensityChange: (String) -> Unit,
     onStoichiometricAfrChange: (String) -> Unit
 ) {
+    var fuelDropdownExpanded by remember { mutableStateOf(false) }
+    var blendSliderValue by remember { mutableStateOf(0f) }
+    var showBlendSlider by remember { mutableStateOf(false) }
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 1.dp,
@@ -310,6 +338,52 @@ private fun FuelPropertiesSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            // Fuel preset dropdown
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { fuelDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Apply Fuel Preset")
+                    }
+                    DropdownMenu(expanded = fuelDropdownExpanded, onDismissRequest = { fuelDropdownExpanded = false }) {
+                        FuelPresets.all.forEach { preset ->
+                            DropdownMenuItem(
+                                text = { Text("${preset.name} (ρ=${preset.densityGPerCc}, AFR=${preset.stoichAfr})") },
+                                onClick = {
+                                    onGasolineDensityChange(preset.densityGPerCc.toString())
+                                    onStoichiometricAfrChange(preset.stoichAfr.toString())
+                                    fuelDropdownExpanded = false
+                                    showBlendSlider = false
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Ethanol Blend (E0–E100 slider)") },
+                            onClick = {
+                                showBlendSlider = true
+                                fuelDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (showBlendSlider) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Ethanol Blend: E${blendSliderValue.toInt()}", style = MaterialTheme.typography.labelMedium)
+                Slider(
+                    value = blendSliderValue,
+                    onValueChange = {
+                        blendSliderValue = it
+                        val blended = FuelPresets.blend(it.toDouble())
+                        onGasolineDensityChange(blended.densityGPerCc.toString())
+                        onStoichiometricAfrChange(blended.stoichAfr.toString())
+                    },
+                    valueRange = 0f..100f,
+                    steps = 19
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             LabeledParameterRow(
                 label = "Gasoline Density",

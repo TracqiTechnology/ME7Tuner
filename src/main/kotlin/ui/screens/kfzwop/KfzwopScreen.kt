@@ -19,6 +19,8 @@ import data.preferences.kfzwop.KfzwopPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.kfzw.Kfzw
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
 import ui.components.ChartSeries
 import ui.components.LineChart
@@ -156,6 +158,25 @@ fun KfzwopScreen() {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // DS1 note for MED17 users
+        if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "ℹ DS1 Note: DS1 overwrites native KFZWOP with map-switch ignition tables. " +
+                        "You can still use this tool to rescale the DS1 ignition map — select the " +
+                        "appropriate map-switch table from your XDF instead of the native KFZWOP.",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+
         ConfigurationCard(
             kfzwopMapName = kfzwopPair?.first?.tableName,
             onSelectKfzwop = { showKfzwopPicker = true },

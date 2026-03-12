@@ -10,11 +10,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import data.contract.Med17LogFileContract
+import data.parser.med17log.Med17LogParser
 import domain.model.injector.InjectorScalingSolver
 import domain.model.injector.InjectorSpec
 import domain.model.injector.KrkteScalingResult
 import domain.model.injector.TvubResult
+import domain.model.pfi.PfiShareCalculator
+import domain.model.pfi.PfiShareResult
+import domain.model.presets.InjectorPresets
 import data.preferences.dualinjection.DualInjectionPreferences
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.awt.FileDialog
+import java.awt.Frame
+import java.io.File
 
 /**
  * MED17-only screen for dual injection (port + direct) calibration.
@@ -101,7 +112,25 @@ private fun PortInjectorTab() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Stock Port Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Stock Port Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    var pfiPresetExpanded by remember { mutableStateOf(false) }
+                    Box {
+                        OutlinedButton(onClick = { pfiPresetExpanded = true }) { Text("Presets") }
+                        DropdownMenu(expanded = pfiPresetExpanded, onDismissRequest = { pfiPresetExpanded = false }) {
+                            InjectorPresets.all.filter { "PFI" in it.name }.forEach { preset ->
+                                DropdownMenuItem(
+                                    text = { Text("${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
+                                    onClick = {
+                                        oldFlowRate = preset.flowRateCcPerMin.toString()
+                                        oldPressure = preset.fuelPressureBar.toString()
+                                        pfiPresetExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = oldFlowRate, onValueChange = { oldFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
@@ -246,7 +275,25 @@ private fun DirectInjectorTab() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Stock Direct Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Stock Direct Injector", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    var gdiPresetExpanded by remember { mutableStateOf(false) }
+                    Box {
+                        OutlinedButton(onClick = { gdiPresetExpanded = true }) { Text("Presets") }
+                        DropdownMenu(expanded = gdiPresetExpanded, onDismissRequest = { gdiPresetExpanded = false }) {
+                            InjectorPresets.all.filter { "GDI" in it.name }.forEach { preset ->
+                                DropdownMenuItem(
+                                    text = { Text("${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
+                                    onClick = {
+                                        oldFlowRate = preset.flowRateCcPerMin.toString()
+                                        oldPressure = preset.fuelPressureBar.toString()
+                                        gdiPresetExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = oldFlowRate, onValueChange = { oldFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
@@ -337,15 +384,24 @@ private fun DirectInjectorTab() {
 @Composable
 private fun SplitCalculatorTab() {
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     var portKrkte by remember { mutableStateOf("") }
     var diKrkte by remember { mutableStateOf("") }
-    var desiredPortShare by remember { mutableStateOf(DualInjectionPreferences.portSharePercentDefault.toString()) }
     var targetLoad by remember { mutableStateOf("150.0") }
+    var targetRpm by remember { mutableStateOf("5000.0") }
 
-    var portOnTime by remember { mutableStateOf<Double?>(null) }
-    var diOnTime by remember { mutableStateOf<Double?>(null) }
+    var pfiResult by remember { mutableStateOf<PfiShareResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var logStatus by remember { mutableStateOf<String?>(null) }
+    var showProgress by remember { mutableStateOf(false) }
+
+    // Initialize default curve on first composition
+    LaunchedEffect(Unit) {
+        if (pfiResult == null) {
+            pfiResult = PfiShareCalculator.calculateRpmDependentShare()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -354,39 +410,163 @@ private fun SplitCalculatorTab() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Description
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 1.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Dual Injection Split Calculator", style = MaterialTheme.typography.titleMedium)
+                Text("RPM-Dependent PFI Split Calculator", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "The 2.5T EA855 EVO runs dual fuel injection from the factory. " +
-                        "Port injectors (PFI) and direct injectors (GDI) share the total fuel delivery. " +
-                        "This calculator computes injection on-times for a given split ratio and load target.",
+                    "The 2.5T EA855 EVO PFI share varies with RPM: port injectors ramp up towards " +
+                        "torque peak (~4500 RPM), hold steady through mid-range, then decline towards " +
+                        "redline where GDI alone supports required fuel mass. Load a WOT/cruise log to " +
+                        "see your actual InjSys_facPrtnPfi curve overlaid on the default.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "te_pfi = targetLoad × portShare% × KRKTE_PFI\n" +
-                        "te_gdi = targetLoad × (1 − portShare%) × KRKTE_GDI",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace
                 )
             }
         }
 
-        // Inputs
+        // Log Loading
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 1.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Parameters", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text("Log-Based Refinement", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = {
+                        val dialog = FileDialog(Frame(), "Select MED17 Log File", FileDialog.LOAD)
+                        dialog.isVisible = true
+                        val dir = dialog.directory
+                        val file = dialog.file
+                        if (dir != null && file != null) {
+                            showProgress = true
+                            logStatus = "Loading..."
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val logFile = File(dir, file)
+                                        val parser = Med17LogParser()
+                                        val logData = parser.parseLogFile(
+                                            Med17LogParser.LogType.PFI_SPLIT, logFile
+                                        )
+                                        val refined = PfiShareCalculator.refineFromLog(logData)
+                                        withContext(Dispatchers.Main) {
+                                            pfiResult = refined
+                                            logStatus = if (refined.loggedRpmAxis != null)
+                                                "✓ Loaded ${refined.loggedRpmAxis!!.size} RPM points from ${logFile.name}"
+                                            else
+                                                "⚠ No PFI split data found in log"
+                                            showProgress = false
+                                        }
+                                    } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            logStatus = "Error: ${e.message}"
+                                            showProgress = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }) {
+                        Text("Load PFI Log")
+                    }
+                    Button(onClick = {
+                        pfiResult = PfiShareCalculator.calculateRpmDependentShare()
+                        logStatus = "Reset to default curve"
+                    }, colors = ButtonDefaults.outlinedButtonColors()) {
+                        Text("Reset to Default")
+                    }
+                }
+                if (showProgress) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                logStatus?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // RPM-Dependent PFI Curve Table
+        pfiResult?.let { result ->
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Default PFI Share Curve", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("RPM", modifier = Modifier.width(50.dp), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                        for (rpm in result.rpmAxis) {
+                            Text("%.0f".format(rpm), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("PFI%", modifier = Modifier.width(50.dp), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        for (pfi in result.pfiSharePercent) {
+                            Text("%.0f".format(pfi), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Logged curve overlay
+                    if (result.loggedRpmAxis != null && result.loggedPfiPercent != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Logged PFI Share (from log)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text("RPM", modifier = Modifier.width(50.dp), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                            for (rpm in result.loggedRpmAxis!!) {
+                                Text("%.0f".format(rpm), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text("PFI%", modifier = Modifier.width(50.dp), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            for (pfi in result.loggedPfiPercent!!) {
+                                Text("%.1f".format(pfi), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // On-Time Calculator
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Injection On-Time Calculator", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Computes PFI and GDI on-times at a given RPM using the current PFI curve. " +
+                        "Also shows available injector window (ms) = 120000 / RPM for 4-stroke.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = portKrkte, onValueChange = { portKrkte = it }, label = { Text("KRKTE_PFI (ms/%)") }, modifier = Modifier.weight(1f), singleLine = true)
@@ -394,7 +574,7 @@ private fun SplitCalculatorTab() {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(value = desiredPortShare, onValueChange = { desiredPortShare = it }, label = { Text("Port Share (%)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = targetRpm, onValueChange = { targetRpm = it }, label = { Text("RPM") }, modifier = Modifier.weight(1f), singleLine = true)
                     OutlinedTextField(value = targetLoad, onValueChange = { targetLoad = it }, label = { Text("Target Load (%)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
@@ -403,67 +583,73 @@ private fun SplitCalculatorTab() {
         // Calculate
         Button(onClick = {
             errorMessage = null
-            portOnTime = null
-            diOnTime = null
             try {
                 val pKrkte = portKrkte.toDouble()
                 val dKrkte = diKrkte.toDouble()
-                val share = desiredPortShare.toDouble() / 100.0
                 val load = targetLoad.toDouble()
+                val rpm = targetRpm.toDouble()
 
                 require(pKrkte > 0) { "KRKTE_PFI must be positive" }
                 require(dKrkte > 0) { "KRKTE_GDI must be positive" }
-                require(share in 0.0..1.0) { "Port share must be 0–100%" }
                 require(load > 0) { "Target load must be positive" }
+                require(rpm > 0) { "RPM must be positive" }
 
-                portOnTime = load * share * pKrkte
-                diOnTime = load * (1.0 - share) * dKrkte
-                // Persist port share
-                desiredPortShare.toDoubleOrNull()?.let { DualInjectionPreferences.portSharePercentDefault = it }
+                // Look up PFI share from curve at this RPM
+                val curveResult = pfiResult ?: PfiShareCalculator.calculateRpmDependentShare()
+                val pfiShare = PfiShareCalculator.interpolateClamped(
+                    rpm, curveResult.rpmAxis, curveResult.pfiSharePercent
+                ) / 100.0
+
+                val portOnTime = load * pfiShare * pKrkte
+                val diOnTime = load * (1.0 - pfiShare) * dKrkte
+                val availableWindow = 120000.0 / rpm  // ms per injection event (4-stroke)
+
+                errorMessage = null
+                // Build result display inline
+                val result = buildString {
+                    appendLine("RPM: %.0f  |  PFI Share: %.1f%%  |  Available window: %.2f ms".format(rpm, pfiShare * 100.0, availableWindow))
+                    appendLine("Port (PFI) on-time:   %.4f ms".format(portOnTime))
+                    appendLine("Direct (GDI) on-time: %.4f ms".format(diOnTime))
+                    appendLine("Total on-time:        %.4f ms".format(portOnTime + diOnTime))
+                    if (portOnTime > availableWindow * 0.85) {
+                        appendLine("⚠ PFI on-time exceeds 85% of available window — consider reducing PFI share at this RPM")
+                    }
+                    if (diOnTime > availableWindow * 0.85) {
+                        appendLine("⚠ GDI on-time exceeds 85% of available window — check DI injector sizing")
+                    }
+                }
+                // Store result in errorMessage field (reusing for simplicity)
+                logStatus = result
+                DualInjectionPreferences.portSharePercentDefault = pfiShare * 100.0
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Calculation error"
             }
         }) {
-            Text("Calculate Split")
+            Text("Calculate at RPM")
         }
 
         errorMessage?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
 
-        if (portOnTime != null && diOnTime != null) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Result", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Port (PFI) on-time:   %.4f ms".format(portOnTime),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Text(
-                        "Direct (GDI) on-time: %.4f ms".format(diOnTime),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Text(
-                        "Total on-time:        %.4f ms".format((portOnTime ?: 0.0) + (diOnTime ?: 0.0)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val share = desiredPortShare.toDoubleOrNull() ?: 30.0
-                    if (share < 10.0 || share > 90.0) {
-                        Text(
-                            "Warning: Extreme split ratio (%.0f%% port). Verify injector sizing.".format(share),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+        // Result display — reuse logStatus but only if it looks like a result (multi-line)
+        logStatus?.let { status ->
+            if (status.contains("on-time:")) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Result", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        for (line in status.lines()) {
+                            if (line.startsWith("⚠")) {
+                                Text(line, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                            } else {
+                                Text(line, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
+                            }
+                        }
                     }
                 }
             }

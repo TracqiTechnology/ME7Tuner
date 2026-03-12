@@ -27,7 +27,8 @@ class Med17LogParser {
     enum class LogType {
         LDRPID,
         OPTIMIZER,
-        FUEL_TRIM
+        FUEL_TRIM,
+        PFI_SPLIT
     }
 
     fun interface ProgressCallback {
@@ -126,6 +127,7 @@ class Med17LogParser {
                             LogType.LDRPID -> parseLdrpidRow(record, map)
                             LogType.OPTIMIZER -> parseOptimizerRow(record, map)
                             LogType.FUEL_TRIM -> parseFuelTrimRow(record, map)
+                            LogType.PFI_SPLIT -> parsePfiSplitRow(record, map)
                         }
                     } catch (_: NumberFormatException) {
                     } catch (_: ArrayIndexOutOfBoundsException) {
@@ -260,6 +262,19 @@ class Med17LogParser {
         getDouble(record, H.LAMBDA_CONTROL_ACTIVE_HEADER)?.let { map[H.LAMBDA_CONTROL_ACTIVE_HEADER]?.add(it) }
     }
 
+    private fun parsePfiSplitRow(
+        record: CSVRecord,
+        map: Map<Med17LogFileContract.Header, MutableList<Double>>
+    ) {
+        val rpm = getDouble(record, H.RPM_COLUMN_HEADER) ?: return
+        val pfi = getDouble(record, H.PFI_SPLIT_FACTOR_HEADER)
+            ?: getDouble(record, H.PFI_SPLIT_FACTOR_UNLIM_HEADER) ?: return
+
+        map[H.RPM_COLUMN_HEADER]!!.add(rpm)
+        map[H.PFI_SPLIT_FACTOR_HEADER]!!.add(pfi)
+        getDouble(record, H.PFI_SPLIT_FACTOR_UNLIM_HEADER)?.let { map[H.PFI_SPLIT_FACTOR_UNLIM_HEADER]?.add(it) }
+    }
+
     private fun getDouble(
         record: CSVRecord,
         header: Med17LogFileContract.Header
@@ -295,6 +310,11 @@ class Med17LogParser {
                               H.LONG_TERM_FT_HEADER in columnIndices
                 val hasLoad = H.ENGINE_LOAD_HEADER in columnIndices
                 hasTime && hasRpm && hasLoad && (hasStft || hasLtft)
+            }
+            LogType.PFI_SPLIT -> {
+                val hasPfi = H.PFI_SPLIT_FACTOR_HEADER in columnIndices ||
+                             H.PFI_SPLIT_FACTOR_UNLIM_HEADER in columnIndices
+                hasTime && hasRpm && hasPfi
             }
         }
     }
@@ -336,6 +356,12 @@ class Med17LogParser {
                 map[H.LONG_TERM_FT_HEADER] = mutableListOf()
                 map[H.FUEL_MASS_REL_HEADER] = mutableListOf()
                 map[H.LAMBDA_CONTROL_ACTIVE_HEADER] = mutableListOf()
+            }
+            LogType.PFI_SPLIT -> {
+                map[H.TIME_STAMP_COLUMN_HEADER] = mutableListOf()
+                map[H.RPM_COLUMN_HEADER] = mutableListOf()
+                map[H.PFI_SPLIT_FACTOR_HEADER] = mutableListOf()
+                map[H.PFI_SPLIT_FACTOR_UNLIM_HEADER] = mutableListOf()
             }
         }
 

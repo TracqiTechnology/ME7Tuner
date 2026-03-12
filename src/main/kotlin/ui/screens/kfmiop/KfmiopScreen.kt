@@ -21,6 +21,8 @@ import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.kfmiop.Kfmiop
 import domain.model.rlsol.Rlsol
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
 import ui.components.ChartSeries
 import ui.components.LineChart
@@ -157,6 +159,26 @@ fun KfmiopScreen() {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // DS1 note for MED17 users
+        if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "ℹ DS1 Note: DS1 reduces KFMIOP/KFMIRL to scalar values and bypasses " +
+                        "the native torque model. Load values are maxed out; only boost pressure " +
+                        "acts as the torque regulator. Use this as a simple inverse calculator " +
+                        "if adjusting the maximum load ceiling.",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+
         ConfigurationCard(
             analyzedMaxMapPressure = kfmiopResult?.maxMapSensorPressure,
             analyzedMaxBoostPressure = kfmiopResult?.maxBoostPressure,

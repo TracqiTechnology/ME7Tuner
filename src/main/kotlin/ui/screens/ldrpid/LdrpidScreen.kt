@@ -62,21 +62,11 @@ fun LdrpidScreen() {
     var kfldimxMap by remember { mutableStateOf<Map3d?>(null) }
     var kfldimxXAxis by remember { mutableStateOf<Array<Array<Double>>?>(null) }
 
-    // Initialize maps from preferences
+    // Initialize maps from preferences (only set KFLDRL/KFLDIMX definitions, not empty zeros)
     LaunchedEffect(kfldrlPair, kfldimxPair) {
         if (kfldrlPair != null) {
-            val kfldrl = kfldrlPair.second
-            kfldrlMap = kfldrl
-            if (kfldrl.zAxis.isNotEmpty() && kfldrl.zAxis[0].isNotEmpty()) {
-                val emptyZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-                if (nonLinearMap == null) {
-                    nonLinearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyZ)
-                }
-                val emptyLZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-                if (linearMap == null) {
-                    linearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyLZ)
-                }
-            }
+            kfldrlMap = kfldrlPair.second
+            // Don't pre-fill nonLinearMap/linearMap with zeros — show "load log" prompt instead
         }
         if (kfldimxPair != null) {
             kfldimxMap = kfldimxPair.second
@@ -391,7 +381,17 @@ private fun BoostTablesTab(
                     MapTable(map = nonLinearMap, editable = true, onMapChanged = { onNonLinearChanged(it) })
                 }
             } else {
-                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("No boost data loaded", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Click 'Load ME7 Logs' above to load WOT log data",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
 
@@ -408,7 +408,9 @@ private fun BoostTablesTab(
                     MapTable(map = linearMap, editable = false)
                 }
             } else {
-                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Calculated after log load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
