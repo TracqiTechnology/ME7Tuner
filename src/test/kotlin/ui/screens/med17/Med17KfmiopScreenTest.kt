@@ -68,7 +68,7 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         }
 
         // Scalar mode should have Write enabled (scalarOutputMap is always non-null)
-        onNodeWithText("Write KFMIOP").assertIsEnabled()
+        onNodeWithText("Write KFLMIOP").assertIsEnabled()
     }
 
     @Test
@@ -81,9 +81,9 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         val address = kfmiopPair.first.zAxis.address.toLong()
         val stride = kfmiopPair.first.zAxis.sizeBits / 8
 
-        // Click Write KFMIOP
-        onNodeWithText("Write KFMIOP").performClick()
-        onNodeWithText("Are you sure you want to write KFMIOP to the binary?").assertExists()
+        // Click Write KFLMIOP
+        onNodeWithText("Write KFLMIOP").performClick()
+        onNodeWithText("Are you sure you want to write KFLMIOP to the binary?").assertExists()
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
@@ -103,7 +103,7 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         }
 
         onNodeWithText("Not configured").assertExists()
-        onNodeWithText("Write KFMIOP").assertIsNotEnabled()
+        onNodeWithText("Write KFLMIOP").assertIsNotEnabled()
     }
 
     @Test

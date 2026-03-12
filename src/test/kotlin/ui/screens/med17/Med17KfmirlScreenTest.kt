@@ -64,7 +64,7 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
         }
 
         // Write should now be enabled — DS1 path uses KFMIRL's own xAxis
-        onNodeWithText("Write KFMIRL").assertIsEnabled()
+        onNodeWithText("Write KFLMIRL").assertIsEnabled()
     }
 
     @Test
@@ -79,8 +79,8 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
         val totalCells = kfmirlPair.second.zAxis.sumOf { it.size }
 
         // Click Write
-        onNodeWithText("Write KFMIRL").performClick()
-        onNodeWithText("Are you sure you want to write KFMIRL to the binary?").assertExists()
+        onNodeWithText("Write KFLMIRL").performClick()
+        onNodeWithText("Are you sure you want to write KFLMIRL to the binary?").assertExists()
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
@@ -105,7 +105,7 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
             notConfiguredNodes.isNotEmpty(),
             "Should show 'Not configured' when KFMIRL is not set"
         )
-        onNodeWithText("Write KFMIRL").assertIsNotEnabled()
+        onNodeWithText("Write KFLMIRL").assertIsNotEnabled()
     }
 
     @Test

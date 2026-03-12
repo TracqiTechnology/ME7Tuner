@@ -60,8 +60,12 @@ fun MapPickerDialog(
 
     val filteredDefinitions = remember(filterText, tableDefinitions) {
         if (filterText.isBlank()) tableDefinitions
-        else tableDefinitions.filter {
-            it.tableName.lowercase().contains(filterText.lowercase())
+        else {
+            val filter = filterText.lowercase()
+            tableDefinitions.filter {
+                it.tableName.lowercase().contains(filter) ||
+                    it.tableDescription.lowercase().contains(filter)
+            }
         }
     }
 
@@ -143,8 +147,10 @@ fun MapPickerDialog(
                         filterField = new
                         // When the user changes the filter, auto-select the first match
                         // so pressing Set immediately picks the best result.
+                        val lc = new.text.lowercase()
                         selectedItem = filteredDefinitions.firstOrNull {
-                            it.tableName.lowercase().contains(new.text.lowercase())
+                            it.tableName.lowercase().contains(lc) ||
+                                it.tableDescription.lowercase().contains(lc)
                         }
                     },
                     label = { Text("Filter") },
