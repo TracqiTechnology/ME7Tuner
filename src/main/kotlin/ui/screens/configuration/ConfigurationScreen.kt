@@ -48,6 +48,7 @@ import data.preferences.krkte.KrkteGdiPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.platform.EcuPlatformPreference
+import data.preferences.rkw.RkwPreferences
 import data.preferences.tvub.TvubPfiPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
 import data.profile.ProfileManager
@@ -96,6 +97,8 @@ private val allMapDefinitions = listOf(
     MapDefinitionEntry("KFLDRQ0", Kfldrq0Preferences),
     MapDefinitionEntry("KFLDRQ1", Kfldrq1Preferences),
     MapDefinitionEntry("KFLDRQ2", Kfldrq2Preferences),
+    // MED17-only — fuel trim correction map
+    MapDefinitionEntry("rk_w (Fuel Trim)", RkwPreferences, platforms = setOf(EcuPlatform.MED17)),
 )
 
 /** Returns map definitions filtered for the active platform. */

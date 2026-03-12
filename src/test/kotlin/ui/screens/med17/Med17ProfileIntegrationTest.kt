@@ -8,6 +8,7 @@ import data.preferences.kfzw.KfzwPreferences
 import data.preferences.kfzwop.KfzwopPreferences
 import data.preferences.krkte.KrktePfiPreferences
 import data.preferences.krkte.KrkteGdiPreferences
+import data.preferences.rkw.RkwPreferences
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -34,6 +35,7 @@ class Med17ProfileIntegrationTest : Med17ScreenTestBase() {
             "KFZW (KfzwScreen)" to KfzwPreferences,
             "KFLDRL (LdrpidScreen)" to KfldrlPreferences,
             "KFLDIMX (LdrpidScreen)" to KfldimxPreferences,
+            "RKW (FuelTrimScreen)" to RkwPreferences,
         )
 
         val failures = mutableListOf<String>()
@@ -130,6 +132,7 @@ class Med17ProfileIntegrationTest : Med17ScreenTestBase() {
             "KFZW" to KfzwPreferences,
             "KFLDRL" to KfldrlPreferences,
             "KFLDIMX" to KfldimxPreferences,
+            "RKW" to RkwPreferences,
         )
 
         for ((name, pref) in screenPreferences) {

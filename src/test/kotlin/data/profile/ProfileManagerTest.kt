@@ -255,7 +255,7 @@ class ProfileManagerTest {
     // ── 6. MED17 profile resolves against real 404E XDF ─────────────
 
     @Test
-    fun `MED17 profile resolves all 13 maps against 404E Normal XDF`() {
+    fun `MED17 profile resolves all 14 maps against 404E Normal XDF`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         val projectRoot = java.io.File(System.getProperty("user.dir"))
         val xdfFile = java.io.File(projectRoot, "technical/med17/Normal XDF/404E_normal.xdf")
@@ -281,23 +281,23 @@ class ProfileManagerTest {
 
         assertTrue(
             unresolved.isEmpty(),
-            "All 13 MED17 profile maps should exact-match 404E XDF, but ${unresolved.size} failed:\n" +
+            "All 14 MED17 profile maps should exact-match 404E XDF, but ${unresolved.size} failed:\n" +
                 unresolved.joinToString("\n  ", prefix = "  ")
         )
     }
 
     @Test
-    fun `MED17 profile has all 13 expected map definition keys`() {
+    fun `MED17 profile has all 14 expected map definition keys`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         val expected = listOf(
             "KRKTE_PFI", "KRKTE_GDI", "TVUB_PFI",
             "KFMIOP", "KFMIRL", "KFZWOP", "KFZW",
             "KFLDRL", "KFLDIMX", "KFLDIOPU",
-            "KFLDRQ0", "KFLDRQ1", "KFLDRQ2"
+            "KFLDRQ0", "KFLDRQ1", "KFLDRQ2", "RKW"
         )
         for (key in expected) {
             assertTrue(key in profile.mapDefinitions, "Profile should contain map definition '$key'")
         }
-        assertEquals(13, profile.mapDefinitions.size, "Profile should have exactly 13 map definitions")
+        assertEquals(14, profile.mapDefinitions.size, "Profile should have exactly 14 map definitions")
     }
 }

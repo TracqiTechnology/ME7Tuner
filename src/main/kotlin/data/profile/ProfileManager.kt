@@ -29,6 +29,7 @@ import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.openloopfueling.OpenLoopFuelingLogFilterPreferences
 import data.preferences.plsol.PlsolPreferences
 import data.preferences.primaryfueling.PrimaryFuelingPreferences
+import data.preferences.rkw.RkwPreferences
 import data.preferences.tvub.TvubPfiPreferences
 import data.preferences.dualinjection.DualInjectionPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
@@ -76,6 +77,8 @@ object ProfileManager {
         "KFLDRQ0" to Kfldrq0Preferences,
         "KFLDRQ1" to Kfldrq1Preferences,
         "KFLDRQ2" to Kfldrq2Preferences,
+        // MED17 fuel trim correction map
+        "RKW" to RkwPreferences,
     )
 
     init {

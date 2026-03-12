@@ -12,7 +12,7 @@ class Med17ConfigurationScreenTest : Med17ScreenTestBase() {
 
     companion object {
         // MED17-only entries — these use colon suffix in UI
-        val MED17_ONLY_DEFS = listOf("KRKTE (Port):", "KRKTE (Direct):", "TVUB (Port):")
+        val MED17_ONLY_DEFS = listOf("KRKTE (Port):", "KRKTE (Direct):", "TVUB (Port):", "rk_w (Fuel Trim):")
 
         // Shared entries — also with colon suffix in UI
         // Use exact "KFZW:" (with colon) to not match "KFZWOP:"

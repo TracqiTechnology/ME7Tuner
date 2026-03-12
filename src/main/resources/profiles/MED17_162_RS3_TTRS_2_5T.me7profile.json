@@ -68,6 +68,11 @@
             "tableName": "Characteristic map LDR controller parameters Q2",
             "tableDescription": "KFLDRQ2 lde(hPa) vs nmot(1/min) =",
             "unit": "-"
+        },
+        "RKW": {
+            "tableName": "Rel fuel mass fac inj type corr HO1",
+            "tableDescription": "InjSys_RelMCorHom1_MAP rl_w(%) vs nmot_w(1/min) = --",
+            "unit": "--"
         }
     },
     "primaryFueling": {
