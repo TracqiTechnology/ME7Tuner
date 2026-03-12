@@ -67,7 +67,7 @@ fun FuelTrimScreen() {
 
     // ── Output: corrections applied to the input rk_w map ──
     val outputRkw: Map3d? = remember(inputRkw, trimResult) {
-        if (inputRkw == null || trimResult == null || trimResult!!.isEmpty) return@remember null
+        if (inputRkw == null || trimResult == null) return@remember null
         val corrections = trimResult!!.toCorrectionsMap3d()
         val output = Map3d(inputRkw)
         for (r in output.zAxis.indices) {

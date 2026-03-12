@@ -61,7 +61,8 @@ object FuelTrimAnalyzer {
         val load = logData[H.ENGINE_LOAD_HEADER].orEmpty()
 
         if (rpm.isEmpty() || load.isEmpty()) {
-            warnings.add("Missing RPM or engine load data")
+            val keysFound = logData.entries.filter { it.value.isNotEmpty() }.map { it.key.name }
+            warnings.add("Missing RPM or engine load data — keys with data: $keysFound")
             return emptyResult(rpmBins, loadBins, warnings)
         }
 
@@ -90,6 +91,10 @@ object FuelTrimAnalyzer {
             stft?.size ?: Int.MAX_VALUE,
             ltft?.size ?: Int.MAX_VALUE
         )
+
+        warnings.add(0, "Parsed $sampleCount samples (RPM: ${rpm.size}, Load: ${load.size}" +
+                "${stft?.let { ", STFT: ${it.size}" } ?: ""}" +
+                "${ltft?.let { ", LTFT: ${it.size}" } ?: ""})")
 
         // Accumulate combined trim per bin
         val trimSums = Array(rpmBins.size) { DoubleArray(loadBins.size) }

@@ -256,8 +256,11 @@ class Med17LogParser {
             map[ltftHeader]!!.add(ltft)
         }
 
-        // Optional signals
-        getDouble(record, H.LONG_TERM_FT_HEADER)?.let { map[H.LONG_TERM_FT_HEADER]?.add(it) }
+        // Optional signals (avoid double-adding longft1_w if already stored as ltft above)
+        if (ltft == null || (H.LTFT_COLUMN_HEADER in columnIndices)) {
+            // Only add longft1_w separately if it wasn't used as the ltft fallback
+            getDouble(record, H.LONG_TERM_FT_HEADER)?.let { map[H.LONG_TERM_FT_HEADER]?.add(it) }
+        }
         getDouble(record, H.FUEL_MASS_REL_HEADER)?.let { map[H.FUEL_MASS_REL_HEADER]?.add(it) }
         getDouble(record, H.LAMBDA_CONTROL_ACTIVE_HEADER)?.let { map[H.LAMBDA_CONTROL_ACTIVE_HEADER]?.add(it) }
     }
