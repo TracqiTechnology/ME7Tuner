@@ -81,17 +81,28 @@ class Me7LogWorkflowTest : Me7TestBase() {
         assertTrue(correctedMlhfm.yAxis.isNotEmpty(), "Corrected MLHFM should have voltage axis")
         assertTrue(correctedMlhfm.zAxis.isNotEmpty(), "Corrected MLHFM should have kg/h values")
 
-        // 3. Verify corrections are in sane range (0.5x to 2.0x of original)
+        // 3. Verify corrections are in sane range (±30% of original, not the loose 0.5x-2.0x)
         for (i in correctedMlhfm.zAxis.indices) {
             val original = if (i < mlhfmMap.zAxis.size) mlhfmMap.zAxis[i][0] else 0.0
             val corrected = correctedMlhfm.zAxis[i][0]
-            if (original > 1.0) { // Skip near-zero values
+
+            // All values must be non-negative
+            assertTrue(corrected >= 0.0,
+                "MLHFM correction at [$i] = $corrected must be non-negative")
+
+            if (original > 5.0) {
                 val ratio = corrected / original
                 assertTrue(
-                    ratio in 0.5..2.0,
-                    "MLHFM correction ratio at [$i] = $ratio (${original} → ${corrected}) out of sane range"
+                    ratio in 0.70..1.30,
+                    "MLHFM correction ratio at [$i] = $ratio (${original} → ${corrected}) exceeds ±30%"
                 )
             }
+        }
+
+        // 3b. Verify no NaN or Infinity in output
+        for (i in correctedMlhfm.zAxis.indices) {
+            assertFalse(correctedMlhfm.zAxis[i][0].isNaN(), "MLHFM[$i] is NaN")
+            assertFalse(correctedMlhfm.zAxis[i][0].isInfinite(), "MLHFM[$i] is Infinite")
         }
 
         // 4. Fit the corrected curve
