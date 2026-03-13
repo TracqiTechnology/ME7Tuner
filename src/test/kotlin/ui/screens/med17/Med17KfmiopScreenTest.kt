@@ -82,9 +82,6 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         setContent { ui.screens.kfmiop.KfmiopScreen() }
 
         val kfmiopPair = KfmiopPreferences.getSelectedMap()!!
-        val address = kfmiopPair.first.zAxis.address.toLong()
-        val totalBytes = (kfmiopPair.first.zAxis.sizeBits / 8) *
-            kfmiopPair.second.xAxis.size * kfmiopPair.second.yAxis.size
 
         // Click Write KFLMIOP
         onNodeWithText("Write KFLMIOP").performClick()
@@ -92,10 +89,9 @@ class Med17KfmiopScreenTest : Med17ScreenTestBase() {
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
-        val newBytes = readBinBytes(address, totalBytes)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KFMIOP 2D table bytes should be non-zero at address $address"
+        // Binary diff: only KFMIOP address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, kfmiopPair.first
         )
     }
 

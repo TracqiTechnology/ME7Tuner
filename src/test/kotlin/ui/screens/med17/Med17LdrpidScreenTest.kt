@@ -64,10 +64,6 @@ class Med17LdrpidScreenTest : Med17ScreenTestBase() {
         }
 
         val kfldrlPair = KfldrlPreferences.getSelectedMap()!!
-        val address = kfldrlPair.first.zAxis.address.toLong()
-        val stride = kfldrlPair.first.zAxis.sizeBits / 8
-        val totalCells = kfldrlPair.second.zAxis.sumOf { it.size }
-        val originalBytes = readBinBytes(address, totalCells * stride)
 
         // Click Write KFLDRL
         onNodeWithText("Write KFLDRL").performClick()
@@ -75,10 +71,9 @@ class Med17LdrpidScreenTest : Med17ScreenTestBase() {
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
-        val newBytes = readBinBytes(address, totalCells * stride)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KFLDRL bytes should be non-zero at address $address"
+        // Binary diff: only KFLDRL address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, kfldrlPair.first
         )
     }
 
@@ -89,10 +84,6 @@ class Med17LdrpidScreenTest : Med17ScreenTestBase() {
         }
 
         val kfldimxPair = KfldimxPreferences.getSelectedMap()!!
-        val address = kfldimxPair.first.zAxis.address.toLong()
-        val stride = kfldimxPair.first.zAxis.sizeBits / 8
-        val totalCells = kfldimxPair.second.zAxis.sumOf { it.size }
-        val originalBytes = readBinBytes(address, totalCells * stride)
 
         // Click Write KFLDIMX
         onNodeWithText("Write KFLDIMX").performClick()
@@ -100,10 +91,9 @@ class Med17LdrpidScreenTest : Med17ScreenTestBase() {
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
-        val newBytes = readBinBytes(address, totalCells * stride)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KFLDIMX bytes should be non-zero at address $address"
+        // Binary diff: only KFLDIMX address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, kfldimxPair.first
         )
     }
 

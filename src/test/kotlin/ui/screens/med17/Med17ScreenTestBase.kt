@@ -48,6 +48,7 @@ abstract class Med17ScreenTestBase {
     protected lateinit var tableDefs: List<TableDefinition>
     protected lateinit var allMaps: List<Pair<TableDefinition, Map3d>>
     protected lateinit var tempBinFile: File
+    protected lateinit var stockBinCopy: File
     protected lateinit var profile: ConfigurationProfile
 
     @BeforeTest
@@ -68,10 +69,13 @@ abstract class Med17ScreenTestBase {
         XdfParser.setTableDefinitionsForTesting(tableDefs)
         BinParser.setMapListForTesting(allMaps)
 
-        // Create a temp BIN copy for write verification
+        // Create a temp BIN copy for write verification and a stock copy for diffing
         tempBinFile = File.createTempFile("med17_test_", ".bin")
         BIN_FILE.copyTo(tempBinFile, overwrite = true)
         BinFilePreferences.setFile(tempBinFile)
+
+        stockBinCopy = File.createTempFile("med17_stock_", ".bin")
+        BIN_FILE.copyTo(stockBinCopy, overwrite = true)
 
         // Load and apply MED17 profile
         val stream = ProfileManager::class.java.getResourceAsStream(
@@ -88,6 +92,9 @@ abstract class Med17ScreenTestBase {
         EcuPlatformPreference.platform = savedPlatform
         if (::tempBinFile.isInitialized && tempBinFile.exists()) {
             tempBinFile.delete()
+        }
+        if (::stockBinCopy.isInitialized && stockBinCopy.exists()) {
+            stockBinCopy.delete()
         }
     }
 

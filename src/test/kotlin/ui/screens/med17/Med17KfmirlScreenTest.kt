@@ -69,9 +69,6 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
         setContent { ui.screens.kfmirl.KfmirlScreen() }
 
         val kfmirlPair = KfmirlPreferences.getSelectedMap()!!
-        val address = kfmirlPair.first.zAxis.address.toLong()
-        val stride = kfmirlPair.first.zAxis.sizeBits / 8
-        val totalCells = kfmirlPair.second.zAxis.sumOf { it.size }
 
         // Click Write
         onNodeWithText("Write KFLMIRL").performClick()
@@ -79,10 +76,9 @@ class Med17KfmirlScreenTest : Med17ScreenTestBase() {
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
-        val newBytes = readBinBytes(address, totalCells * stride)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KFMIRL bytes should be non-zero at address $address"
+        // Binary diff: only KFMIRL address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, kfmirlPair.first
         )
     }
 

@@ -63,43 +63,17 @@ class Med17KrkteScreenTest : Med17ScreenTestBase() {
             ui.screens.krkte.KrkteScreen()
         }
 
-        // Read original bytes at KRKTE address
         val krktePair = KrktePfiPreferences.getSelectedMap()!!
-        val address = krktePair.first.zAxis.address.toLong()
-        val stride = krktePair.first.zAxis.sizeBits / 8
-        val originalBytes = readBinBytes(address, stride)
 
         // Click Write KRKTE button
         onNodeWithText("Write KRKTE").performClick()
-
-        // Confirm dialog appears
         onNodeWithText("Are you sure you want to write KRKTE to the binary?").assertExists()
-
-        // Click Yes
         onNodeWithText("Yes").performClick()
-
-        // Verify success feedback
         waitForIdle()
 
-        // Read new bytes — they should represent the calculated KRKTE value
-        val newBytes = readBinBytes(address, stride)
-
-        // Calculate expected KRKTE from profile parameters
-        val pf = profile.primaryFueling
-        val cylDisp = pf.displacement / pf.numCylinders
-        val expectedKrkte = KrkteCalculator.calculateKrkte(
-            pf.airDensity, cylDisp, pf.fuelInjectorSize,
-            pf.gasolineGramsPerCcm, pf.stoichiometricAfr
-        )
-        assertTrue(expectedKrkte > 0.0, "Calculated KRKTE should be positive: $expectedKrkte")
-
-        // Verify write happened (bytes should represent a reasonable KRKTE value)
-        val writtenMap = Map3d()
-        writtenMap.zAxis = arrayOf(arrayOf(expectedKrkte))
-        // The write occurred — verify BIN was modified (at minimum bytes shouldn't be all zeros)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KRKTE bytes should be non-zero at address $address"
+        // Binary diff: only KRKTE address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, krktePair.first
         )
     }
 

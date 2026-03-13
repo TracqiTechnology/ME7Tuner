@@ -55,10 +55,6 @@ class Med17KfzwopScreenTest : Med17ScreenTestBase() {
         }
 
         val kfzwopPair = KfzwopPreferences.getSelectedMap()!!
-        val address = kfzwopPair.first.zAxis.address.toLong()
-        val stride = kfzwopPair.first.zAxis.sizeBits / 8
-        val totalCells = kfzwopPair.second.zAxis.sumOf { it.size }
-        val originalBytes = readBinBytes(address, totalCells * stride)
 
         // Click Write
         onNodeWithText("Write KFZWOP").performClick()
@@ -66,10 +62,9 @@ class Med17KfzwopScreenTest : Med17ScreenTestBase() {
         onNodeWithText("Yes").performClick()
         waitForIdle()
 
-        val newBytes = readBinBytes(address, totalCells * stride)
-        assertTrue(
-            newBytes.any { it != 0.toByte() },
-            "Written KFZWOP bytes should be non-zero at address $address"
+        // Binary diff: only KFZWOP address range should be modified
+        BinaryDiffHelper.assertOnlyExpectedBytesChanged(
+            stockBinCopy, tempBinFile, kfzwopPair.first
         )
     }
 
