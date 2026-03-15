@@ -27,6 +27,10 @@ object DualInjectionPreferences {
         get() = prefs.get("direct_fuel_pressure", "200.0").toDouble()
         set(value) = prefs.put("direct_fuel_pressure", value.toString())
 
+    var directInjectorDeadTimeMs: Double
+        get() = prefs.get("direct_dead_time", "0.0").toDouble()
+        set(value) = prefs.put("direct_dead_time", value.toString())
+
     var portSharePercentDefault: Double
         get() = prefs.get("port_share_percent", "30.0").toDouble()
         set(value) = prefs.put("port_share_percent", value.toString())

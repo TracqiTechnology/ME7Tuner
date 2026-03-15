@@ -10,6 +10,7 @@ import data.preferences.krkte.KrktePfiPreferences
 import data.preferences.krkte.KrkteGdiPreferences
 import data.preferences.rkw.RkwPreferences
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -70,6 +71,19 @@ class Med17ProfileIntegrationTest : Med17ScreenTestBase() {
             selected.first.tableName == KFMIOP_TITLE,
             "KFMIOP should map to '$KFMIOP_TITLE', got: ${selected.first.tableName}"
         )
+        // Bug 1 regression: must be a real 2D table, not a scalar
+        assertFalse(
+            selected.second.xAxis.isEmpty() && selected.second.yAxis.isEmpty(),
+            "KFMIOP must NOT be scalar — wrong map selected if scalar"
+        )
+        assertTrue(
+            selected.second.xAxis.size >= 14,
+            "KFMIOP should have 14+ load columns, got ${selected.second.xAxis.size}"
+        )
+        assertTrue(
+            selected.second.yAxis.size >= 14,
+            "KFMIOP should have 14+ RPM rows, got ${selected.second.yAxis.size}"
+        )
     }
 
     @Test
@@ -97,8 +111,8 @@ class Med17ProfileIntegrationTest : Med17ScreenTestBase() {
         val selected = KfzwPreferences.getSelectedMap()
         assertNotNull(selected, "KFZW should resolve")
         assertTrue(
-            selected.first.tableName.contains("Delta ignition", ignoreCase = true),
-            "KFZW should map to delta ignition table, got: ${selected.first.tableName}"
+            selected.first.tableName.contains("Ignition GDI", ignoreCase = true),
+            "KFZW should map to DS1 ignition switch map, got: ${selected.first.tableName}"
         )
     }
 
@@ -120,6 +134,27 @@ class Med17ProfileIntegrationTest : Med17ScreenTestBase() {
             selected.first.tableName.contains("LDR I controller", ignoreCase = true),
             "KFLDIMX should map to LDR I controller table, got: ${selected.first.tableName}"
         )
+    }
+
+    @Test
+    fun `all 2D maps meet minimum dimension contract`() {
+        val maps2d = mapOf(
+            "KFMIOP" to KfmiopPreferences,
+            "KFMIRL" to KfmirlPreferences,
+            "KFZWOP" to KfzwopPreferences,
+            "KFZW" to KfzwPreferences,
+            "KFLDRL" to KfldrlPreferences,
+            "KFLDIMX" to KfldimxPreferences,
+            "RKW" to RkwPreferences,
+        )
+
+        for ((name, pref) in maps2d) {
+            val selected = pref.getSelectedMap()
+            assertNotNull(selected, "$name should resolve")
+            val map = selected.second
+            assertTrue(map.xAxis.size > 1, "$name should be 2D (xAxis.size=${map.xAxis.size})")
+            assertTrue(map.yAxis.size > 1, "$name should be 2D (yAxis.size=${map.yAxis.size})")
+        }
     }
 
     @Test

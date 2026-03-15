@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import data.preferences.MapPreference
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfzw.KfzwPreferences
+import data.preferences.kfzw.KfzwSwitchMapPreferences
 import data.writer.BinWriter
 import domain.math.RescaleAxis
 import domain.math.map.Map3d
@@ -24,14 +26,11 @@ import domain.model.kfzw.Kfzw
 import data.model.EcuPlatform
 import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
-import ui.components.ChartSeries
-import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
 import ui.components.ParameterField
-import ui.theme.ChartRed
-import ui.theme.Primary
+import ui.components.TimingCharts
 
 private enum class WriteStatus { Idle, Success, Error }
 
@@ -45,8 +44,16 @@ private fun findMap(
     } else null
 }
 
+private fun computeRescaledOutput(input: Map3d, targetMax: Double): Map3d? {
+    if (input.xAxis.size < 2) return null
+    val rescaledXAxis = RescaleAxis.rescaleAxis(input.xAxis, targetMax)
+    val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, rescaledXAxis)
+    return Map3d(rescaledXAxis, input.yAxis, newZAxis)
+}
+
 @Composable
 fun KfzwScreen() {
+    val isMed17 = EcuPlatformPreference.platform == EcuPlatform.MED17
     val mapList by BinParser.mapList.collectAsState()
     val tableDefinitions by XdfParser.tableDefinitions.collectAsState()
 
@@ -61,11 +68,479 @@ fun KfzwScreen() {
     val kfzwPair = remember(mapList, mapVersion) { findMap(mapList, KfzwPreferences) }
     val kfmiopPair = remember(mapList, mapVersion) { findMap(mapList, KfmiopPreferences) }
 
-    val inputKfzw = kfzwPair?.second
     val inputKfmiop = kfmiopPair?.second
 
-    // Detect scalar KFMIOP (DS1: 1×1 map with empty axes)
+    // Detect scalar KFMIOP (DS1: 1x1 map with empty axes)
     val kfmiopIsScalar = inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()
+
+    // Use multi-switch-map mode when MED17 + scalar KFMIOP
+    val useMultiSwitchMode = isMed17 && kfmiopIsScalar
+
+    if (useMultiSwitchMode) {
+        KfzwMultiSwitchScreen(
+            mapList = mapList,
+            tableDefinitions = tableDefinitions,
+            kfmiopPair = kfmiopPair
+        )
+    } else {
+        KfzwSingleMapScreen(
+            mapList = mapList,
+            tableDefinitions = tableDefinitions,
+            kfzwPair = kfzwPair,
+            kfmiopPair = kfmiopPair,
+            kfmiopIsScalar = kfmiopIsScalar,
+            isMed17 = isMed17,
+            showKfzwPicker = showKfzwPicker,
+            onShowKfzwPicker = { showKfzwPicker = it },
+            showKfmiopPicker = showKfmiopPicker,
+            onShowKfmiopPicker = { showKfmiopPicker = it }
+        )
+    }
+}
+
+// ============================================================================
+// MED17 Multi-Switch-Map Mode
+// ============================================================================
+
+@Composable
+private fun KfzwMultiSwitchScreen(
+    mapList: List<Pair<TableDefinition, Map3d>>,
+    tableDefinitions: List<TableDefinition>,
+    kfmiopPair: Pair<TableDefinition, Map3d>?
+) {
+    // Switch map preferences tracking
+    var switchVersion by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { KfzwSwitchMapPreferences.switchMapsChanged.collect { switchVersion++ } }
+
+    val switchMaps = remember(mapList, switchVersion) {
+        KfzwSwitchMapPreferences.getAllSelectedMaps()
+    }
+
+    var activeSwitchIndex by remember { mutableStateOf(0) }
+    var showSwitchMapPicker by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    // Clamp active index
+    val validIndex = if (switchMaps.isNotEmpty()) activeSwitchIndex.coerceIn(0, switchMaps.lastIndex) else 0
+    if (validIndex != activeSwitchIndex) activeSwitchIndex = validIndex
+
+    // KFMIOP scalar value for target max load default
+    val inputKfmiop = kfmiopPair?.second
+    val kfmiopScalarValue = if (inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()) {
+        inputKfmiop.zAxis.firstOrNull()?.firstOrNull() ?: 400.0
+    } else 400.0
+
+    var targetMaxLoad by remember(kfmiopScalarValue) {
+        mutableStateOf(kfmiopScalarValue.toString())
+    }
+
+    // Per-map edited inputs keyed by switch index
+    var editedInputMaps by remember { mutableStateOf(mapOf<Int, Map3d>()) }
+
+    // Initialize/update edited maps when switch maps change
+    LaunchedEffect(switchMaps) {
+        val updated = editedInputMaps.toMutableMap()
+        for ((idx, pair) in switchMaps) {
+            if (pair != null && idx !in updated) {
+                updated[idx] = Map3d(pair.second)
+            }
+        }
+        // Remove stale entries
+        val validIndices = switchMaps.map { it.first }.toSet()
+        updated.keys.removeAll { it !in validIndices }
+        editedInputMaps = updated
+    }
+
+    // Compute outputs for all switch maps
+    val computedOutputs = remember(editedInputMaps, targetMaxLoad) {
+        val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
+        editedInputMaps.mapValues { (_, input) -> computeRescaledOutput(input, newMax) }
+    }
+
+    // Active map data
+    val activeOriginal = switchMaps.getOrNull(activeSwitchIndex)?.second?.second
+    val activeEdited = editedInputMaps[activeSwitchIndex]
+    val activeOutput = computedOutputs[activeSwitchIndex]
+
+    // Write prerequisites
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+    val hasAnyMaps = switchMaps.any { it.second != null }
+    val hasAnyOutputs = computedOutputs.values.any { it != null }
+    val canWrite = binLoaded && hasAnyMaps && hasAnyOutputs
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) {
+            delay(3000)
+            writeStatus = WriteStatus.Idle
+        }
+    }
+
+    // Dialogs
+    if (showSwitchMapPicker) {
+        MapPickerDialog(
+            title = "Add Switch Map",
+            tableDefinitions = tableDefinitions,
+            initialValue = null,
+            onSelected = { it?.let { def -> KfzwSwitchMapPreferences.addMap(def) } },
+            onDismiss = { showSwitchMapPicker = false }
+        )
+    }
+
+    if (showWriteConfirmation) {
+        val writeCount = switchMaps.count { (idx, pair) -> pair != null && computedOutputs[idx] != null }
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write KFZW Switch Maps") },
+            text = { Text("Write $writeCount switch map(s) to the binary?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showWriteConfirmation = false
+                    try {
+                        for ((idx, pair) in switchMaps) {
+                            val (tableDef, _) = pair ?: continue
+                            val output = computedOutputs[idx] ?: continue
+                            BinWriter.write(BinFilePreferences.file.value, tableDef, output)
+                        }
+                        writeStatus = WriteStatus.Success
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        writeStatus = WriteStatus.Error
+                    }
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) { Text("No") }
+            }
+        )
+    }
+
+    // Main layout
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // DS1 info banner
+        Surface(
+            shape = MaterialTheme.shapes.small,
+            tonalElevation = 1.dp,
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "DS1 overwrites native KFZW with map-switch ignition tables. " +
+                    "Add the switch maps from your XDF below to rescale them all to a new max load.",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+        }
+
+        // Configuration card with switch map management
+        SwitchMapConfigCard(
+            switchMaps = switchMaps,
+            activeSwitchIndex = activeSwitchIndex,
+            dropdownExpanded = dropdownExpanded,
+            onDropdownExpandedChange = { dropdownExpanded = it },
+            onActiveSwitchIndexChange = { activeSwitchIndex = it },
+            onAddMap = { showSwitchMapPicker = true },
+            onRemoveMap = { idx ->
+                KfzwSwitchMapPreferences.removeMap(idx)
+                // Clear stale edited input
+                editedInputMaps = editedInputMaps.toMutableMap().also { it.remove(idx) }
+            },
+            kfmiopScalarValue = kfmiopScalarValue,
+            targetMaxLoad = targetMaxLoad,
+            onTargetMaxLoadChange = { targetMaxLoad = it },
+            onApplyToAll = {
+                // Re-initialize all edited maps from originals to force recompute
+                val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
+                val fresh = mutableMapOf<Int, Map3d>()
+                for ((idx, pair) in switchMaps) {
+                    if (pair != null) {
+                        fresh[idx] = Map3d(pair.second)
+                    }
+                }
+                editedInputMaps = fresh
+            }
+        )
+
+        // Comparison area — shows active switch map
+        ComparisonArea(
+            modifier = Modifier.weight(1f),
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            editedInputMap = activeEdited,
+            onInputMapChanged = { newMap ->
+                editedInputMaps = editedInputMaps.toMutableMap().also { it[activeSwitchIndex] = newMap }
+            },
+            originalKfzw = activeOriginal,
+            outputKfzw = activeOutput
+        )
+
+        // Write section
+        SwitchMapWriteSection(
+            binLoaded = binLoaded,
+            binFileName = if (binLoaded) binFile.name else null,
+            switchMapCount = switchMaps.count { it.second != null },
+            canWrite = canWrite,
+            writeStatus = writeStatus,
+            onWriteClick = { showWriteConfirmation = true }
+        )
+    }
+}
+
+@Composable
+private fun SwitchMapConfigCard(
+    switchMaps: List<Pair<Int, Pair<TableDefinition, Map3d>?>>,
+    activeSwitchIndex: Int,
+    dropdownExpanded: Boolean,
+    onDropdownExpandedChange: (Boolean) -> Unit,
+    onActiveSwitchIndexChange: (Int) -> Unit,
+    onAddMap: () -> Unit,
+    onRemoveMap: (Int) -> Unit,
+    kfmiopScalarValue: Double,
+    targetMaxLoad: String,
+    onTargetMaxLoadChange: (String) -> Unit,
+    onApplyToAll: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "KFZW \u2014 Rescale Ignition Switch Maps",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Manage and rescale DS1 map-switch ignition tables.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            // Active map dropdown
+            if (switchMaps.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Active Map:", style = MaterialTheme.typography.bodyMedium)
+                    Box {
+                        OutlinedButton(onClick = { onDropdownExpandedChange(true) }) {
+                            val activeLabel = switchMaps.getOrNull(activeSwitchIndex)?.let { (idx, pair) ->
+                                "Map $idx: ${pair?.first?.tableName ?: "Not found"}"
+                            } ?: "None"
+                            Text(activeLabel, style = MaterialTheme.typography.bodySmall)
+                        }
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { onDropdownExpandedChange(false) }
+                        ) {
+                            switchMaps.forEachIndexed { listIdx, (idx, pair) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Map $idx: ${pair?.first?.tableName ?: "Not found in XDF"}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    },
+                                    onClick = {
+                                        onActiveSwitchIndexChange(listIdx)
+                                        onDropdownExpandedChange(false)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Switch map list with remove buttons
+            switchMaps.forEach { (idx, pair) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (pair != null) Icons.Default.Check else Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = if (pair != null) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Map $idx: ${pair?.first?.tableName ?: "Not found in XDF"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { onRemoveMap(idx) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove",
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+
+            // Add button
+            OutlinedButton(
+                onClick = onAddMap,
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                Text("+ Add Switch Map")
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            // Target max load row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("KFMIOP Value (current):", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "%.2f%%".format(kfmiopScalarValue),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                Text("Target Max Load:", style = MaterialTheme.typography.bodySmall)
+                ParameterField(
+                    value = targetMaxLoad,
+                    onValueChange = onTargetMaxLoadChange,
+                    label = "%",
+                    tooltip = "Target max load for KFZW axis rescale. " +
+                        "Defaults to the KFMIOP scalar. Increase for higher-power builds.",
+                    readOnly = false,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.width(130.dp).height(56.dp)
+                )
+
+                OutlinedButton(onClick = onApplyToAll) {
+                    Text("Apply to All")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SwitchMapWriteSection(
+    binLoaded: Boolean,
+    binFileName: String?,
+    switchMapCount: Int,
+    canWrite: Boolean,
+    writeStatus: WriteStatus,
+    onWriteClick: () -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Write to Binary",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            PrerequisiteRow(
+                label = "BIN file",
+                detail = if (binLoaded) binFileName!! else "Not loaded",
+                met = binLoaded
+            )
+
+            PrerequisiteRow(
+                label = "Switch maps",
+                detail = if (switchMapCount > 0) "$switchMapCount map(s) configured" else "None configured",
+                met = switchMapCount > 0
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onWriteClick,
+                    enabled = canWrite
+                ) {
+                    Text("Write All Switch Maps")
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary
+                            else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            if (!canWrite) {
+                Text(
+                    text = when {
+                        !binLoaded -> "Load a BIN file to write."
+                        switchMapCount == 0 -> "Add at least one switch map above."
+                        else -> "Configure all prerequisites above."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Single-Map Mode (ME7 + MED17 non-scalar)
+// ============================================================================
+
+@Composable
+private fun KfzwSingleMapScreen(
+    mapList: List<Pair<TableDefinition, Map3d>>,
+    tableDefinitions: List<TableDefinition>,
+    kfzwPair: Pair<TableDefinition, Map3d>?,
+    kfmiopPair: Pair<TableDefinition, Map3d>?,
+    kfmiopIsScalar: Boolean,
+    isMed17: Boolean,
+    showKfzwPicker: Boolean,
+    onShowKfzwPicker: (Boolean) -> Unit,
+    showKfmiopPicker: Boolean,
+    onShowKfmiopPicker: (Boolean) -> Unit
+) {
+    val inputKfzw = kfzwPair?.second
+    val inputKfmiop = kfmiopPair?.second
 
     // --- DS1 scalar mode: target max load input ---
     val kfmiopScalarValue = if (kfmiopIsScalar) {
@@ -96,15 +571,9 @@ fun KfzwScreen() {
         val input = editedInputMap ?: return@remember null
 
         if (kfmiopIsScalar) {
-            // DS1 path: use KFZW's own xAxis, rescale to target max load
             val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
-            if (input.xAxis.size >= 2) {
-                val rescaledXAxis = RescaleAxis.rescaleAxis(input.xAxis, newMax)
-                val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, rescaledXAxis)
-                Map3d(rescaledXAxis, input.yAxis, newZAxis)
-            } else null
+            computeRescaledOutput(input, newMax)
         } else {
-            // ME7 path: use KFMIOP xAxis
             if (editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
                 val newXAxis = editedXAxis[0]
                 val maxValue = newXAxis.last()
@@ -115,30 +584,7 @@ fun KfzwScreen() {
         }
     }
 
-    // Timing comparison chart data — peak timing per RPM
-    val timingChartData = remember(outputKfzw, kfzwPair) {
-        val originalKfzw = kfzwPair?.second
-        val calculatedKfzw = outputKfzw
-        if (originalKfzw == null || calculatedKfzw == null) {
-            return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
-        }
-
-        val originalPeaks = originalKfzw.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < originalKfzw.zAxis.size) {
-                val peakTiming = originalKfzw.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakTiming)
-            } else null
-        }
-        val calculatedPeaks = calculatedKfzw.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < calculatedKfzw.zAxis.size) {
-                val peakTiming = calculatedKfzw.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakTiming)
-            } else null
-        }
-        Pair(originalPeaks, calculatedPeaks)
-    }
-
-    // Write prerequisites — scalar mode only needs KFZW configured
+    // Write prerequisites
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
     val kfzwMapConfigured = kfzwPair != null
@@ -164,7 +610,7 @@ fun KfzwScreen() {
             tableDefinitions = tableDefinitions,
             initialValue = kfzwPair?.first,
             onSelected = { KfzwPreferences.setSelectedMap(it) },
-            onDismiss = { showKfzwPicker = false }
+            onDismiss = { onShowKfzwPicker(false) }
         )
     }
 
@@ -174,7 +620,7 @@ fun KfzwScreen() {
             tableDefinitions = tableDefinitions,
             initialValue = kfmiopPair?.first,
             onSelected = { KfmiopPreferences.setSelectedMap(it) },
-            onDismiss = { showKfmiopPicker = false }
+            onDismiss = { onShowKfmiopPicker(false) }
         )
     }
 
@@ -210,7 +656,7 @@ fun KfzwScreen() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // DS1 note for MED17 users
-        if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+        if (isMed17) {
             Surface(
                 shape = MaterialTheme.shapes.small,
                 tonalElevation = 1.dp,
@@ -219,11 +665,11 @@ fun KfzwScreen() {
             ) {
                 Text(
                     if (kfmiopIsScalar)
-                        "ℹ DS1 Note: KFMIOP is a scalar on this ECU. " +
+                        "DS1 Note: KFMIOP is a scalar on this ECU. " +
                             "KFZW will be rescaled to the target max load using its own axis."
                     else
-                        "ℹ DS1 Note: DS1 overwrites native KFZW with map-switch ignition tables. " +
-                            "You can still use this tool to rescale the DS1 ignition map — select the " +
+                        "DS1 Note: DS1 overwrites native KFZW with map-switch ignition tables. " +
+                            "You can still use this tool to rescale the DS1 ignition map \u2014 select the " +
                             "appropriate map-switch table from your XDF instead of the native KFZW.",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall,
@@ -233,21 +679,19 @@ fun KfzwScreen() {
         }
 
         if (kfmiopIsScalar) {
-            // DS1 scalar mode: show target max load input
             ScalarRescaleConfigCard(
                 kfzwMapName = kfzwPair?.first?.tableName,
-                onSelectKfzw = { showKfzwPicker = true },
+                onSelectKfzw = { onShowKfzwPicker(true) },
                 currentMaxLoad = kfmiopScalarValue,
                 targetMaxLoad = targetMaxLoad,
                 onTargetMaxLoadChange = { targetMaxLoad = it }
             )
         } else {
-            // ME7 mode: full KFMIOP axis editor
             ConfigurationCard(
                 kfzwMapName = kfzwPair?.first?.tableName,
                 kfmiopMapName = kfmiopPair?.first?.tableName,
-                onSelectKfzw = { showKfzwPicker = true },
-                onSelectKfmiop = { showKfmiopPicker = true },
+                onSelectKfzw = { onShowKfzwPicker(true) },
+                onSelectKfmiop = { onShowKfmiopPicker(true) },
                 editedXAxis = editedXAxis,
                 onXAxisChanged = { newData -> editedXAxis = newData }
             )
@@ -260,9 +704,7 @@ fun KfzwScreen() {
             editedInputMap = editedInputMap,
             onInputMapChanged = { editedInputMap = it },
             originalKfzw = kfzwPair?.second,
-            outputKfzw = outputKfzw,
-            originalPeakTiming = timingChartData.first,
-            calculatedPeakTiming = timingChartData.second
+            outputKfzw = outputKfzw
         )
 
         WriteToBinarySection(
@@ -279,6 +721,10 @@ fun KfzwScreen() {
     }
 }
 
+// ============================================================================
+// Shared Composables
+// ============================================================================
+
 @Composable
 private fun ScalarRescaleConfigCard(
     kfzwMapName: String?,
@@ -294,7 +740,7 @@ private fun ScalarRescaleConfigCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "KFZW — Rescale Load Axis",
+                text = "KFZW \u2014 Rescale Load Axis",
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
@@ -453,9 +899,7 @@ private fun ComparisonArea(
     editedInputMap: Map3d?,
     onInputMapChanged: (Map3d) -> Unit,
     originalKfzw: Map3d?,
-    outputKfzw: Map3d?,
-    originalPeakTiming: List<Pair<Double, Double>>,
-    calculatedPeakTiming: List<Pair<Double, Double>>
+    outputKfzw: Map3d?
 ) {
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = selectedTab) {
@@ -472,7 +916,7 @@ private fun ComparisonArea(
             Tab(
                 selected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                text = { Text("Timing Comparison") }
+                text = { Text("Charts") }
             )
         }
 
@@ -487,10 +931,10 @@ private fun ComparisonArea(
                 calculatedKfzw = outputKfzw,
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
-            2 -> TimingComparisonChart(
-                originalPeakTiming = originalPeakTiming,
-                calculatedPeakTiming = calculatedPeakTiming,
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+            2 -> TimingCharts(
+                originalMap = originalKfzw,
+                calculatedMap = outputKfzw,
+                modifier = Modifier.fillMaxWidth().weight(1f)
             )
         }
     }
@@ -574,33 +1018,6 @@ private fun SideBySideTables(
                 Text("No data", style = MaterialTheme.typography.bodyMedium)
             }
         }
-    }
-}
-
-@Composable
-private fun TimingComparisonChart(
-    originalPeakTiming: List<Pair<Double, Double>>,
-    calculatedPeakTiming: List<Pair<Double, Double>>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        LineChart(
-            series = listOf(
-                ChartSeries(
-                    name = "Original Peak Timing",
-                    points = originalPeakTiming,
-                    color = Primary
-                ),
-                ChartSeries(
-                    name = "Calculated Peak Timing",
-                    points = calculatedPeakTiming,
-                    color = ChartRed
-                )
-            ),
-            title = "Peak Timing Comparison",
-            xAxisLabel = "RPM",
-            yAxisLabel = "Timing (grad KW)"
-        )
     }
 }
 

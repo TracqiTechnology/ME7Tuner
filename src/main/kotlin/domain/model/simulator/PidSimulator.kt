@@ -186,11 +186,11 @@ object PidSimulator {
                 }
             }
 
-            // Look up gains at this operating point
-            val relativePsi = (entry.actualMap - entry.barometricPressure) * 0.0145038
-            val q0 = kfldrq0?.lookup(relativePsi.coerceAtLeast(0.0), rpm) ?: 0.5
-            val q1 = kfldrq1?.lookup(relativePsi.coerceAtLeast(0.0), rpm) ?: 0.1
-            val q2 = kfldrq2?.lookup(relativePsi.coerceAtLeast(0.0), rpm) ?: 0.0
+            // Look up gains at this operating point (x-axis is relative boost in mbar)
+            val relativeMbar = entry.actualMap - entry.barometricPressure
+            val q0 = kfldrq0?.lookup(relativeMbar.coerceAtLeast(0.0), rpm) ?: 0.5
+            val q1 = kfldrq1?.lookup(relativeMbar.coerceAtLeast(0.0), rpm) ?: 0.1
+            val q2 = kfldrq2?.lookup(relativeMbar.coerceAtLeast(0.0), rpm) ?: 0.0
 
             val ldptv: Double
             val ldrdtv: Double
@@ -227,9 +227,9 @@ object PidSimulator {
                 lditv += effectiveIGain * previousLde / 100.0
             }
 
-            // Clamp I-term by KFLDIMX
-            val imaxLimit = if (kfldimx != null && relativePsi > 0) {
-                kfldimx.lookup(relativePsi, rpm)
+            // Clamp I-term by KFLDIMX (x-axis is relative boost in mbar)
+            val imaxLimit = if (kfldimx != null && relativeMbar > 0) {
+                kfldimx.lookup(relativeMbar, rpm)
             } else MAX_WGDC
 
             lditv = lditv.coerceIn(0.0, imaxLimit)
@@ -237,9 +237,9 @@ object PidSimulator {
             // Total PID output
             val ldtv = (ldptv + lditv + ldrdtv).coerceIn(MIN_WGDC, MAX_WGDC)
 
-            // Linearize through KFLDRL
-            val ldtvLinearized = if (kfldrl != null && relativePsi > 0) {
-                kfldrl.lookup(relativePsi, rpm)
+            // Linearize through KFLDRL: x-axis is duty cycle (%), not boost pressure
+            val ldtvLinearized = if (kfldrl != null) {
+                kfldrl.lookup(ldtv, rpm)
             } else ldtv
 
             states.add(PidState(

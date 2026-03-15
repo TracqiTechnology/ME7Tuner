@@ -1,8 +1,12 @@
 package ui.screens.dualinjection
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import data.contract.Med17LogFileContract
 import data.parser.med17log.Med17LogParser
+import data.preferences.bin.BinFilePreferences
+import data.preferences.dualinjection.DualInjectionPreferences
+import data.preferences.krkte.KrkteGdiPreferences
+import data.preferences.krkte.KrktePfiPreferences
+import data.writer.BinWriter
+import domain.math.map.Map3d
 import domain.model.injector.InjectorScalingSolver
 import domain.model.injector.InjectorSpec
 import domain.model.injector.KrkteScalingResult
@@ -19,13 +29,16 @@ import domain.model.injector.TvubResult
 import domain.model.pfi.PfiShareCalculator
 import domain.model.pfi.PfiShareResult
 import domain.model.presets.InjectorPresets
-import data.preferences.dualinjection.DualInjectionPreferences
+import domain.model.presets.InjectorType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
+
+private enum class WriteStatus { Idle, Success, Error }
 
 /**
  * MED17-only screen for dual injection (port + direct) calibration.
@@ -75,6 +88,23 @@ private fun PortInjectorTab() {
     var scalingResult by remember { mutableStateOf<KrkteScalingResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // Write-to-binary state
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+
+    var pfiMapVersion by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { KrktePfiPreferences.mapChanged.collect { pfiMapVersion++ } }
+    val pfiMap = remember(pfiMapVersion) { KrktePfiPreferences.getSelectedMap() }
+    val pfiMapConfigured = pfiMap != null
+    val currentKrktePfi = pfiMap?.second?.zAxis?.firstOrNull()?.firstOrNull()
+    val canWrite = binLoaded && pfiMapConfigured && scalingResult != null && currentKrktePfi != null
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) { delay(3000); writeStatus = WriteStatus.Idle }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -118,15 +148,21 @@ private fun PortInjectorTab() {
                     Box {
                         OutlinedButton(onClick = { pfiPresetExpanded = true }) { Text("Presets") }
                         DropdownMenu(expanded = pfiPresetExpanded, onDismissRequest = { pfiPresetExpanded = false }) {
-                            InjectorPresets.all.filter { "PFI" in it.name }.forEach { preset ->
-                                DropdownMenuItem(
-                                    text = { Text("${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
-                                    onClick = {
-                                        oldFlowRate = preset.flowRateCcPerMin.toString()
-                                        oldPressure = preset.fuelPressureBar.toString()
-                                        pfiPresetExpanded = false
+                            InjectorPresets.engines.forEach { engine ->
+                                val presets = InjectorPresets.byEngineAndType(engine, InjectorType.PFI)
+                                if (presets.isNotEmpty()) {
+                                    DropdownMenuItem(text = { Text(engine, fontWeight = FontWeight.Bold) }, onClick = {}, enabled = false)
+                                    presets.forEach { preset ->
+                                        DropdownMenuItem(
+                                            text = { Text("  ${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
+                                            onClick = {
+                                                oldFlowRate = preset.flowRateCcPerMin.toString()
+                                                oldPressure = preset.fuelPressureBar.toString()
+                                                pfiPresetExpanded = false
+                                            }
+                                        )
                                     }
-                                )
+                                }
                             }
                         }
                     }
@@ -200,11 +236,20 @@ private fun PortInjectorTab() {
                         style = MaterialTheme.typography.bodyMedium,
                         fontFamily = FontFamily.Monospace
                     )
-                    Text(
-                        "KRKTE_PFI_new = KRKTE_PFI_old × %.6f".format(result.scaleFactor),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace
-                    )
+                    if (currentKrktePfi != null) {
+                        val newValue = currentKrktePfi * result.scaleFactor
+                        Text(
+                            "Current KRKTE_PFI: %.6f  →  New: %.6f".format(currentKrktePfi, newValue),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    } else {
+                        Text(
+                            "KRKTE_PFI_new = KRKTE_PFI_old × %.6f".format(result.scaleFactor),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                     if (result.warnings.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         result.warnings.forEach { warning ->
@@ -214,6 +259,104 @@ private fun PortInjectorTab() {
                 }
             }
         }
+
+        // Write to Binary
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Write to Binary", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 12.dp))
+
+                WritePfiPrerequisiteRow("BIN file", if (binLoaded) binFile.name else "Not loaded", binLoaded)
+                WritePfiPrerequisiteRow("KRKTE_PFI map", if (pfiMapConfigured) pfiMap!!.first.tableName else "Not configured", pfiMapConfigured)
+                WritePfiPrerequisiteRow("Scale factor", if (scalingResult != null) "%.6f".format(scalingResult!!.scaleFactor) else "Not calculated", scalingResult != null)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = { showWriteConfirmation = true }, enabled = canWrite) {
+                        Text("Write KRKTE_PFI")
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                if (!canWrite) {
+                    val message = when {
+                        !binLoaded -> "Load a BIN file to write."
+                        !pfiMapConfigured -> "Configure the KRKTE_PFI map definition in the Configuration screen."
+                        scalingResult == null -> "Calculate a scale factor first."
+                        else -> ""
+                    }
+                    if (message.isNotEmpty()) {
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    if (showWriteConfirmation && scalingResult != null && currentKrktePfi != null) {
+        val newValue = currentKrktePfi * scalingResult!!.scaleFactor
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write KRKTE_PFI") },
+            text = { Text("Write %.6f to KRKTE_PFI? (was %.6f)".format(newValue, currentKrktePfi)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showWriteConfirmation = false
+                    val pfiTable = KrktePfiPreferences.getSelectedMap()
+                    if (pfiTable != null) {
+                        try {
+                            val map = Map3d()
+                            map.zAxis = arrayOf(arrayOf(newValue))
+                            BinWriter.write(BinFilePreferences.file.value, pfiTable.first, map)
+                            writeStatus = WriteStatus.Success
+                        } catch (e: Exception) {
+                            writeStatus = WriteStatus.Error
+                        }
+                    }
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) { Text("No") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun WritePfiPrerequisiteRow(label: String, detail: String, met: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Warning,
+            contentDescription = if (met) "Ready" else "Not ready",
+            tint = if (met) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("$label:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(100.dp))
+        Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -225,11 +368,30 @@ private fun DirectInjectorTab() {
 
     var oldFlowRate by remember { mutableStateOf(DualInjectionPreferences.directInjectorFlowRateCcMin.let { if (it > 0) it.toString() else "" }) }
     var oldPressure by remember { mutableStateOf(DualInjectionPreferences.directInjectorFuelPressureBar.toString()) }
+    var oldDeadTime by remember { mutableStateOf(DualInjectionPreferences.directInjectorDeadTimeMs.let { if (it > 0) it.toString() else "" }) }
     var newFlowRate by remember { mutableStateOf("") }
     var newPressure by remember { mutableStateOf("200.0") }
+    var newDeadTime by remember { mutableStateOf("") }
 
     var scalingResult by remember { mutableStateOf<KrkteScalingResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Write-to-binary state
+    val binFile by BinFilePreferences.file.collectAsState()
+    val binLoaded = binFile.exists() && binFile.isFile
+
+    var gdiMapVersion by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { KrkteGdiPreferences.mapChanged.collect { gdiMapVersion++ } }
+    val gdiMap = remember(gdiMapVersion) { KrkteGdiPreferences.getSelectedMap() }
+    val gdiMapConfigured = gdiMap != null
+    val currentKrkteGdi = gdiMap?.second?.zAxis?.firstOrNull()?.firstOrNull()
+    val canWrite = binLoaded && gdiMapConfigured && scalingResult != null && currentKrkteGdi != null
+
+    var showWriteConfirmation by remember { mutableStateOf(false) }
+    var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
+    LaunchedEffect(writeStatus) {
+        if (writeStatus != WriteStatus.Idle) { delay(3000); writeStatus = WriteStatus.Idle }
+    }
 
     Column(
         modifier = Modifier
@@ -281,15 +443,21 @@ private fun DirectInjectorTab() {
                     Box {
                         OutlinedButton(onClick = { gdiPresetExpanded = true }) { Text("Presets") }
                         DropdownMenu(expanded = gdiPresetExpanded, onDismissRequest = { gdiPresetExpanded = false }) {
-                            InjectorPresets.all.filter { "GDI" in it.name }.forEach { preset ->
-                                DropdownMenuItem(
-                                    text = { Text("${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
-                                    onClick = {
-                                        oldFlowRate = preset.flowRateCcPerMin.toString()
-                                        oldPressure = preset.fuelPressureBar.toString()
-                                        gdiPresetExpanded = false
+                            InjectorPresets.engines.forEach { engine ->
+                                val presets = InjectorPresets.byEngineAndType(engine, InjectorType.GDI)
+                                if (presets.isNotEmpty()) {
+                                    DropdownMenuItem(text = { Text(engine, fontWeight = FontWeight.Bold) }, onClick = {}, enabled = false)
+                                    presets.forEach { preset ->
+                                        DropdownMenuItem(
+                                            text = { Text("  ${preset.name} (${preset.flowRateCcPerMin} cc/min @ ${preset.fuelPressureBar} bar)") },
+                                            onClick = {
+                                                oldFlowRate = preset.flowRateCcPerMin.toString()
+                                                oldPressure = preset.fuelPressureBar.toString()
+                                                gdiPresetExpanded = false
+                                            }
+                                        )
                                     }
-                                )
+                                }
                             }
                         }
                     }
@@ -298,6 +466,7 @@ private fun DirectInjectorTab() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = oldFlowRate, onValueChange = { oldFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
                     OutlinedTextField(value = oldPressure, onValueChange = { oldPressure = it }, label = { Text("Fuel Pressure (bar, absolute)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = oldDeadTime, onValueChange = { oldDeadTime = it }, label = { Text("Dead Time @ 14V (ms)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
         }
@@ -314,6 +483,7 @@ private fun DirectInjectorTab() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = newFlowRate, onValueChange = { newFlowRate = it }, label = { Text("Flow Rate (cc/min)") }, modifier = Modifier.weight(1f), singleLine = true)
                     OutlinedTextField(value = newPressure, onValueChange = { newPressure = it }, label = { Text("Fuel Pressure (bar, absolute)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = newDeadTime, onValueChange = { newDeadTime = it }, label = { Text("Dead Time @ 14V (ms)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
             }
         }
@@ -326,17 +496,18 @@ private fun DirectInjectorTab() {
                 val oldSpec = InjectorSpec(
                     flowRateCcPerMin = oldFlowRate.toDouble(),
                     fuelPressureBar = oldPressure.toDouble(),
-                    deadTimeMs = 0.0
+                    deadTimeMs = oldDeadTime.toDoubleOrNull() ?: 0.0
                 )
                 val newSpec = InjectorSpec(
                     flowRateCcPerMin = newFlowRate.toDouble(),
                     fuelPressureBar = newPressure.toDouble(),
-                    deadTimeMs = 0.0
+                    deadTimeMs = newDeadTime.toDoubleOrNull() ?: 0.0
                 )
                 scalingResult = InjectorScalingSolver.computeKrkteScaling(oldSpec, newSpec)
                 // Persist direct injector specs
                 oldFlowRate.toDoubleOrNull()?.let { DualInjectionPreferences.directInjectorFlowRateCcMin = it }
                 oldPressure.toDoubleOrNull()?.let { DualInjectionPreferences.directInjectorFuelPressureBar = it }
+                oldDeadTime.toDoubleOrNull()?.let { DualInjectionPreferences.directInjectorDeadTimeMs = it }
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Calculation error"
             }
@@ -362,11 +533,20 @@ private fun DirectInjectorTab() {
                         style = MaterialTheme.typography.bodyMedium,
                         fontFamily = FontFamily.Monospace
                     )
-                    Text(
-                        "KRKTE_GDI_new = KRKTE_GDI_old × %.6f".format(result.scaleFactor),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace
-                    )
+                    if (currentKrkteGdi != null) {
+                        val newValue = currentKrkteGdi * result.scaleFactor
+                        Text(
+                            "Current KRKTE_GDI: %.6f  →  New: %.6f".format(currentKrkteGdi, newValue),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    } else {
+                        Text(
+                            "KRKTE_GDI_new = KRKTE_GDI_old × %.6f".format(result.scaleFactor),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                     if (result.warnings.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         result.warnings.forEach { warning ->
@@ -376,6 +556,86 @@ private fun DirectInjectorTab() {
                 }
             }
         }
+
+        // Write to Binary
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Write to Binary", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 12.dp))
+
+                WritePfiPrerequisiteRow("BIN file", if (binLoaded) binFile.name else "Not loaded", binLoaded)
+                WritePfiPrerequisiteRow("KRKTE_GDI map", if (gdiMapConfigured) gdiMap!!.first.tableName else "Not configured", gdiMapConfigured)
+                WritePfiPrerequisiteRow("Scale factor", if (scalingResult != null) "%.6f".format(scalingResult!!.scaleFactor) else "Not calculated", scalingResult != null)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = { showWriteConfirmation = true }, enabled = canWrite) {
+                        Text("Write KRKTE_GDI")
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    AnimatedVisibility(visible = writeStatus != WriteStatus.Idle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (writeStatus == WriteStatus.Success) Icons.Default.Check else Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                if (writeStatus == WriteStatus.Success) "Written successfully" else "Write failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (writeStatus == WriteStatus.Success) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                if (!canWrite) {
+                    val message = when {
+                        !binLoaded -> "Load a BIN file to write."
+                        !gdiMapConfigured -> "Configure the KRKTE_GDI map definition in the Configuration screen."
+                        scalingResult == null -> "Calculate a scale factor first."
+                        else -> ""
+                    }
+                    if (message.isNotEmpty()) {
+                        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    if (showWriteConfirmation && scalingResult != null && currentKrkteGdi != null) {
+        val newValue = currentKrkteGdi * scalingResult!!.scaleFactor
+        AlertDialog(
+            onDismissRequest = { showWriteConfirmation = false },
+            title = { Text("Write KRKTE_GDI") },
+            text = { Text("Write %.6f to KRKTE_GDI? (was %.6f)".format(newValue, currentKrkteGdi)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showWriteConfirmation = false
+                    val gdiTable = KrkteGdiPreferences.getSelectedMap()
+                    if (gdiTable != null) {
+                        try {
+                            val map = Map3d()
+                            map.zAxis = arrayOf(arrayOf(newValue))
+                            BinWriter.write(BinFilePreferences.file.value, gdiTable.first, map)
+                            writeStatus = WriteStatus.Success
+                        } catch (e: Exception) {
+                            writeStatus = WriteStatus.Error
+                        }
+                    }
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWriteConfirmation = false }) { Text("No") }
+            }
+        )
     }
 }
 

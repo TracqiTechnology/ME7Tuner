@@ -28,7 +28,8 @@ class Med17LogParser {
         LDRPID,
         OPTIMIZER,
         FUEL_TRIM,
-        PFI_SPLIT
+        PFI_SPLIT,
+        PLSOL
     }
 
     fun interface ProgressCallback {
@@ -128,6 +129,7 @@ class Med17LogParser {
                             LogType.OPTIMIZER -> parseOptimizerRow(record, map)
                             LogType.FUEL_TRIM -> parseFuelTrimRow(record, map)
                             LogType.PFI_SPLIT -> parsePfiSplitRow(record, map)
+                            LogType.PLSOL -> parsePlsolRow(record, map)
                         }
                     } catch (_: NumberFormatException) {
                     } catch (_: ArrayIndexOutOfBoundsException) {
@@ -265,6 +267,25 @@ class Med17LogParser {
         getDouble(record, H.LAMBDA_CONTROL_ACTIVE_HEADER)?.let { map[H.LAMBDA_CONTROL_ACTIVE_HEADER]?.add(it) }
     }
 
+    private fun parsePlsolRow(
+        record: CSVRecord,
+        map: Map<Med17LogFileContract.Header, MutableList<Double>>
+    ) {
+        val time = getDouble(record, H.TIME_STAMP_COLUMN_HEADER) ?: return
+        val load = getDouble(record, H.ENGINE_LOAD_HEADER) ?: return
+        val pressure = getDouble(record, H.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER) ?: return
+        val baro = getDouble(record, H.BAROMETRIC_PRESSURE_HEADER) ?: return
+        val throttle = getDouble(record, H.THROTTLE_PLATE_ANGLE_HEADER) ?: return
+
+        map[H.TIME_STAMP_COLUMN_HEADER]!!.add(time)
+        map[H.ENGINE_LOAD_HEADER]!!.add(load)
+        map[H.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER]!!.add(pressure)
+        map[H.BAROMETRIC_PRESSURE_HEADER]!!.add(baro)
+        map[H.THROTTLE_PLATE_ANGLE_HEADER]!!.add(throttle)
+
+        getDouble(record, H.FUPSRLS_HEADER)?.let { map[H.FUPSRLS_HEADER]?.add(it) }
+    }
+
     private fun parsePfiSplitRow(
         record: CSVRecord,
         map: Map<Med17LogFileContract.Header, MutableList<Double>>
@@ -319,6 +340,10 @@ class Med17LogParser {
                              H.PFI_SPLIT_FACTOR_UNLIM_HEADER in columnIndices
                 hasTime && hasRpm && hasPfi
             }
+            LogType.PLSOL -> {
+                val hasLoad = H.ENGINE_LOAD_HEADER in columnIndices
+                hasTime && hasLoad && hasBoost && hasBaro && hasThrottle
+            }
         }
     }
 
@@ -365,6 +390,14 @@ class Med17LogParser {
                 map[H.RPM_COLUMN_HEADER] = mutableListOf()
                 map[H.PFI_SPLIT_FACTOR_HEADER] = mutableListOf()
                 map[H.PFI_SPLIT_FACTOR_UNLIM_HEADER] = mutableListOf()
+            }
+            LogType.PLSOL -> {
+                map[H.TIME_STAMP_COLUMN_HEADER] = mutableListOf()
+                map[H.ENGINE_LOAD_HEADER] = mutableListOf()
+                map[H.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER] = mutableListOf()
+                map[H.BAROMETRIC_PRESSURE_HEADER] = mutableListOf()
+                map[H.THROTTLE_PLATE_ANGLE_HEADER] = mutableListOf()
+                map[H.FUPSRLS_HEADER] = mutableListOf()
             }
         }
 

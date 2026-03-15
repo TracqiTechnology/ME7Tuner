@@ -22,13 +22,10 @@ import domain.model.kfzw.Kfzw
 import data.model.EcuPlatform
 import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
-import ui.components.ChartSeries
-import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
-import ui.theme.ChartRed
-import ui.theme.Primary
+import ui.components.TimingCharts
 
 private enum class WriteStatus { Idle, Success, Error }
 
@@ -78,29 +75,6 @@ fun KfzwopScreen() {
             val newZAxis = Kfzw.generateKfzw(input.xAxis, input.zAxis, newXAxis)
             Map3d(newXAxis, input.yAxis, newZAxis)
         } else null
-    }
-
-    // Timing comparison chart data — peak timing per RPM
-    val timingChartData = remember(outputKfzwop, kfzwopPair) {
-        val originalKfzwop = kfzwopPair?.second
-        val calculatedKfzwop = outputKfzwop
-        if (originalKfzwop == null || calculatedKfzwop == null) {
-            return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
-        }
-
-        val originalPeaks = originalKfzwop.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < originalKfzwop.zAxis.size) {
-                val peakTiming = originalKfzwop.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakTiming)
-            } else null
-        }
-        val calculatedPeaks = calculatedKfzwop.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < calculatedKfzwop.zAxis.size) {
-                val peakTiming = calculatedKfzwop.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakTiming)
-            } else null
-        }
-        Pair(originalPeaks, calculatedPeaks)
     }
 
     // Write prerequisites
@@ -185,12 +159,7 @@ fun KfzwopScreen() {
             kfzwopMapName = kfzwopPair?.first?.tableName,
             onSelectKfzwop = { showKfzwopPicker = true },
             editedXAxis = editedXAxis,
-            onXAxisChanged = { newData ->
-                editedXAxis = newData
-                editedInputMap?.let { currentMap ->
-                    editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
-                }
-            }
+            onXAxisChanged = { newData -> editedXAxis = newData }
         )
 
         ComparisonArea(
@@ -200,9 +169,7 @@ fun KfzwopScreen() {
             editedInputMap = editedInputMap,
             onInputMapChanged = { editedInputMap = it },
             originalKfzwop = kfzwopPair?.second,
-            outputKfzwop = outputKfzwop,
-            originalPeakTiming = timingChartData.first,
-            calculatedPeakTiming = timingChartData.second
+            outputKfzwop = outputKfzwop
         )
 
         WriteToBinarySection(
@@ -311,9 +278,7 @@ private fun ComparisonArea(
     editedInputMap: Map3d?,
     onInputMapChanged: (Map3d) -> Unit,
     originalKfzwop: Map3d?,
-    outputKfzwop: Map3d?,
-    originalPeakTiming: List<Pair<Double, Double>>,
-    calculatedPeakTiming: List<Pair<Double, Double>>
+    outputKfzwop: Map3d?
 ) {
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = selectedTab) {
@@ -330,7 +295,7 @@ private fun ComparisonArea(
             Tab(
                 selected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                text = { Text("Timing Comparison") }
+                text = { Text("Charts") }
             )
         }
 
@@ -345,10 +310,10 @@ private fun ComparisonArea(
                 calculatedKfzwop = outputKfzwop,
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
-            2 -> TimingComparisonChart(
-                originalPeakTiming = originalPeakTiming,
-                calculatedPeakTiming = calculatedPeakTiming,
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+            2 -> TimingCharts(
+                originalMap = originalKfzwop,
+                calculatedMap = outputKfzwop,
+                modifier = Modifier.fillMaxWidth().weight(1f)
             )
         }
     }
@@ -432,33 +397,6 @@ private fun SideBySideTables(
                 Text("No data", style = MaterialTheme.typography.bodyMedium)
             }
         }
-    }
-}
-
-@Composable
-private fun TimingComparisonChart(
-    originalPeakTiming: List<Pair<Double, Double>>,
-    calculatedPeakTiming: List<Pair<Double, Double>>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        LineChart(
-            series = listOf(
-                ChartSeries(
-                    name = "Original Peak Timing",
-                    points = originalPeakTiming,
-                    color = Primary
-                ),
-                ChartSeries(
-                    name = "Calculated Peak Timing",
-                    points = calculatedPeakTiming,
-                    color = ChartRed
-                )
-            ),
-            title = "Peak Timing Comparison",
-            xAxisLabel = "RPM",
-            yAxisLabel = "Timing (grad KW)"
-        )
     }
 }
 

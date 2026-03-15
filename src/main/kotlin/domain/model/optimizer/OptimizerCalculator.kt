@@ -1206,7 +1206,8 @@ object OptimizerCalculator {
         logSummaries: List<LogSummary> = emptyList(),
         kfldrq0Map: Map3d? = null,
         kfldrq1Map: Map3d? = null,
-        kfldrq2Map: Map3d? = null
+        kfldrq2Map: Map3d? = null,
+        fupsrlsValues: List<Double>? = null
     ): OptimizerResult {
         val filteredData = filterWotEntriesWithOptionalData(values, minThrottleAngle)
         val wotEntries = filteredData.wotEntries
@@ -1294,7 +1295,15 @@ object OptimizerCalculator {
         val safetyModes = SafetyModeDetector.detect(wotEntries)
         val transients = TransientDetector.detect(wotEntries, ldrxnTarget)
         val environmental = EnvironmentalCorrector.analyzeSummary(wotEntries)
-        val throttleCheck = ThrottleBodyChecker.check(wotEntries, turboMaxed = false)
+        // ── Mechanical limit detection (turbo/MAP checks — no MAF data) ──
+        val mechanicalLimits = MechanicalLimitDetector.detect(
+            wotEntries = wotEntries,
+            mafValues = null,
+            injectorOnTimes = null,
+            rpms = wotEntries.map { it.rpm },
+            mafVoltages = null
+        )
+        val throttleCheck = ThrottleBodyChecker.check(wotEntries, turboMaxed = mechanicalLimits.turboMaxed)
 
         // PID dynamics (if gain maps available)
         val pidSimulation = if (kfldrq0Map != null || kfldrq1Map != null || kfldrq2Map != null) {
@@ -1320,6 +1329,7 @@ object OptimizerCalculator {
 
         // ── Collect warnings ────────────────────────────────────────
         val v4Warnings = mutableListOf<String>()
+        v4Warnings.addAll(mechanicalLimits.warnings)
         v4Warnings.addAll(safetyModes.warnings)
         v4Warnings.addAll(transients.warnings)
         v4Warnings.addAll(environmental.warnings)
@@ -1333,6 +1343,16 @@ object OptimizerCalculator {
             v4Warnings.add("INFO: PID: $rec")
         }
 
+        // fupsrls_w convergence check
+        v4Warnings.addAll(checkFupsrlsConvergence(fupsrlsValues))
+
+        // Altitude PID gain warning
+        if (pidSimulation != null && environmental.avgBaroPressure < 950.0) {
+            val altitudeM = (1 - Math.pow(environmental.avgBaroPressure / 1013.25, 0.190284)) * 44330
+            v4Warnings.add("INFO: PID: High altitude (~${String.format("%.0f", altitudeM)}m, baro ${String.format("%.0f", environmental.avgBaroPressure)} mbar): " +
+                "PID gains may need altitude adjustment. Consider KFLDRQ0H/Q1H/Q2H if available in your ECU.")
+        }
+
         val allWarnings = interventionWarnings + v4Warnings
 
         return OptimizerResult(
@@ -1344,7 +1364,7 @@ object OptimizerCalculator {
             warnings = allWarnings,
             wotEntries = wotEntries,
             simulationResults = syntheticSimResults,
-            mechanicalLimits = MechanicalLimitDetector.MechanicalLimits(),
+            mechanicalLimits = mechanicalLimits,
             simulatedPressureSeries = emptyList(),
             simulatedLoadSeries = emptyList(),
             chainDiagnosis = chainDiagnosis,
@@ -1363,5 +1383,29 @@ object OptimizerCalculator {
             pidSimulation = pidSimulation,
             kfprgSolverResult = null
         )
+    }
+
+    /**
+     * Check fupsrls_w (live VE correction factor) for convergence.
+     * High variance indicates the adaptive VE model hasn't settled, making
+     * all pressure→load conversions unreliable.
+     */
+    private fun checkFupsrlsConvergence(fupsrlsValues: List<Double>?): List<String> {
+        if (fupsrlsValues.isNullOrEmpty()) return emptyList()
+
+        val mean = fupsrlsValues.average()
+        if (mean == 0.0) return emptyList()
+
+        val variance = fupsrlsValues.map { (it - mean) * (it - mean) }.average()
+        val stddev = kotlin.math.sqrt(variance)
+        val cv = stddev / kotlin.math.abs(mean)
+
+        val warnings = mutableListOf<String>()
+        if (cv > 0.05) {
+            warnings.add("WARNING: VE adaptation (fupsrls_w) shows high variance — may not have converged. " +
+                "Mean: ${String.format("%.3f", mean)}, range: ${String.format("%.3f", fupsrlsValues.min())}–${String.format("%.3f", fupsrlsValues.max())}, " +
+                "CV: ${String.format("%.1f", cv * 100)}%. Allow more adaptation drives before tuning.")
+        }
+        return warnings
     }
 }

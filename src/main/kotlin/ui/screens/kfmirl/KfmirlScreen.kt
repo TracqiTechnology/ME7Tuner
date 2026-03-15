@@ -24,15 +24,12 @@ import domain.math.map.Map3d
 import data.model.EcuPlatform
 import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
-import ui.components.ChartSeries
-import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
 import ui.components.ParameterField
+import ui.components.TimingCharts
 import ui.navigation.CalibrationTab
-import ui.theme.ChartRed
-import ui.theme.Primary
 
 private enum class WriteStatus { Idle, Success, Error }
 
@@ -115,29 +112,6 @@ fun KfmirlScreen() {
                 inverse
             } else null
         }
-    }
-
-    // Load comparison chart data — peak load per RPM
-    val loadChartData = remember(outputKfmirl, kfmirlPair) {
-        val originalKfmirl = kfmirlPair?.second
-        val calculatedKfmirl = outputKfmirl
-        if (originalKfmirl == null || calculatedKfmirl == null) {
-            return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
-        }
-
-        val originalPeaks = originalKfmirl.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < originalKfmirl.zAxis.size) {
-                val peakLoad = originalKfmirl.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakLoad)
-            } else null
-        }
-        val calculatedPeaks = calculatedKfmirl.yAxis.mapIndexedNotNull { i, rpm ->
-            if (i < calculatedKfmirl.zAxis.size) {
-                val peakLoad = calculatedKfmirl.zAxis[i].maxOrNull() ?: 0.0
-                Pair(rpm, peakLoad)
-            } else null
-        }
-        Pair(originalPeaks, calculatedPeaks)
     }
 
     // Write prerequisites — scalar mode only needs KFMIRL configured
@@ -271,9 +245,7 @@ fun KfmirlScreen() {
             editedInputMap = editedInputMap,
             onInputMapChanged = { editedInputMap = it },
             originalKfmirl = kfmirlPair?.second,
-            outputKfmirl = outputKfmirl,
-            originalPeakLoad = loadChartData.first,
-            calculatedPeakLoad = loadChartData.second
+            outputKfmirl = outputKfmirl
         )
 
         WriteToBinarySection(
@@ -453,9 +425,7 @@ private fun ComparisonArea(
     editedInputMap: Map3d?,
     onInputMapChanged: (Map3d) -> Unit,
     originalKfmirl: Map3d?,
-    outputKfmirl: Map3d?,
-    originalPeakLoad: List<Pair<Double, Double>>,
-    calculatedPeakLoad: List<Pair<Double, Double>>
+    outputKfmirl: Map3d?
 ) {
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = selectedTab) {
@@ -472,7 +442,7 @@ private fun ComparisonArea(
             Tab(
                 selected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                text = { Text("Load Comparison") }
+                text = { Text("Charts") }
             )
         }
 
@@ -489,10 +459,14 @@ private fun ComparisonArea(
                 calculatedKfmirl = outputKfmirl,
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
-            2 -> LoadComparisonChart(
-                originalPeakLoad = originalPeakLoad,
-                calculatedPeakLoad = calculatedPeakLoad,
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+            2 -> TimingCharts(
+                originalMap = originalKfmirl,
+                calculatedMap = outputKfmirl,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                heatmapTitle = "Load Delta (Original − Calculated)",
+                sliceTitle = "Load vs RPM at Selected Torques",
+                sliceYLabel = "Load (%)",
+                contourTitle = "Load Contours"
             )
         }
     }
@@ -543,10 +517,18 @@ private fun SideBySideTables(
     calculatedKfmirl: Map3d?,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Side-by-side view of the original $kfmirlLabel from the binary and the calculated inverse. " +
+                "Differences highlight where the torque-to-load mapping will change.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Text(
                 text = "$kfmirlLabel (Original)",
@@ -578,33 +560,7 @@ private fun SideBySideTables(
                 Text("No data", style = MaterialTheme.typography.bodyMedium)
             }
         }
-    }
-}
-
-@Composable
-private fun LoadComparisonChart(
-    originalPeakLoad: List<Pair<Double, Double>>,
-    calculatedPeakLoad: List<Pair<Double, Double>>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        LineChart(
-            series = listOf(
-                ChartSeries(
-                    name = "Original Peak Load",
-                    points = originalPeakLoad,
-                    color = Primary
-                ),
-                ChartSeries(
-                    name = "Calculated Peak Load",
-                    points = calculatedPeakLoad,
-                    color = ChartRed
-                )
-            ),
-            title = "Peak Load Comparison",
-            xAxisLabel = "RPM",
-            yAxisLabel = "Load (%)"
-        )
+        }
     }
 }
 

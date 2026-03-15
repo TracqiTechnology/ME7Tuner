@@ -4,6 +4,7 @@ import data.contract.Me7LogFileContract
 import data.contract.Med17LogFileContract
 import data.parser.xdf.XdfParser
 import data.preferences.closedloopfueling.ClosedLoopFuelingLogPreferences
+import data.preferences.kfzw.KfzwSwitchMapPreferences
 import data.preferences.kfldiopu.KfldioPuPreferences
 import data.preferences.kfldrq0.Kfldrq0Preferences
 import data.preferences.kfldrq1.Kfldrq1Preferences
@@ -109,6 +110,20 @@ object ProfileManager {
             med17LogHeaders[header.name] = Med17LogHeaderPreference.getHeader(header)
         }
 
+        // Export multi-map definitions (e.g. KFZW switch maps)
+        val multiMapDefs = mutableMapOf<String, List<MapDefinitionRef>>()
+        val switchMaps = KfzwSwitchMapPreferences.getAllSelectedMaps()
+        if (switchMaps.isNotEmpty()) {
+            multiMapDefs["KFZW_SWITCH"] = switchMaps.mapNotNull { (_, pair) ->
+                val (def, _) = pair ?: return@mapNotNull null
+                MapDefinitionRef(
+                    tableName = def.tableName,
+                    tableDescription = def.tableDescription,
+                    unit = def.zAxis.unit
+                )
+            }
+        }
+
         return ConfigurationProfile(
             name = name,
             description = "",
@@ -164,7 +179,8 @@ object ProfileManager {
                 numDirectInjectors = DualInjectionPreferences.numDirectInjectors
             ),
             logHeaders = logHeaders,
-            med17LogHeaders = med17LogHeaders
+            med17LogHeaders = med17LogHeaders,
+            multiMapDefinitions = multiMapDefs
         )
     }
 
@@ -274,6 +290,30 @@ object ProfileManager {
         for ((headerName, value) in profile.med17LogHeaders) {
             val header = Med17LogFileContract.Header.entries.firstOrNull { it.name == headerName } ?: continue
             Med17LogHeaderPreference.setHeader(header, value)
+        }
+
+        // Apply multi-map definitions (e.g. KFZW switch maps)
+        val switchRefs = profile.multiMapDefinitions["KFZW_SWITCH"]
+        if (switchRefs != null) {
+            KfzwSwitchMapPreferences.clear()
+            for (ref in switchRefs) {
+                // Same fuzzy matching logic as single maps
+                val exact = tableDefs.firstOrNull { def ->
+                    ref.tableName == def.tableName &&
+                        ref.tableDescription == def.tableDescription &&
+                        ref.unit == def.zAxis.unit
+                }
+                val fuzzyName = if (exact == null) {
+                    tableDefs.firstOrNull { def ->
+                        def.tableName.startsWith(ref.tableName, ignoreCase = true) ||
+                            ref.tableName.startsWith(def.tableName, ignoreCase = true)
+                    }
+                } else null
+                val matched = exact ?: fuzzyName
+                if (matched != null) {
+                    KfzwSwitchMapPreferences.addMap(matched)
+                }
+            }
         }
     }
 

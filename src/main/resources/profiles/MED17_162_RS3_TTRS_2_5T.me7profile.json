@@ -35,8 +35,8 @@
             "unit": "Grad KW"
         },
         "KFZW": {
-            "tableName": "Delta ignition during warm-up",
-            "tableDescription": "KFZWWLNM tyzwwlnm(Grad C) vs nmot(1/min) = Grad KW",
+            "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Gasoline 0",
+            "tableDescription": "IgCtl_agGDIout_GM_0_ Gasoline 0 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
             "unit": "Grad KW"
         },
         "KFLDRL": {
@@ -164,5 +164,39 @@
         "FUEL_PRESSURE_DIRECT_HEADER": "pfuel_hde_w",
         "FUEL_PRESSURE_PORT_HEADER": "pfuel_pfi_w",
         "PORT_FUEL_SHARE_HEADER": "tqfuel_pfi_w"
+    },
+    "multiMapDefinitions": {
+        "KFZW_SWITCH": [
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Gasoline 0",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Gasoline 0 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            },
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Ethanol 0",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Ethanol 0 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            },
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Gasoline 1",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Gasoline 1 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            },
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Ethanol 1",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Ethanol 1 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            },
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Gasoline 2",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Gasoline 2 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            },
+            {
+                "tableName": "Ignition GDI ex cam control/std valve lift (MAIN) Ethanol 2",
+                "tableDescription": "IgCtl_agGDIout_GM_0_ Ethanol 2 rlzwgru_w(%) vs nmot_w(1/min) = Grad KW",
+                "unit": "Grad KW"
+            }
+        ]
     }
 }

@@ -1,14 +1,31 @@
 package domain.model.presets
 
-data class InjectorPreset(val name: String, val flowRateCcPerMin: Double, val fuelPressureBar: Double)
+enum class InjectorType { GDI, PFI }
+
+data class InjectorPreset(
+    val name: String,
+    val flowRateCcPerMin: Double,
+    val fuelPressureBar: Double,
+    val engine: String = "EA855 2.5T",
+    val type: InjectorType = if ("GDI" in name) InjectorType.GDI else InjectorType.PFI
+)
 
 object InjectorPresets {
-    // GDI injectors
-    val DAZA_GDI = InjectorPreset("DAZA GDI (Stock RS3 FL)", 450.0, 200.0)
-    val DNWA_GDI = InjectorPreset("DNWA GDI (Stock RS3 PFL)", 380.0, 200.0)
-    // PFI injectors
-    val DAZA_PFI = InjectorPreset("DAZA PFI (Stock RS3 FL)", 270.0, 5.0)
-    val DNWA_PFI = InjectorPreset("DNWA PFI (Stock RS3 PFL)", 220.0, 5.0)
+    // EA855 EVO 2.5T
+    val DAZA_GDI = InjectorPreset("DAZA GDI (Stock RS3 FL)", 450.0, 200.0, "EA855 2.5T", InjectorType.GDI)
+    val DNWA_GDI = InjectorPreset("DNWA GDI (Stock RS3 PFL)", 380.0, 200.0, "EA855 2.5T", InjectorType.GDI)
+    val DAZA_PFI = InjectorPreset("DAZA PFI (Stock RS3 FL)", 270.0, 5.0, "EA855 2.5T", InjectorType.PFI)
+    val DNWA_PFI = InjectorPreset("DNWA PFI (Stock RS3 PFL)", 220.0, 5.0, "EA855 2.5T", InjectorType.PFI)
+
+    // EA825 4.0T — TODO: need real specs
+    // 5.2 V10 FSI — TODO: need real specs
 
     val all = listOf(DAZA_GDI, DNWA_GDI, DAZA_PFI, DNWA_PFI)
+
+    /** All engines that have at least one preset. */
+    val engines: List<String> get() = all.map { it.engine }.distinct()
+
+    fun byEngine(engine: String) = all.filter { it.engine == engine }
+    fun byType(type: InjectorType) = all.filter { it.type == type }
+    fun byEngineAndType(engine: String, type: InjectorType) = all.filter { it.engine == engine && it.type == type }
 }

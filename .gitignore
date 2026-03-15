@@ -4,6 +4,7 @@
 /.idea
 /.claude
 CLAUDE.md
+.claudeignore
 
 # Private documentation (only calibration-guide.md and images/ are public)
 documentation/*.md

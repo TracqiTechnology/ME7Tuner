@@ -24,4 +24,8 @@ object PlsolPreferences {
     var rpm: Int
         get() = prefs.get("rpm_preference", "6000").toInt()
         set(value) = prefs.put("rpm_preference", value.toString())
+
+    var lastDirectory: String
+        get() = prefs.get("last_directory", "")
+        set(value) = prefs.put("last_directory", value)
 }

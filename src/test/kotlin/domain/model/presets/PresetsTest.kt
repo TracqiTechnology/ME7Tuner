@@ -2,6 +2,7 @@ package domain.model.presets
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class PresetsTest {
@@ -101,8 +102,72 @@ class PresetsTest {
 
     @Test
     fun `GDI injectors have higher pressure than PFI`() {
-        val gdiMin = InjectorPresets.all.filter { "GDI" in it.name }.minOf { it.fuelPressureBar }
-        val pfiMax = InjectorPresets.all.filter { "PFI" in it.name }.maxOf { it.fuelPressureBar }
+        val gdiMin = InjectorPresets.byType(InjectorType.GDI).minOf { it.fuelPressureBar }
+        val pfiMax = InjectorPresets.byType(InjectorType.PFI).maxOf { it.fuelPressureBar }
         assertTrue(gdiMin > pfiMax, "GDI pressure ($gdiMin) must exceed PFI pressure ($pfiMax)")
+    }
+
+    @Test
+    fun `byEngine returns only presets for that engine`() {
+        val ea855 = InjectorPresets.byEngine("EA855 2.5T")
+        assertTrue(ea855.isNotEmpty())
+        ea855.forEach { assertEquals("EA855 2.5T", it.engine) }
+    }
+
+    @Test
+    fun `byType returns only presets of that type`() {
+        val gdi = InjectorPresets.byType(InjectorType.GDI)
+        val pfi = InjectorPresets.byType(InjectorType.PFI)
+        assertTrue(gdi.isNotEmpty())
+        assertTrue(pfi.isNotEmpty())
+        gdi.forEach { assertEquals(InjectorType.GDI, it.type) }
+        pfi.forEach { assertEquals(InjectorType.PFI, it.type) }
+    }
+
+    @Test
+    fun `byEngineAndType filters correctly`() {
+        val result = InjectorPresets.byEngineAndType("EA855 2.5T", InjectorType.GDI)
+        assertTrue(result.isNotEmpty())
+        result.forEach {
+            assertEquals("EA855 2.5T", it.engine)
+            assertEquals(InjectorType.GDI, it.type)
+        }
+    }
+
+    @Test
+    fun `all injector presets have engine and type set`() {
+        InjectorPresets.all.forEach {
+            assertTrue(it.engine.isNotBlank(), "${it.name} must have an engine")
+        }
+    }
+
+    // ── Fuel blend with custom endpoints ─────────────────────────
+
+    @Test
+    fun `custom blend endpoints produce different results`() {
+        val customE0 = FuelPreset("Custom E0", 0.75, 14.5)
+        val customE100 = FuelPreset("Custom E100", 0.80, 8.5)
+        val defaultBlend = FuelPresets.blend(50.0)
+        val customBlend = FuelPresets.blend(50.0, customE0, customE100)
+        assertNotEquals(defaultBlend.densityGPerCc, customBlend.densityGPerCc)
+        assertNotEquals(defaultBlend.stoichAfr, customBlend.stoichAfr)
+    }
+
+    @Test
+    fun `custom blend at 0 pct returns e0 values`() {
+        val customE0 = FuelPreset("Custom E0", 0.75, 14.5)
+        val customE100 = FuelPreset("Custom E100", 0.80, 8.5)
+        val result = FuelPresets.blend(0.0, customE0, customE100)
+        assertEquals(0.75, result.densityGPerCc, 1e-9)
+        assertEquals(14.5, result.stoichAfr, 1e-9)
+    }
+
+    @Test
+    fun `custom blend at 100 pct returns e100 values`() {
+        val customE0 = FuelPreset("Custom E0", 0.75, 14.5)
+        val customE100 = FuelPreset("Custom E100", 0.80, 8.5)
+        val result = FuelPresets.blend(100.0, customE0, customE100)
+        assertEquals(0.80, result.densityGPerCc, 1e-9)
+        assertEquals(8.5, result.stoichAfr, 1e-9)
     }
 }

@@ -25,8 +25,8 @@ class Med17KfzwScreenTest : Med17ScreenTestBase() {
         assertNotNull(kfzw, "Profile should resolve KFZW map preference")
         assertNotNull(kfmiop, "Profile should resolve KFMIOP map preference")
         assertTrue(
-            kfzw.first.tableName.contains("Delta ignition", ignoreCase = true),
-            "KFZW table name should match, got '${kfzw.first.tableName}'"
+            kfzw.first.tableName.contains("Ignition GDI", ignoreCase = true),
+            "KFZW table name should match DS1 ignition switch map, got '${kfzw.first.tableName}'"
         )
     }
 

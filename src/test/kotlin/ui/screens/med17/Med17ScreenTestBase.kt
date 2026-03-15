@@ -36,7 +36,7 @@ abstract class Med17ScreenTestBase {
         const val KFLDRL_TITLE = "KF to linearize boost pressure = fTV"
         const val KFLDIMX_TITLE = "LDR I controller limitation map"
         const val KFZWOP_TITLE = "Opt model ref ignition"
-        const val KFZW_TITLE = "Delta ignition during warm-up"
+        const val KFZW_TITLE = "Ignition GDI ex cam control/std valve lift (MAIN) Gasoline 0"
         const val KRKTE_GDI_TITLE = "Conv rel fuel mass rk into effective inj time te"
         const val KRKTE_PFI_TITLE = "Conv rel fuel mass rk to effective inj time te or intake man inj PFI"
         const val WASTEGATE_TITLE = "Precontrol wastegate for LDR inactive"

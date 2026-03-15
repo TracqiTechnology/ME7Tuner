@@ -399,11 +399,13 @@ fun OptimizerScreen() {
                             val summaries = mutableListOf<domain.model.optimizer.LogSummary>()
 
                             // Parse merged data for main analysis — platform-aware
+                            var rawMed17Values: Map<data.contract.Med17LogFileContract.Header, List<Double>>? = null
                             val mergedValues = if (isMed17) {
                                 val med17Parser = Med17LogParser()
                                 val med17Values = med17Parser.parseLogDirectory(
                                     Med17LogParser.LogType.OPTIMIZER, selectedDir
                                 ) { _, _ -> }
+                                rawMed17Values = med17Values
                                 Med17LogAdapter.toMe7OptimizerFormat(med17Values)
                             } else {
                                 val parser = Me7LogParser()
@@ -451,7 +453,8 @@ fun OptimizerScreen() {
                                     logSummaries = summaries,
                                     kfldrq0Map = kfldrq0Pair?.second,
                                     kfldrq1Map = kfldrq1Pair?.second,
-                                    kfldrq2Map = kfldrq2Pair?.second
+                                    kfldrq2Map = kfldrq2Pair?.second,
+                                    fupsrlsValues = rawMed17Values?.get(data.contract.Med17LogFileContract.Header.FUPSRLS_HEADER)
                                 )
                             } else {
                                 OptimizerCalculator.analyze(

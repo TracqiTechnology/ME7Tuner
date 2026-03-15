@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -220,6 +221,7 @@ fun MapTable(
                                         .size(CELL_WIDTH, CELL_HEIGHT)
                                         .drawBehind { drawRect(bgColor) }
                                         .border(0.5.dp, Color.Black)
+                                        .focusProperties { canFocus = false }
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null
@@ -238,6 +240,7 @@ fun MapTable(
                                 ) {
                                     if (isEditing && editable) {
                                         val focusRequester = remember { FocusRequester() }
+                                        var hadFocus by remember { mutableStateOf(false) }
                                         BasicTextField(
                                             value = editText,
                                             onValueChange = { editText = it },
@@ -252,7 +255,10 @@ fun MapTable(
                                                 .fillMaxSize()
                                                 .padding(2.dp)
                                                 .focusRequester(focusRequester)
-                                                .onFocusChanged { if (!it.isFocused) commitEdit() }
+                                                .onFocusChanged {
+                                                    if (it.isFocused) hadFocus = true
+                                                    else if (hadFocus) commitEdit()
+                                                }
                                         )
                                         LaunchedEffect(Unit) { focusRequester.requestFocus() }
                                     } else {
