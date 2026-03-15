@@ -53,12 +53,12 @@ class Med17MultiVariantTest {
         private val profileJson = Json { ignoreUnknownKeys = true }
 
         val VARIANTS = listOf(
-            Variant("404A", "technical/med17/Normal XDF/404A_normal.xdf", "technical/med17/OTS tunes/404A/MED17_1_62_STOCK.bin"),
-            Variant("404E", "technical/med17/Normal XDF/404E_normal.xdf", "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin"),
-            Variant("404G", "technical/med17/Normal XDF/404G_normal.xdf", "technical/med17/OTS tunes/404G/MED17_1_62_STOCK.bin"),
-            Variant("404H", "technical/med17/Normal XDF/404H_normal.xdf", "technical/med17/OTS tunes/404H/MED17_1_62_STOCK.bin"),
-            Variant("404J", "technical/med17/Normal XDF/404J_normal.xdf", "technical/med17/OTS tunes/404J/MED17_1_62_STOCK.bin"),
-            Variant("404L", "technical/med17/Normal XDF/404L_normal.xdf", "technical/med17/OTS tunes/404L/MED17_1_62_8S0907404L__0001_STOCK.bin")
+            Variant("404A", "example/med17/404A/404A_normal.xdf", "example/med17/404A/MED17_1_62_STOCK.bin"),
+            Variant("404E", "example/med17/404E/404E_normal.xdf", "example/med17/404E/MED17_1_62_STOCK.bin"),
+            Variant("404G", "example/med17/404G/404G_normal.xdf", "example/med17/404G/MED17_1_62_STOCK.bin"),
+            Variant("404H", "example/med17/404H/404H_normal.xdf", "example/med17/404H/MED17_1_62_STOCK.bin"),
+            Variant("404J", "example/med17/404J/404J_normal.xdf", "example/med17/404J/MED17_1_62_STOCK.bin"),
+            Variant("404L", "example/med17/404L/404L_normal.xdf", "example/med17/404L/MED17_1_62_8S0907404L__0001_STOCK.bin")
         )
 
         private fun loadProfile(): ConfigurationProfile {

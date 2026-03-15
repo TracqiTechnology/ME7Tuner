@@ -258,7 +258,7 @@ class ProfileManagerTest {
     fun `MED17 profile resolves all 14 maps against 404E Normal XDF`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         val projectRoot = java.io.File(System.getProperty("user.dir"))
-        val xdfFile = java.io.File(projectRoot, "technical/med17/Normal XDF/404E_normal.xdf")
+        val xdfFile = java.io.File(projectRoot, "example/med17/404E/404E_normal.xdf")
         if (!xdfFile.exists()) {
             println("SKIP: 404E XDF not available at ${xdfFile.absolutePath}")
             return

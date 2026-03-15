@@ -29,8 +29,8 @@ class Med17WorkflowCalculatorTest {
 
     companion object {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
-        private val XDF_404E = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        private val BIN_404E = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        private val XDF_404E = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        private val BIN_404E = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
     }
 
     private lateinit var savedPlatform: EcuPlatform
@@ -378,8 +378,8 @@ class Med17WorkflowCalculatorTest {
     data class Variant(val code: String, val xdfPath: String, val binPath: String)
 
     private val extraVariants = listOf(
-        Variant("404A", "technical/med17/Normal XDF/404A_normal.xdf", "technical/med17/OTS tunes/404A/MED17_1_62_STOCK.bin"),
-        Variant("404H", "technical/med17/Normal XDF/404H_normal.xdf", "technical/med17/OTS tunes/404H/MED17_1_62_STOCK.bin"),
+        Variant("404A", "example/med17/404A/404A_normal.xdf", "example/med17/404A/MED17_1_62_STOCK.bin"),
+        Variant("404H", "example/med17/404H/404H_normal.xdf", "example/med17/404H/MED17_1_62_STOCK.bin"),
     )
 
     private fun loadVariant(variant: Variant): List<Pair<TableDefinition, Map3d>>? {

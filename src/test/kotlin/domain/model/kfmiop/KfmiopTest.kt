@@ -20,12 +20,12 @@ class KfmiopTest {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
 
         // 404A fixtures (x-axis starts at 0 — the bug trigger)
-        private val XDF_404A = File(PROJECT_ROOT, "technical/med17/Normal XDF/404A_normal.xdf")
-        private val BIN_404A = File(PROJECT_ROOT, "technical/med17/OTS tunes/404A/MED17_1_62_STOCK.bin")
+        private val XDF_404A = File(PROJECT_ROOT, "example/med17/404A/404A_normal.xdf")
+        private val BIN_404A = File(PROJECT_ROOT, "example/med17/404A/MED17_1_62_STOCK.bin")
 
         // 404E fixtures (regression guard)
-        private val XDF_404E = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        private val BIN_404E = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        private val XDF_404E = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        private val BIN_404E = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
 
         private const val KFMIOP_TITLE = "Opt eng tq"
     }

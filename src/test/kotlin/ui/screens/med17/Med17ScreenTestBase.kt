@@ -6,6 +6,7 @@ import data.parser.xdf.TableDefinition
 import data.parser.xdf.XdfParser
 import data.preferences.bin.BinFilePreferences
 import data.preferences.platform.EcuPlatformPreference
+import data.preferences.xdf.XdfFilePreferences
 import data.profile.ConfigurationProfile
 import data.profile.ProfileManager
 import domain.math.map.Map3d
@@ -27,8 +28,8 @@ abstract class Med17ScreenTestBase {
 
     companion object {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
-        val XDF_FILE = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        val BIN_FILE = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        val XDF_FILE = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        val BIN_FILE = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
 
         // 404E Normal XDF map titles
         const val KFMIOP_TITLE = "Opt eng tq"
@@ -45,6 +46,7 @@ abstract class Med17ScreenTestBase {
     }
 
     protected lateinit var savedPlatform: EcuPlatform
+    protected lateinit var savedXdfFile: File
     protected lateinit var tableDefs: List<TableDefinition>
     protected lateinit var allMaps: List<Pair<TableDefinition, Map3d>>
     protected lateinit var tempBinFile: File
@@ -54,6 +56,7 @@ abstract class Med17ScreenTestBase {
     @BeforeTest
     open fun setUp() {
         savedPlatform = EcuPlatformPreference.platform
+        savedXdfFile = XdfFilePreferences.getStoredFile()
         EcuPlatformPreference.platform = EcuPlatform.MED17
 
         assertTrue(XDF_FILE.exists(), "XDF not found: ${XDF_FILE.absolutePath}")
@@ -73,6 +76,7 @@ abstract class Med17ScreenTestBase {
         tempBinFile = File.createTempFile("med17_test_", ".bin")
         BIN_FILE.copyTo(tempBinFile, overwrite = true)
         BinFilePreferences.setFile(tempBinFile)
+        XdfFilePreferences.setFile(XDF_FILE)
 
         stockBinCopy = File.createTempFile("med17_stock_", ".bin")
         BIN_FILE.copyTo(stockBinCopy, overwrite = true)
@@ -90,6 +94,7 @@ abstract class Med17ScreenTestBase {
     @AfterTest
     open fun tearDown() {
         EcuPlatformPreference.platform = savedPlatform
+        XdfFilePreferences.setFile(savedXdfFile)
         if (::tempBinFile.isInitialized && tempBinFile.exists()) {
             tempBinFile.delete()
         }
