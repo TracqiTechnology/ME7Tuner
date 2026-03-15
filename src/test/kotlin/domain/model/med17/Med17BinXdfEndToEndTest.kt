@@ -14,7 +14,7 @@ import kotlin.test.*
 /**
  * End-to-end tests for MED17 BIN + XDF parsing and map extraction.
  *
- * Uses the real 404E Normal XDF + stock BIN from technical/med17/.
+ * Uses the real 404E Normal XDF + stock BIN from example/med17/.
  * The vlmspec XDF is a definition-only file that produces 0×0 maps — we skip it.
  *
  * Validates:
@@ -28,8 +28,8 @@ class Med17BinXdfEndToEndTest {
 
     companion object {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
-        private val XDF_FILE = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        private val BIN_FILE = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        private val XDF_FILE = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        private val BIN_FILE = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
 
         // 404E normal XDF map titles (different from vlmspec names)
         private const val KFLDRL_TITLE = "KF to linearize boost pressure = fTV"
