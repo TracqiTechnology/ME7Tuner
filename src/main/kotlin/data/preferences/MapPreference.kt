@@ -3,6 +3,7 @@ package data.preferences
 import data.parser.bin.BinParser
 import data.parser.xdf.TableDefinition
 import domain.math.map.Map3d
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -15,13 +16,20 @@ open class MapPreference(
 ) {
     private val prefs = Preferences.userNodeForPackage(MapPreference::class.java)
 
-    private val _mapChanged = MutableSharedFlow<Pair<TableDefinition, Map3d>?>(extraBufferCapacity = 1)
+    private val _mapChanged = MutableSharedFlow<Pair<TableDefinition, Map3d>?>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val mapChanged: SharedFlow<Pair<TableDefinition, Map3d>?> = _mapChanged.asSharedFlow()
 
     init { MapPreferenceManager.add(this) }
 
     fun clear() {
-        runCatching { prefs.clear() }
+        runCatching {
+            prefs.remove(tableTitlePreference)
+            prefs.remove(tableDescriptionPreference)
+            prefs.remove(tableUnitPreference)
+        }
         _mapChanged.tryEmit(null)
     }
 

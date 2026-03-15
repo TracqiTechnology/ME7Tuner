@@ -12,12 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.Me7LogParser
+import data.parser.med17log.Med17LogAdapter
+import data.parser.med17log.Med17LogParser
 import data.parser.xdf.TableDefinition
 import data.preferences.MapPreference
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
 import data.preferences.kfldrl.KfldrlPreferences
 import data.preferences.ldrpid.LdrpidPreferences
+import data.preferences.platform.EcuPlatformPreference
+import data.model.EcuPlatform
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.ldrpid.LdrpidCalculator
@@ -58,19 +62,11 @@ fun LdrpidScreen() {
     var kfldimxMap by remember { mutableStateOf<Map3d?>(null) }
     var kfldimxXAxis by remember { mutableStateOf<Array<Array<Double>>?>(null) }
 
-    // Initialize maps from preferences
+    // Initialize maps from preferences (only set KFLDRL/KFLDIMX definitions, not empty zeros)
     LaunchedEffect(kfldrlPair, kfldimxPair) {
         if (kfldrlPair != null) {
-            val kfldrl = kfldrlPair.second
-            kfldrlMap = kfldrl
-            val emptyZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-            if (nonLinearMap == null) {
-                nonLinearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyZ)
-            }
-            val emptyLZ = Array(kfldrl.zAxis.size) { Array(kfldrl.zAxis[0].size) { 0.0 } }
-            if (linearMap == null) {
-                linearMap = Map3d(kfldrl.xAxis, kfldrl.yAxis, emptyLZ)
-            }
+            kfldrlMap = kfldrlPair.second
+            // Don't pre-fill nonLinearMap/linearMap with zeros — show "load log" prompt instead
         }
         if (kfldimxPair != null) {
             kfldimxMap = kfldimxPair.second
@@ -195,13 +191,25 @@ fun LdrpidScreen() {
                     progressValue = 0
                     scope.launch {
                         withContext(Dispatchers.IO) {
-                            val parser = Me7LogParser()
-                            val values = parser.parseLogDirectory(
-                                Me7LogParser.LogType.LDRPID, selectedDir
-                            ) { value, max ->
-                                progressValue = value
-                                progressMax = max
-                                showProgress = value < max - 1
+                            val values = if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+                                val med17Parser = Med17LogParser()
+                                val med17Values = med17Parser.parseLogDirectory(
+                                    Med17LogParser.LogType.LDRPID, selectedDir
+                                ) { value, max ->
+                                    progressValue = value
+                                    progressMax = max
+                                    showProgress = value < max - 1
+                                }
+                                Med17LogAdapter.toMe7LdrpidFormat(med17Values)
+                            } else {
+                                val parser = Me7LogParser()
+                                parser.parseLogDirectory(
+                                    Me7LogParser.LogType.LDRPID, selectedDir
+                                ) { value, max ->
+                                    progressValue = value
+                                    progressMax = max
+                                    showProgress = value < max - 1
+                                }
                             }
                             val kfldimxDef = KfldimxPreferences.getSelectedMap()
                             val kfldrlDef = KfldrlPreferences.getSelectedMap()
@@ -302,7 +310,10 @@ private fun LdrpidConfigCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Button(onClick = onLoadLogs) {
-                        Text("Load ME7 Logs")
+                        Text(
+                            if (EcuPlatformPreference.platform == EcuPlatform.MED17)
+                                "Load ScorpionEFI Logs" else "Load ME7 Logs"
+                        )
                     }
                     if (showProgress) {
                         Spacer(Modifier.height(4.dp))
@@ -373,7 +384,17 @@ private fun BoostTablesTab(
                     MapTable(map = nonLinearMap, editable = true, onMapChanged = { onNonLinearChanged(it) })
                 }
             } else {
-                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("No boost data loaded", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Click the load button above to load WOT log data",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
 
@@ -390,7 +411,9 @@ private fun BoostTablesTab(
                     MapTable(map = linearMap, editable = false)
                 }
             } else {
-                Text("No map data", style = MaterialTheme.typography.bodyMedium)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Calculated after log load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

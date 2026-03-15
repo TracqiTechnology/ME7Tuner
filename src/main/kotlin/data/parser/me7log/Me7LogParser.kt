@@ -12,7 +12,8 @@ class Me7LogParser {
         CLOSED_LOOP,
         LDRPID,
         KFVPDKSD,
-        OPTIMIZER
+        OPTIMIZER,
+        PLSOL
     }
 
     fun interface ProgressCallback {
@@ -184,6 +185,19 @@ class Me7LogParser {
                                     map[Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER]!!.add(baro)
                                     map[Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER]!!.add(absBoost)
                                 }
+                                LogType.PLSOL -> {
+                                    val time = record.get(timeColumnIndex).toDouble()
+                                    val engineLoad = record.get(engineLoadIndex).toDouble()
+                                    val absBoost = record.get(absoluteBoostPressureActualIndex).toDouble()
+                                    val baro = record.get(barometricPressureIndex).toDouble()
+                                    val throttle = record.get(throttlePlateAngleIndex).toDouble()
+
+                                    map[Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER]!!.add(time)
+                                    map[Me7LogFileContract.Header.ENGINE_LOAD_HEADER]!!.add(engineLoad)
+                                    map[Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER]!!.add(absBoost)
+                                    map[Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER]!!.add(baro)
+                                    map[Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER]!!.add(throttle)
+                                }
                                 LogType.OPTIMIZER -> {
                                     // Parse all required values first to ensure atomicity
                                     val time = record.get(timeColumnIndex).toDouble()
@@ -293,6 +307,7 @@ class Me7LogParser {
         LogType.LDRPID -> timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && selectedGearIndex != -1
         LogType.KFVPDKSD -> timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1
         LogType.OPTIMIZER -> timeColumnIndex != -1 && rpmColumnIndex != -1 && throttlePlateAngleIndex != -1 && wastegateDutyCycleIndex != -1 && barometricPressureIndex != -1 && absoluteBoostPressureActualIndex != -1 && requestedPressureIndex != -1 && requestedLoadIndex != -1 && engineLoadIndex != -1
+        LogType.PLSOL -> timeColumnIndex != -1 && engineLoadIndex != -1 && absoluteBoostPressureActualIndex != -1 && barometricPressureIndex != -1 && throttlePlateAngleIndex != -1
     }
 
     private fun generateMap(logType: LogType): Map<Me7LogFileContract.Header, MutableList<Double>> {
@@ -348,6 +363,13 @@ class Me7LogParser {
                 map[Me7LogFileContract.Header.MAF_GRAMS_PER_SECOND_HEADER] = mutableListOf()
                 map[Me7LogFileContract.Header.FUEL_INJECTOR_ON_TIME_HEADER] = mutableListOf()
                 map[Me7LogFileContract.Header.MAF_VOLTAGE_HEADER] = mutableListOf()
+            }
+            LogType.PLSOL -> {
+                map[Me7LogFileContract.Header.TIME_STAMP_COLUMN_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.ENGINE_LOAD_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.ABSOLUTE_BOOST_PRESSURE_ACTUAL_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.BAROMETRIC_PRESSURE_HEADER] = mutableListOf()
+                map[Me7LogFileContract.Header.THROTTLE_PLATE_ANGLE_HEADER] = mutableListOf()
             }
         }
 

@@ -12,10 +12,14 @@ data class Kfmiop(
     val maxBoostPressure: Double
 ) {
     companion object {
-        fun calculateKfmiop(baseKfmiop: Map3d, maxMapSensorLoad: Double, maxBoostPressureLoad: Double): Kfmiop {
+        fun calculateKfmiop(baseKfmiop: Map3d, maxMapSensorLoad: Double, maxBoostPressureLoad: Double): Kfmiop? {
             val xAxis = baseKfmiop.xAxis
             val yAxis = baseKfmiop.yAxis
             val zAxis = baseKfmiop.zAxis
+
+            if (xAxis.isEmpty() || yAxis.isEmpty() || zAxis.isEmpty() || zAxis[0].isEmpty()) {
+                return null
+            }
 
             val optimalLoad = Array(yAxis.size) { Array(xAxis.size) { 0.0 } }
 
@@ -38,7 +42,8 @@ data class Kfmiop(
 
             for (i in optimalLoad.indices) {
                 for (j in optimalLoad[i].indices) {
-                    kfmiop[i][j] = ((zAxis[i][j] / 100 * currentMaxLoad) / (zAxis[i][j] / 100 * maxMapSensorLoad) * zAxis[i][j]) * (rescaledXAxis[j] / xAxis[j])
+                    val axisRatio = if (xAxis[j] == 0.0) 1.0 else rescaledXAxis[j] / xAxis[j]
+                    kfmiop[i][j] = (currentMaxLoad / maxMapSensorLoad * zAxis[i][j]) * axisRatio
                     inputBoost[i][j] = (Plsol.plsol(1013.0, 1013.0, 0.0, 96.0, 0.106, (zAxis[i][j] / 100 * currentMaxLoad)) - 1013) * 0.0145038
                     outputBoost[i][j] = (Plsol.plsol(1013.0, 1013.0, 0.0, 96.0, 0.106, (kfmiop[i][j] / 100 * maxMapSensorLoad)) - 1013) * 0.0145038
                 }

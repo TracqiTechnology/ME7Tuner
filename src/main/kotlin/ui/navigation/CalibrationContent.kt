@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import ui.screens.closedloop.ClosedLoopScreen
 import ui.screens.dualinjection.DualInjectionScreen
 import ui.screens.fueling.FuelingScreen
+import ui.screens.fueltrim.FuelTrimScreen
 import ui.screens.kfmiop.KfmiopScreen
 import ui.screens.kfmirl.KfmirlScreen
 import ui.screens.kfvpdksd.KfvpdksdScreen
@@ -60,6 +61,7 @@ fun CalibrationContent(navState: NavigationState) {
                     autoFitDegree = navState.autoFitDegree
                 )
                 CalibrationTab.DUAL_INJECTION -> DualInjectionScreen()
+                CalibrationTab.FUEL_TRIM -> FuelTrimScreen()
                 CalibrationTab.PLSOL -> PlsolScreen(initialTab = navState.plsolTab)
                 CalibrationTab.KFMIOP -> KfmiopScreen()
                 CalibrationTab.KFMIRL -> KfmirlScreen()

@@ -77,6 +77,9 @@ object LdrpidCalculator {
     }
 
     fun calculateLinearTable(nonLinearTable: Array<Array<Double>>, kfldrlMap: Map3d): Map3d {
+        if (nonLinearTable.isEmpty() || nonLinearTable[0].isEmpty()) {
+            return Map3d(kfldrlMap.xAxis, kfldrlMap.yAxis, emptyArray())
+        }
         val linearTable = Array(nonLinearTable.size) { Array(nonLinearTable[0].size) { 0.0 } }
 
         for (i in nonLinearTable[0].indices) {
@@ -106,6 +109,12 @@ object LdrpidCalculator {
     }
 
     fun calculateKfldimx(nonLinearTable: Array<Array<Double>>, linearTable: Array<Array<Double>>, kfldrlMap: Map3d, kfldimxMap: Map3d): Map3d {
+        if (linearTable.isEmpty() || linearTable[0].isEmpty() || nonLinearTable.isEmpty()) {
+            return Map3d(kfldimxMap.xAxis, kfldimxMap.yAxis, emptyArray())
+        }
+        if (kfldimxMap.xAxis.size < 2) {
+            return Map3d(kfldimxMap.xAxis, kfldimxMap.yAxis, emptyArray())
+        }
         val linearBoostMax = Array(linearTable[0].size) { i ->
             val linearBoost = linearTable.map { it[i] * 68.9476 }
             Collections.max(linearBoost)

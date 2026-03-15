@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import data.parser.bin.BinParser
 import data.parser.me7log.Me7LogParser
+import data.parser.med17log.Med17LogAdapter
+import data.parser.med17log.Med17LogParser
 import data.parser.xdf.TableDefinition
 import data.preferences.bin.BinFilePreferences
 import data.preferences.kfldimx.KfldimxPreferences
@@ -31,6 +33,8 @@ import data.preferences.kfmirl.KfmirlPreferences
 import data.preferences.kfpbrk.KfpbrkPreferences
 import data.preferences.kfpbrknw.KfpbrknwPreferences
 import data.preferences.optimizer.OptimizerPreferences
+import data.preferences.platform.EcuPlatformPreference
+import data.model.EcuPlatform
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.optimizer.*
@@ -387,24 +391,40 @@ fun OptimizerScreen() {
 
                     scope.launch {
                         withContext(Dispatchers.IO) {
-                            val parser = Me7LogParser()
                             val minAngle = minThrottleAngle.toDoubleOrNull() ?: 80.0
+                            val isMed17 = EcuPlatformPreference.platform == EcuPlatform.MED17
 
                             // Parse each file individually for per-log summaries
                             val logFiles = selectedDir.listFiles()?.filter { it.isFile && it.name.endsWith(".csv", ignoreCase = true) } ?: emptyList()
                             val summaries = mutableListOf<domain.model.optimizer.LogSummary>()
 
-                            // Also merge all data for the main analysis
-                            val mergedValues = parser.parseLogDirectory(
-                                Me7LogParser.LogType.OPTIMIZER,
-                                selectedDir
-                            ) { _, _ -> }
+                            // Parse merged data for main analysis — platform-aware
+                            var rawMed17Values: Map<data.contract.Med17LogFileContract.Header, List<Double>>? = null
+                            val mergedValues = if (isMed17) {
+                                val med17Parser = Med17LogParser()
+                                val med17Values = med17Parser.parseLogDirectory(
+                                    Med17LogParser.LogType.OPTIMIZER, selectedDir
+                                ) { _, _ -> }
+                                rawMed17Values = med17Values
+                                Med17LogAdapter.toMe7OptimizerFormat(med17Values)
+                            } else {
+                                val parser = Me7LogParser()
+                                parser.parseLogDirectory(
+                                    Me7LogParser.LogType.OPTIMIZER, selectedDir
+                                ) { _, _ -> }
+                            }
 
-                            // Build per-log summaries
+                            // Build per-log summaries — platform-aware
                             for (logFile in logFiles) {
                                 try {
-                                    val fileParser = Me7LogParser()
-                                    val fileValues = fileParser.parseLogFile(Me7LogParser.LogType.OPTIMIZER, logFile)
+                                    val fileValues = if (isMed17) {
+                                        val fileParser = Med17LogParser()
+                                        val med17Values = fileParser.parseLogFile(Med17LogParser.LogType.OPTIMIZER, logFile)
+                                        Med17LogAdapter.toMe7OptimizerFormat(med17Values)
+                                    } else {
+                                        val fileParser = Me7LogParser()
+                                        fileParser.parseLogFile(Me7LogParser.LogType.OPTIMIZER, logFile)
+                                    }
                                     val wotEntries = OptimizerCalculator.filterWotEntries(fileValues, minAngle)
                                     if (wotEntries.isNotEmpty()) {
                                         val rpmRange = "${wotEntries.minOf { it.rpm }.toInt()} – ${wotEntries.maxOf { it.rpm }.toInt()}"
@@ -419,24 +439,43 @@ fun OptimizerScreen() {
                                 } catch (_: Exception) { /* skip unparseable files */ }
                             }
 
-                            val analysisResult = OptimizerCalculator.analyze(
-                                values = mergedValues,
-                                kfldrlMap = kfldrlPair?.second,
-                                kfldimxMap = kfldimxPair?.second,
-                                kfpbrkMap = kfpbrkPair?.second,
-                                kfmiopMap = kfmiopPair?.second,
-                                kfmirlMap = kfmirlPair?.second,
-                                ldrxnTarget = ldrxnTarget.toDoubleOrNull() ?: 191.0,
-                                toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
-                                minThrottleAngle = minAngle,
-                                kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
-                                kfurl = kfurl.toDoubleOrNull() ?: 0.106,
-                                kfurlMap = autoKfurlMap,  // Finding 2: RPM-dependent KFURL
-                                logSummaries = summaries,
-                                kfldrq0Map = kfldrq0Pair?.second,
-                                kfldrq1Map = kfldrq1Pair?.second,
-                                kfldrq2Map = kfldrq2Pair?.second
-                            )
+                            val analysisResult = if (isMed17) {
+                                OptimizerCalculator.analyzeMed17(
+                                    values = mergedValues,
+                                    kfldrlMap = kfldrlPair?.second,
+                                    kfldimxMap = kfldimxPair?.second,
+                                    kfmiopMap = kfmiopPair?.second,
+                                    kfmirlMap = kfmirlPair?.second,
+                                    ldrxnTarget = ldrxnTarget.toDoubleOrNull() ?: 191.0,
+                                    toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
+                                    minThrottleAngle = minAngle,
+                                    kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
+                                    logSummaries = summaries,
+                                    kfldrq0Map = kfldrq0Pair?.second,
+                                    kfldrq1Map = kfldrq1Pair?.second,
+                                    kfldrq2Map = kfldrq2Pair?.second,
+                                    fupsrlsValues = rawMed17Values?.get(data.contract.Med17LogFileContract.Header.FUPSRLS_HEADER)
+                                )
+                            } else {
+                                OptimizerCalculator.analyze(
+                                    values = mergedValues,
+                                    kfldrlMap = kfldrlPair?.second,
+                                    kfldimxMap = kfldimxPair?.second,
+                                    kfpbrkMap = kfpbrkPair?.second,
+                                    kfmiopMap = kfmiopPair?.second,
+                                    kfmirlMap = kfmirlPair?.second,
+                                    ldrxnTarget = ldrxnTarget.toDoubleOrNull() ?: 191.0,
+                                    toleranceMbar = toleranceMbar.toDoubleOrNull() ?: 30.0,
+                                    minThrottleAngle = minAngle,
+                                    kfldimxOverheadPercent = kfldimxOverhead.toDoubleOrNull() ?: 8.0,
+                                    kfurl = kfurl.toDoubleOrNull() ?: 0.106,
+                                    kfurlMap = autoKfurlMap,
+                                    logSummaries = summaries,
+                                    kfldrq0Map = kfldrq0Pair?.second,
+                                    kfldrq1Map = kfldrq1Pair?.second,
+                                    kfldrq2Map = kfldrq2Pair?.second
+                                )
+                            }
 
                             withContext(Dispatchers.Main) {
                                 result = analysisResult
@@ -446,7 +485,8 @@ fun OptimizerScreen() {
                     }
                 }
             }) {
-                Text("Load ME7 Log Directory")
+                val buttonLabel = if (EcuPlatformPreference.platform == EcuPlatform.MED17) "Load ScorpionEFI Log Directory" else "Load ME7 Log Directory"
+                Text(buttonLabel)
             }
 
             Text(logFileName, style = MaterialTheme.typography.bodySmall)

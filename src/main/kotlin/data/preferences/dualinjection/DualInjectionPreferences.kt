@@ -9,6 +9,7 @@ object DualInjectionPreferences {
         get() = prefs.get("port_flow_rate", "220.0").toDouble()
         set(value) = prefs.put("port_flow_rate", value.toString())
 
+    /** PFI rail pressure in bar gauge (relative to atmospheric). Typical range: 3–5 bar. */
     var portInjectorFuelPressureBar: Double
         get() = prefs.get("port_fuel_pressure", "4.0").toDouble()
         set(value) = prefs.put("port_fuel_pressure", value.toString())
@@ -21,9 +22,14 @@ object DualInjectionPreferences {
         get() = prefs.get("direct_flow_rate", "160.0").toDouble()
         set(value) = prefs.put("direct_flow_rate", value.toString())
 
+    /** GDI rail pressure in bar absolute. Typical range: 100–200 bar. */
     var directInjectorFuelPressureBar: Double
         get() = prefs.get("direct_fuel_pressure", "200.0").toDouble()
         set(value) = prefs.put("direct_fuel_pressure", value.toString())
+
+    var directInjectorDeadTimeMs: Double
+        get() = prefs.get("direct_dead_time", "0.0").toDouble()
+        set(value) = prefs.put("direct_dead_time", value.toString())
 
     var portSharePercentDefault: Double
         get() = prefs.get("port_share_percent", "30.0").toDouble()

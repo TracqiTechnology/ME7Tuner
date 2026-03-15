@@ -67,7 +67,7 @@ fun LineChart(
     }
 
     val density = LocalDensity.current
-    val leftMarginPx = with(density) { 50.dp.toPx() }
+    val leftMarginPx = with(density) { 60.dp.toPx() }
     val bottomMarginPx = with(density) { 30.dp.toPx() }
     val rightMarginPx = with(density) { 16.dp.toPx() }
     val topMarginPx = with(density) { 8.dp.toPx() }
@@ -112,7 +112,7 @@ fun LineChart(
                     text = yAxisLabel,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 2.dp)
                 )
             }
 

@@ -32,6 +32,7 @@ import data.preferences.kfvpdksd.KfvpdksdPreferences
 import data.preferences.kfzw.KfzwPreferences
 import data.preferences.kfzwop.KfzwopPreferences
 import data.preferences.krkte.KrktePreferences
+import data.preferences.rkw.RkwPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.platform.EcuPlatformPreference
@@ -57,8 +58,8 @@ fun main() {
     LogHeaderPreference.loadHeaders()
 
     // Load example files
-    XdfFilePreferences.setFile(File("example/8D0907551M-20170411-16bit-kfzw.xdf"))
-    BinFilePreferences.setFile(File("example/8D0907551M-0002 (16Bit KFZW).bin"))
+    XdfFilePreferences.setFile(File("example/me7/xdf/8D0907551M-20170411-16bit-kfzw.xdf"))
+    BinFilePreferences.setFile(File("example/me7/bin/8D0907551M-0002 (16Bit KFZW).bin"))
 
     // Wait for BIN parsing to complete
     println("Waiting for BIN parsing...")
@@ -209,7 +210,7 @@ fun main() {
     captureScreenWithLogData(
         filename = "kfvpdksd.png",
         loadData = {
-            KfvpdksdLogParser.loadDirectory(File("example/")) { _, _ -> }
+            KfvpdksdLogParser.loadDirectory(File("example/me7/logs/me7/")) { _, _ -> }
         }
     ) {
         val navState = NavigationState()
@@ -221,7 +222,7 @@ fun main() {
 
     captureScreenWithLogData(
         filename = "closed_loop_mlhfm_filter.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/me7/logs/me7/")) }
     ) {
         val navState = NavigationState()
         navState.closedLoopTab = 0
@@ -231,7 +232,7 @@ fun main() {
 
     captureScreenWithLogData(
         filename = "closed_loop_mlhfm_corrected_percentage.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/me7/logs/me7/")) }
     ) {
         val navState = NavigationState()
         navState.closedLoopTab = 2
@@ -242,7 +243,7 @@ fun main() {
 
     captureScreenWithLogData(
         filename = "closed_loop_mlhfm_derivative.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/me7/logs/me7/")) }
     ) {
         val navState = NavigationState()
         navState.closedLoopTab = 2
@@ -253,7 +254,7 @@ fun main() {
 
     captureScreenWithLogData(
         filename = "closed_loop_mlhfm_corrected.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/me7/logs/me7/")) }
     ) {
         val navState = NavigationState()
         navState.closedLoopTab = 2
@@ -264,7 +265,7 @@ fun main() {
 
     captureScreenWithLogData(
         filename = "closed_loop_mlhfm_corrected_best_fit.png",
-        loadData = { ClosedLoopLogParser.loadDirectory(File("example/")) }
+        loadData = { ClosedLoopLogParser.loadDirectory(File("example/me7/logs/me7/")) }
     ) {
         val navState = NavigationState()
         navState.closedLoopTab = 2
@@ -279,8 +280,8 @@ fun main() {
     captureScreenWithLogData(
         filename = "open_loop_mlhfm_logs.png",
         loadData = {
-            OpenLoopLogParser.loadFile(File("example/me7logger.csv"))
-            AfrLogParser.load(File("example/zeitronix.csv"))
+            OpenLoopLogParser.loadFile(File("example/me7/logs/me7/me7logger.csv"))
+            AfrLogParser.load(File("example/me7/logs/ziet/zeitronix.csv"))
         }
     ) {
         val navState = NavigationState()
@@ -293,8 +294,8 @@ fun main() {
     captureScreenWithLogData(
         filename = "open_loop_mlhfm_airflow.png",
         loadData = {
-            OpenLoopLogParser.loadFile(File("example/me7logger.csv"))
-            AfrLogParser.load(File("example/zeitronix.csv"))
+            OpenLoopLogParser.loadFile(File("example/me7/logs/me7/me7logger.csv"))
+            AfrLogParser.load(File("example/me7/logs/ziet/zeitronix.csv"))
         }
     ) {
         val navState = NavigationState()
@@ -306,8 +307,8 @@ fun main() {
 
     captureScreenWithTwoPhaseLogData(
         filename = "open_loop_mlhfm_correction.png",
-        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
-        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7/logs/me7/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/me7/logs/ziet/zeitronix.csv")) }
     ) {
         val navState = NavigationState()
         navState.openLoopTab = 2
@@ -318,8 +319,8 @@ fun main() {
 
     captureScreenWithTwoPhaseLogData(
         filename = "open_loop_mlhfm_correction_percentage.png",
-        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
-        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7/logs/me7/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/me7/logs/ziet/zeitronix.csv")) }
     ) {
         val navState = NavigationState()
         navState.openLoopTab = 2
@@ -330,8 +331,8 @@ fun main() {
 
     captureScreenWithTwoPhaseLogData(
         filename = "open_loop_mlhfm_correction_best_fit.png",
-        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7logger.csv")) },
-        loadPhase2 = { AfrLogParser.load(File("example/zeitronix.csv")) }
+        loadPhase1 = { OpenLoopLogParser.loadFile(File("example/me7/logs/me7/me7logger.csv")) },
+        loadPhase2 = { AfrLogParser.load(File("example/me7/logs/ziet/zeitronix.csv")) }
     ) {
         val navState = NavigationState()
         navState.openLoopTab = 2
@@ -380,6 +381,7 @@ fun main() {
     autoSelectMap(KfzwPreferences, "KFZW")
     autoSelectMap(KfldrlPreferences, "KFLDRL")
     autoSelectMap(KfldimxPreferences, "KFLDIMX")
+    autoSelectMap(RkwPreferences, "rk_w")
 
     val med17OutputDir = File("documentation/images/med17")
     med17OutputDir.mkdirs()
@@ -437,6 +439,34 @@ fun main() {
     captureScreen("med17/optimizer_med17.png") {
         val navState = NavigationState()
         navState.navigateToOptimizer()
+        ME7TunerApp(navState)
+    }
+
+    // Fuel Trim (MED17-only)
+    captureScreen("med17/fuel_trim_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.FUEL_TRIM)
+        ME7TunerApp(navState)
+    }
+
+    // KFZWOP in MED17 mode
+    captureScreen("med17/kfzwop_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.KFZWOP)
+        ME7TunerApp(navState)
+    }
+
+    // KFZW in MED17 mode
+    captureScreen("med17/kfzw_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.KFZW)
+        ME7TunerApp(navState)
+    }
+
+    // Fueling in MED17 mode (KRKTE with dual presets)
+    captureScreen("med17/fueling_med17.png") {
+        val navState = NavigationState()
+        navState.navigateToCalibration(CalibrationTab.FUELING)
         ME7TunerApp(navState)
     }
 

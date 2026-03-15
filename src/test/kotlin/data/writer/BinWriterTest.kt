@@ -5,7 +5,7 @@ import data.preferences.platform.EcuPlatformPreference
 import kotlin.test.*
 
 /**
- * Tests for [BinWriter] MED17 platform guard.
+ * Tests for [BinWriter] platform support.
  */
 class BinWriterTest {
 
@@ -28,8 +28,8 @@ class BinWriterTest {
     }
 
     @Test
-    fun `isBinWriteSupported returns false for MED17`() {
+    fun `isBinWriteSupported returns true for MED17`() {
         EcuPlatformPreference.platform = EcuPlatform.MED17
-        assertFalse(BinWriter.isBinWriteSupported(), "MED17 should NOT support BIN writing (CRC32 not implemented)")
+        assertTrue(BinWriter.isBinWriteSupported(), "MED17 should support BIN writing")
     }
 }

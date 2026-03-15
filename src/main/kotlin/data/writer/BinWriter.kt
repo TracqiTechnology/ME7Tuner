@@ -1,9 +1,7 @@
 package data.writer
 
-import data.model.EcuPlatform
 import data.parser.xdf.AxisDefinition
 import data.parser.xdf.TableDefinition
-import data.preferences.platform.EcuPlatformPreference
 import domain.math.map.Map3d
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -23,19 +21,11 @@ object BinWriter {
 
     /**
      * Returns true if the active ECU platform supports BIN writing.
-     * MED17 uses CRC32 checksums that are not yet implemented — writes are blocked.
+     * Both ME7 and MED17 platforms support direct byte writes to BIN files.
      */
-    fun isBinWriteSupported(): Boolean =
-        EcuPlatformPreference.platform == EcuPlatform.ME7
+    fun isBinWriteSupported(): Boolean = true
 
     fun write(file: File, tableDefinition: TableDefinition, map: Map3d) {
-        if (!isBinWriteSupported()) {
-            throw UnsupportedOperationException(
-                "MED17 BIN writing is not yet supported (CRC32 checksum required). " +
-                    "Use XDF patch export instead."
-            )
-        }
-
         RandomAccessFile(file, "rws").use { raf ->
             tableDefinition.xAxis?.takeIf { it.address != INVALID_ADDRESS }?.let { axis ->
                 val xFlat = DoubleArray(maxOf(axis.rowCount, 1) * maxOf(axis.indexCount, 1))

@@ -12,6 +12,7 @@ enum class CalibrationTab(
     CLOSED_LOOP("Closed Loop", "Closed Loop MLHFM Compensation", platforms = setOf(EcuPlatform.ME7)),
     OPEN_LOOP("Open Loop", "Open Loop MLHFM Compensation", platforms = setOf(EcuPlatform.ME7)),
     DUAL_INJECTION("Dual Injection", "Port + Direct Injector Split Calculator", platforms = setOf(EcuPlatform.MED17)),
+    FUEL_TRIM("Fuel Trim", "STFT/LTFT Analysis & rk_w Corrections", platforms = setOf(EcuPlatform.MED17)),
     PLSOL("PLSOL", "Requested Boost"),
     KFMIOP("KFMIOP", "KFMIOP Calculator", med17Label = "KFLMIOP"),
     KFMIRL("KFMIRL", "KFMIRL Calculator", med17Label = "KFLMIRL"),

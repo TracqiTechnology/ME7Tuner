@@ -676,7 +676,7 @@ class OptimizerMapSuggestionTest {
     }
 
     @Test
-    fun `analyzeMed17 chain diagnosis percentages sum to approximately 100`() {
+    fun `analyzeMed17 chain diagnosis percentages are valid`() {
         val me7Data = parseAndAdapt("2025-01-21_16.24.32_log(1).csv")
 
         val result = OptimizerCalculator.analyzeMed17(
@@ -693,10 +693,15 @@ class OptimizerMapSuggestionTest {
         assertEquals(0.0, diag.veMismatchPercent, 0.001,
             "MED17 should have 0% VE mismatch")
 
-        val sum = diag.torqueCappedPercent + diag.boostShortfallPercent + diag.onTargetPercent
-        assertTrue(sum in 99.0..101.0,
-            "Chain diagnosis percentages should sum to ~100%, got $sum " +
-                "(torque=${diag.torqueCappedPercent}, boost=${diag.boostShortfallPercent}, ok=${diag.onTargetPercent})")
+        // MED17 computes torqueCapped and boostShortfall independently — they CAN overlap
+        // (e.g., during spool-up: rlsol below target AND actual boost short of requested).
+        // onTargetPercent = max(0, 100 - torquePct - boostPct), clamped at 0 on overlap.
+        assertTrue(diag.torqueCappedPercent in 0.0..100.0,
+            "torqueCappedPercent out of range: ${diag.torqueCappedPercent}")
+        assertTrue(diag.boostShortfallPercent in 0.0..100.0,
+            "boostShortfallPercent out of range: ${diag.boostShortfallPercent}")
+        assertTrue(diag.onTargetPercent >= 0.0,
+            "onTargetPercent should be >= 0: ${diag.onTargetPercent}")
     }
 
     @Test

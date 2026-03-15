@@ -241,6 +241,54 @@ object KfurlSolver {
         )
     }
 
+    /**
+     * Lightweight solver that only needs actual load + actual pressure + baro.
+     * At WOT, actual ≈ requested, so using rl_w as the target load and pvdks_w
+     * as the comparison pressure is a valid approximation for scalar KFURL fitting.
+     *
+     * Used for ME7 PLSOL log auto-fill where requestedLoad/requestedMap aren't logged.
+     */
+    fun solveFromActuals(
+        loadValues: List<Double>,
+        pressureValues: List<Double>,
+        baroValues: List<Double>,
+        searchRange: ClosedFloatingPointRange<Double> = 0.050..0.200,
+        steps: Int = 150
+    ): Double {
+        if (loadValues.isEmpty() || pressureValues.isEmpty() || baroValues.isEmpty()) {
+            return 0.106
+        }
+
+        val n = minOf(loadValues.size, pressureValues.size, baroValues.size)
+        var bestKfurl = 0.106
+        var bestRmse = Double.MAX_VALUE
+
+        for (i in 0..steps) {
+            val kfurl = searchRange.start + (searchRange.endInclusive - searchRange.start) * i / steps
+            var totalSquaredError = 0.0
+
+            for (j in 0 until n) {
+                val simPssol = Plsol.plsol(
+                    baroValues[j],
+                    pressureValues[j],
+                    20.0, 96.0,
+                    kfurl,
+                    loadValues[j]
+                )
+                val error = simPssol - pressureValues[j]
+                totalSquaredError += error * error
+            }
+
+            val rmse = kotlin.math.sqrt(totalSquaredError / n)
+            if (rmse < bestRmse) {
+                bestRmse = rmse
+                bestKfurl = kfurl
+            }
+        }
+
+        return bestKfurl
+    }
+
     data class SolverResult(
         val optimalKfurl: Double,
         val rmse: Double,

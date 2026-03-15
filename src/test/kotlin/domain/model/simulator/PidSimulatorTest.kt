@@ -58,11 +58,11 @@ class PidSimulatorTest {
 
     /**
      * Create a small 3×3 gain map.
-     * xAxis = relative boost PSI breakpoints, yAxis = RPM breakpoints.
+     * xAxis = relative boost mbar breakpoints, yAxis = RPM breakpoints.
      */
     private fun gainMap(
         value: Double,
-        xAxis: Array<Double> = arrayOf(0.0, 10.0, 20.0),
+        xAxis: Array<Double> = arrayOf(0.0, 700.0, 1400.0),
         yAxis: Array<Double> = arrayOf(2000.0, 4000.0, 6000.0)
     ): Map3d {
         val z = Array(yAxis.size) { Array(xAxis.size) { value } }
@@ -72,7 +72,7 @@ class PidSimulatorTest {
     /** Create a gain map with per-cell values from a flat list (row-major). */
     private fun gainMapFromValues(
         values: List<Double>,
-        xAxis: Array<Double> = arrayOf(0.0, 10.0, 20.0),
+        xAxis: Array<Double> = arrayOf(0.0, 700.0, 1400.0),
         yAxis: Array<Double> = arrayOf(2000.0, 4000.0, 6000.0)
     ): Map3d {
         val cols = xAxis.size
@@ -552,7 +552,7 @@ class PidSimulatorTest {
     fun `Q2 warnings emitted for D-gain below 2500 RPM`() {
         // Map with non-zero D-gain at low RPM
         val kfldrq2 = Map3d(
-            arrayOf(0.0, 10.0, 20.0),
+            arrayOf(0.0, 700.0, 1400.0),
             arrayOf(1500.0, 2000.0, 3000.0, 5000.0),
             arrayOf(
                 arrayOf(0.1, 0.1, 0.1),   // 1500 RPM — should warn
@@ -579,7 +579,7 @@ class PidSimulatorTest {
     fun `Q2 warnings emitted when max D-gain exceeds 90 percent of LDRQ0DY`() {
         // Map with D-gain very close to LDRQ0DY (default = 1.0)
         val kfldrq2 = Map3d(
-            arrayOf(0.0, 10.0),
+            arrayOf(0.0, 700.0),
             arrayOf(3000.0, 5000.0),
             arrayOf(
                 arrayOf(0.95, 0.95),   // > 0.9 × 1.0
@@ -602,7 +602,7 @@ class PidSimulatorTest {
     fun `no Q2 warnings for well-calibrated D-gain map`() {
         // D-gain only above 2500 RPM, max well below 0.9 × LDRQ0DY
         val kfldrq2 = Map3d(
-            arrayOf(0.0, 10.0),
+            arrayOf(0.0, 700.0),
             arrayOf(3000.0, 5000.0),
             arrayOf(
                 arrayOf(0.2, 0.3),
@@ -671,9 +671,9 @@ class PidSimulatorTest {
         )
 
         // ldtvLinearized should come from KFLDRL lookup
-        // With positive relative boost PSI, KFLDRL returns 75.0
+        // With positive relative boost mbar, KFLDRL returns 75.0
         val statesWithBoost = result.states.filter {
-            (it.pvdks - 1013.0) * 0.0145038 > 0  // positive relative PSI
+            it.pvdks - 1013.0 > 0  // positive relative boost (mbar)
         }
         if (statesWithBoost.isNotEmpty()) {
             assertTrue(statesWithBoost.all { it.ldtvLinearized == 75.0 },
@@ -697,8 +697,9 @@ class PidSimulatorTest {
     }
 
     @Test
-    fun `KFLDRL falls back to ldtv when relative PSI is non-positive`() {
+    fun `KFLDRL is applied even when relative PSI is non-positive`() {
         // Pull at sub-atmospheric pressure → relativePsi <= 0
+        // KFLDRL x-axis is duty cycle (not boost), so it should still be applied
         val pull = rampPull(
             count = 20,
             requestedMap = 900.0,
@@ -712,9 +713,9 @@ class PidSimulatorTest {
             kfldrl = gainMap(75.0), kfldimx = null
         )
 
-        // actualMap = 850 < baro = 1013 → relativePsi < 0 → KFLDRL not used
-        assertTrue(result.states.all { it.ldtvLinearized == it.ldtv },
-            "KFLDRL should not be used when relative PSI <= 0")
+        // KFLDRL transforms duty cycle → linearized duty, regardless of boost pressure
+        assertTrue(result.states.all { it.ldtvLinearized == 75.0 },
+            "KFLDRL should be applied using duty cycle as x-key, not boost pressure")
     }
 
     // ── 18. Time progression ────────────────────────────────────────
