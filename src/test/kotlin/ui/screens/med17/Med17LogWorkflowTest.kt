@@ -38,8 +38,8 @@ class Med17LogWorkflowTest {
 
     companion object {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
-        private val XDF_FILE = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        private val BIN_FILE = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        private val XDF_FILE = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        private val BIN_FILE = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
         private val profileJson = Json { ignoreUnknownKeys = true }
 
         val LOG_FILES = listOf(

@@ -27,8 +27,8 @@ abstract class Med17ScreenTestBase {
 
     companion object {
         private val PROJECT_ROOT = File(System.getProperty("user.dir"))
-        val XDF_FILE = File(PROJECT_ROOT, "technical/med17/Normal XDF/404E_normal.xdf")
-        val BIN_FILE = File(PROJECT_ROOT, "technical/med17/OTS tunes/404E/MED17_1_62_STOCK.bin")
+        val XDF_FILE = File(PROJECT_ROOT, "example/med17/404E/404E_normal.xdf")
+        val BIN_FILE = File(PROJECT_ROOT, "example/med17/404E/MED17_1_62_STOCK.bin")
 
         // 404E Normal XDF map titles
         const val KFMIOP_TITLE = "Opt eng tq"
