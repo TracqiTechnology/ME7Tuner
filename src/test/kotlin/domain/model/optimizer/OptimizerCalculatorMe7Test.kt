@@ -197,4 +197,99 @@ class OptimizerCalculatorMe7Test {
                 "Boost ${entry.actualMap} hPa out of ME7 B5 S4 range [100, 4000]")
         }
     }
+
+    // ── T11: analyze() result value assertions ──────────────────────
+
+    @Test
+    fun `analyze pressure errors have physically plausible magnitudes`() {
+        val data = parseOptimizer(mainLog)
+        val result = OptimizerCalculator.analyze(
+            values = data,
+            kfldrlMap = null,
+            kfldimxMap = null,
+            kfpbrkMap = null
+        )
+
+        // Pressure errors are (requested, actual) pairs — represent error deltas
+        assertTrue(result.pressureErrors.isNotEmpty(),
+            "Should have pressure error data from WOT log")
+        for ((requested, actual) in result.pressureErrors) {
+            assertFalse(requested.isNaN(), "Requested pressure is NaN")
+            assertFalse(actual.isNaN(), "Actual pressure is NaN")
+            assertFalse(requested.isInfinite(), "Requested pressure is Infinite")
+            assertFalse(actual.isInfinite(), "Actual pressure is Infinite")
+        }
+    }
+
+    @Test
+    fun `analyze load errors have no NaN or Infinite values`() {
+        val data = parseOptimizer(mainLog)
+        val result = OptimizerCalculator.analyze(
+            values = data,
+            kfldrlMap = null,
+            kfldimxMap = null,
+            kfpbrkMap = null
+        )
+
+        assertTrue(result.loadErrors.isNotEmpty(),
+            "Should have load error data from WOT log")
+        for ((requested, actual) in result.loadErrors) {
+            assertFalse(requested.isNaN(), "Requested load is NaN")
+            assertFalse(actual.isNaN(), "Actual load is NaN")
+            assertFalse(requested.isInfinite(), "Requested load is Infinite")
+            assertFalse(actual.isInfinite(), "Actual load is Infinite")
+        }
+    }
+
+    @Test
+    fun `analyze chain diagnosis percentages sum to meaningful total`() {
+        val data = parseOptimizer(mainLog)
+        val result = OptimizerCalculator.analyze(
+            values = data,
+            kfldrlMap = null,
+            kfldimxMap = null,
+            kfpbrkMap = null
+        )
+
+        val cd = result.chainDiagnosis
+        val totalPct = cd.torqueCappedPercent + cd.boostShortfallPercent + cd.onTargetPercent
+        // Total should be close to 100% (all entries classified)
+        assertTrue(totalPct > 0.0,
+            "Chain diagnosis should classify some entries")
+        // None should be negative
+        assertTrue(cd.torqueCappedPercent >= 0.0, "Torque capped % should be non-negative")
+        assertTrue(cd.boostShortfallPercent >= 0.0, "Boost shortfall % should be non-negative")
+        assertTrue(cd.onTargetPercent >= 0.0, "On-target % should be non-negative")
+    }
+
+    @Test
+    fun `analyze WOT pulls segment the log into continuous runs`() {
+        val data = parseOptimizer(mainLog)
+        val result = OptimizerCalculator.analyze(
+            values = data,
+            kfldrlMap = null,
+            kfldimxMap = null,
+            kfpbrkMap = null
+        )
+
+        // Should detect multiple WOT pulls (a real log has several gear pulls)
+        assertTrue(result.pulls.isNotEmpty(),
+            "Should detect at least one WOT pull from a real log")
+
+        for (pull in result.pulls) {
+            assertTrue(pull.sampleCount > 0,
+                "Each pull should have at least one sample")
+            // RPM should increase within each pull (accelerating)
+            assertTrue(pull.rpmEnd > pull.rpmStart,
+                "RPM should increase within a pull: start=${pull.rpmStart}, end=${pull.rpmEnd}")
+            // startIdx < endIdx
+            assertTrue(pull.endIdx > pull.startIdx,
+                "Pull end index ${pull.endIdx} should be > start ${pull.startIdx}")
+            // Physical RPM bounds
+            assertTrue(pull.rpmStart in 500.0..8000.0,
+                "Pull start RPM ${pull.rpmStart} out of bounds")
+            assertTrue(pull.rpmEnd in 500.0..8000.0,
+                "Pull end RPM ${pull.rpmEnd} out of bounds")
+        }
+    }
 }

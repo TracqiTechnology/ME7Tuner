@@ -13,12 +13,16 @@ object KpFilePreferences {
     private val _file = MutableStateFlow(getStoredFile())
     val file: StateFlow<File> = _file.asStateFlow()
 
-    fun clear() { runCatching { prefs.clear() } }
+    fun clear() {
+        runCatching { prefs.clear(); prefs.flush() }
+        _file.value = File("")
+    }
 
     fun getStoredFile(): File = File(prefs.get(FILE_PATH_KEY, ""))
 
     fun setFile(file: File) {
         prefs.put(FILE_PATH_KEY, file.absolutePath)
+        prefs.flush()
         _file.value = file
     }
 }

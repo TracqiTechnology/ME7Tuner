@@ -28,4 +28,21 @@ object PrimaryFuelingPreferences {
     var fuelInjectorSize: Double
         get() = prefs.get("fuel_injector_size_preference", "349").toDouble()
         set(value) = prefs.put("fuel_injector_size_preference", value.toString())
+
+    // Flex fuel E0/E100 endpoint preferences (UI-state only)
+    var e0Density: Double
+        get() = prefs.get("e0_density_preference", "0.755").toDouble()
+        set(value) = prefs.put("e0_density_preference", value.toString())
+
+    var e0Afr: Double
+        get() = prefs.get("e0_afr_preference", "14.7").toDouble()
+        set(value) = prefs.put("e0_afr_preference", value.toString())
+
+    var e100Density: Double
+        get() = prefs.get("e100_density_preference", "0.789").toDouble()
+        set(value) = prefs.put("e100_density_preference", value.toString())
+
+    var e100Afr: Double
+        get() = prefs.get("e100_afr_preference", "9.0").toDouble()
+        set(value) = prefs.put("e100_afr_preference", value.toString())
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -46,7 +47,7 @@ fun MapTable(
     onMapChanged: ((Map3d) -> Unit)? = null
 ) {
     val zAxis = map.zAxis
-    if (zAxis.isEmpty()) return
+    if (zAxis.isEmpty() || zAxis[0].isEmpty()) return
 
     val rowCount = zAxis.size
     val colCount = zAxis[0].size
@@ -130,6 +131,7 @@ fun MapTable(
 
     Column(
         modifier = Modifier
+            .fillMaxSize()
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
                     val meta = event.isMetaPressed || event.isCtrlPressed
@@ -219,6 +221,7 @@ fun MapTable(
                                         .size(CELL_WIDTH, CELL_HEIGHT)
                                         .drawBehind { drawRect(bgColor) }
                                         .border(0.5.dp, Color.Black)
+                                        .focusProperties { canFocus = false }
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null
@@ -237,6 +240,7 @@ fun MapTable(
                                 ) {
                                     if (isEditing && editable) {
                                         val focusRequester = remember { FocusRequester() }
+                                        var hadFocus by remember { mutableStateOf(false) }
                                         BasicTextField(
                                             value = editText,
                                             onValueChange = { editText = it },
@@ -251,7 +255,10 @@ fun MapTable(
                                                 .fillMaxSize()
                                                 .padding(2.dp)
                                                 .focusRequester(focusRequester)
-                                                .onFocusChanged { if (!it.isFocused) commitEdit() }
+                                                .onFocusChanged {
+                                                    if (it.isFocused) hadFocus = true
+                                                    else if (hadFocus) commitEdit()
+                                                }
                                         )
                                         LaunchedEffect(Unit) { focusRequester.requestFocus() }
                                     } else {

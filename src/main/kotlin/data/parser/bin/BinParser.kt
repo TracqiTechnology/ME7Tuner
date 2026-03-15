@@ -27,18 +27,12 @@ object BinParser {
 
     fun init() {
         scope.launch {
-            BinFilePreferences.file.collect { file ->
+            combine(BinFilePreferences.file, XdfParser.tableDefinitions) { file, defs ->
+                file to defs
+            }.collect { (file, defs) ->
                 binaryFile = file
-                if (binaryFile.exists() && binaryFile.isFile) {
-                    try { parseMutex.withLock { parse(FileInputStream(binaryFile), XdfParser.tableDefinitions.value) } }
-                    catch (e: IOException) { e.printStackTrace() }
-                }
-            }
-        }
-        scope.launch {
-            XdfParser.tableDefinitions.collect { tableDefinitions ->
-                if (binaryFile.exists() && binaryFile.isFile) {
-                    try { parseMutex.withLock { parse(FileInputStream(binaryFile), tableDefinitions) } }
+                if (file.exists() && file.isFile) {
+                    try { parseMutex.withLock { parse(FileInputStream(file), defs) } }
                     catch (e: IOException) { e.printStackTrace() }
                 }
             }
@@ -57,6 +51,11 @@ object BinParser {
         _mapList.value = parseToList(inputStream, tableDefinitions)
     }
 
+    /** Sets the singleton mapList directly — for UI tests that need to populate state without file I/O. */
+    internal fun setMapListForTesting(list: List<Pair<TableDefinition, Map3d>>) {
+        _mapList.value = list
+    }
+
     /**
      * Parses a BIN input stream using the given table definitions and returns
      * the list of (TableDefinition, Map3d) pairs without touching singleton state.
@@ -70,11 +69,21 @@ object BinParser {
         val bytes: ByteArray
         BufferedInputStream(inputStream).use { bytes = it.readAllBytes() }
 
+        var skippedCount = 0
         for (tableDefinition in tableDefinitions) {
             val xAxis = tableDefinition.xAxis?.let { parseAxis(bytes, it) } ?: emptyArray()
             val yAxis = tableDefinition.yAxis?.let { parseAxis(bytes, it) } ?: emptyArray()
             val zAxis = parseData(bytes, tableDefinition.zAxis)
             result.add(tableDefinition to Map3d(xAxis, yAxis, zAxis))
+
+            // Count maps skipped due to out-of-range addresses
+            if (tableDefinition.zAxis.address != 0 && zAxis.isEmpty() && xAxis.isEmpty() && yAxis.isEmpty()) {
+                skippedCount++
+            }
+        }
+
+        if (skippedCount > 0) {
+            System.err.println("WARNING: $skippedCount of ${tableDefinitions.size} XDF map definitions reference addresses beyond BIN size (${bytes.size} bytes) — skipped")
         }
 
         return result
@@ -155,6 +164,11 @@ object BinParser {
         // minorStrideBits: extra bits between consecutive elements (often used for padding)
         val minorSkipBytes = axis.minorStrideBits / 8
 
+        val requiredBytes = axis.address.toLong() + count.toLong() * (strideBytes + minorSkipBytes)
+        if (axis.address < 0 || requiredBytes > bytes.size) {
+            return emptyArray()
+        }
+
         val buf = ByteBuffer.wrap(bytes).order(byteOrderFor(axis))
         val raw = DoubleArray(count)
 
@@ -192,6 +206,11 @@ object BinParser {
         val minorSkipBytes = axis.minorStrideBits / 8      // per-element padding
 
         val buf = ByteBuffer.wrap(bytes).order(byteOrderFor(axis))
+
+        val totalDataBytes = axis.address.toLong() + rows.toLong() * rowSizeBytes
+        if (axis.address < 0 || totalDataBytes > bytes.size) {
+            return emptyArray()
+        }
 
         val raw: Array<Array<Double>>
         try {

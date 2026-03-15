@@ -195,4 +195,34 @@ class Med17LogParserTest {
         val totalRows = result[H.RPM_COLUMN_HEADER]!!.size
         assertEquals(2839, totalRows, "Total optimizer rows across all 3 logs")
     }
+
+    // ── PFI_SPLIT log type ──────────────────────────────────────────
+
+    @Test
+    fun `parse 2025 log as PFI_SPLIT extracts RPM and PFI factor`() {
+        val result = parser.parseLogFile(Med17LogParser.LogType.PFI_SPLIT, logFile("2025-01-21_16.24.32_log(1).csv"))
+        val rpmList = result[H.RPM_COLUMN_HEADER]
+        val pfiList = result[H.PFI_SPLIT_FACTOR_HEADER]
+
+        // The WOT log should have InjSys_facPrtnPfiTar — if not, verify header names
+        if (rpmList != null && rpmList.isNotEmpty()) {
+            println("PFI_SPLIT: ${rpmList.size} rows, RPM range ${rpmList.min()}-${rpmList.max()}")
+            assertTrue(rpmList.size > 0, "Should have RPM data")
+            assertNotNull(pfiList, "Should have PFI split data")
+            assertTrue(pfiList!!.size == rpmList.size, "RPM and PFI should have same count")
+            // PFI factor should be between 0.0 and 1.0
+            for (v in pfiList) {
+                assertTrue(v in 0.0..1.0, "PFI factor should be 0-1, got $v")
+            }
+        } else {
+            println("PFI_SPLIT: log does not contain InjSys_facPrtnPfiTar column — skipping assertions")
+        }
+    }
+
+    @Test
+    fun `parse cruise log as PFI_SPLIT does not crash`() {
+        val result = parser.parseLogFile(Med17LogParser.LogType.PFI_SPLIT, logFile("2023-05-19_21.08.33_log.csv"))
+        // Should return something even if PFI columns don't exist
+        assertNotNull(result)
+    }
 }

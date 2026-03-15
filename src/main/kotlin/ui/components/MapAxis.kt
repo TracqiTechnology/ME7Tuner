@@ -11,12 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -150,8 +152,10 @@ fun MapAxis(
                 Box(
                     modifier = Modifier
                         .size(AXIS_CELL_WIDTH, AXIS_CELL_HEIGHT)
+                        .testTag("axis_cell_${r}_${c}")
                         .drawBehind { drawRect(bgColor) }
                         .border(0.5.dp, Color.Black)
+                        .focusProperties { canFocus = false }
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -170,6 +174,7 @@ fun MapAxis(
                 ) {
                     if (isEditing && editable) {
                         val focusRequester = remember { FocusRequester() }
+                        var hadFocus by remember { mutableStateOf(false) }
                         BasicTextField(
                             value = editText,
                             onValueChange = { editText = it },
@@ -184,7 +189,10 @@ fun MapAxis(
                                 .fillMaxSize()
                                 .padding(2.dp)
                                 .focusRequester(focusRequester)
-                                .onFocusChanged { if (!it.isFocused) commitEdit() }
+                                .onFocusChanged {
+                                    if (it.isFocused) hadFocus = true
+                                    else if (hadFocus) commitEdit()
+                                }
                         )
                         LaunchedEffect(Unit) { focusRequester.requestFocus() }
                     } else {

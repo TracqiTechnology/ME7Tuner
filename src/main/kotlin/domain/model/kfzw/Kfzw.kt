@@ -5,6 +5,9 @@ import domain.math.LinearExtrapolation
 
 object Kfzw {
     fun generateKfzw(xAxisOld: Array<Double>, kfzwOld: Array<Array<Double>>, xAxisNew: Array<Double>): Array<Array<Double>> {
+        if (kfzwOld.isEmpty() || kfzwOld[0].isEmpty() || xAxisOld.isEmpty() || xAxisNew.isEmpty()) {
+            return emptyArray()
+        }
         return Array(kfzwOld.size) { i ->
             Array(kfzwOld[0].size) { j ->
                 var indexKey = Index.getInsertIndex(xAxisOld.toList(), xAxisNew[j])

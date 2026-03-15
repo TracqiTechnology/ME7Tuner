@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import data.contract.Me7LogFileContract
 import data.model.EcuPlatform
+import data.parser.bin.BinParser
 import data.parser.xdf.XdfParser
 import data.preferences.MapPreference
 import data.preferences.MapPreferenceManager
@@ -47,6 +48,7 @@ import data.preferences.krkte.KrkteGdiPreferences
 import data.preferences.logheaderdefinition.LogHeaderPreference
 import data.preferences.mlhfm.MlhfmPreferences
 import data.preferences.platform.EcuPlatformPreference
+import data.preferences.rkw.RkwPreferences
 import data.preferences.tvub.TvubPfiPreferences
 import data.preferences.wdkugdn.WdkugdnPreferences
 import data.profile.ProfileManager
@@ -95,6 +97,8 @@ private val allMapDefinitions = listOf(
     MapDefinitionEntry("KFLDRQ0", Kfldrq0Preferences),
     MapDefinitionEntry("KFLDRQ1", Kfldrq1Preferences),
     MapDefinitionEntry("KFLDRQ2", Kfldrq2Preferences),
+    // MED17-only — fuel trim correction map
+    MapDefinitionEntry("rk_w (Fuel Trim)", RkwPreferences, platforms = setOf(EcuPlatform.MED17)),
 )
 
 /** Returns map definitions filtered for the active platform. */
@@ -145,11 +149,33 @@ fun ConfigurationScreen(
     ) {
         FileLoadSection(xdfFile, xdfLoaded, binFile, binLoaded)
 
+        // Show XDF parse error if present
+        val xdfParseError by XdfParser.parseError.collectAsState()
+        xdfParseError?.let { error ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "⚠ XDF parse error: $error",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!filesLoaded) {
             FilesNotLoadedPlaceholder()
         } else {
+            // Auto-apply the matching default profile when both files are loaded
+            // and no map definitions have been configured yet.
+            AutoApplyProfile()
+
             QuickSetupSection()
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -295,6 +321,35 @@ private fun FilesNotLoadedPlaceholder() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+/**
+ * Automatically applies the matching default profile when both XDF and BIN
+ * are loaded (mapList is non-empty) and no map definitions are configured yet.
+ * Fires at most once per composition lifecycle — switching files or platform
+ * resets the guard via the key parameters.
+ */
+@Composable
+private fun AutoApplyProfile() {
+    val mapList by BinParser.mapList.collectAsState()
+    val allDefaultProfiles by ProfileManager.defaultProfiles.collectAsState()
+    val platform = EcuPlatformPreference.platform
+
+    val matchingProfiles = remember(allDefaultProfiles, platform) {
+        allDefaultProfiles.filter { it.ecuPlatform == platform.name }
+    }
+    val mapDefinitions = remember(platform) { mapDefinitionsForPlatform(platform) }
+
+    LaunchedEffect(mapList, matchingProfiles) {
+        if (mapList.isEmpty()) return@LaunchedEffect
+        if (matchingProfiles.isEmpty()) return@LaunchedEffect
+
+        // Only auto-apply when no maps are currently configured
+        val configuredCount = mapDefinitions.count { it.preference.getSelectedMap() != null }
+        if (configuredCount > 0) return@LaunchedEffect
+
+        ProfileManager.applyProfile(matchingProfiles.first())
     }
 }
 
@@ -477,6 +532,7 @@ private fun ProfileRow(profile: data.profile.ConfigurationProfile, onApply: () -
 @Composable
 private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
     val tableDefinitions by XdfParser.tableDefinitions.collectAsState()
+    val mapList by BinParser.mapList.collectAsState()
     val platform = EcuPlatformPreference.platform
     val mapDefinitions = remember(platform) { mapDefinitionsForPlatform(platform) }
 
@@ -493,7 +549,7 @@ private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
         }
     }
 
-    val configuredCount = remember(version, tableDefinitions) {
+    val configuredCount = remember(version, tableDefinitions, mapList) {
         mapDefinitions.count { it.preference.getSelectedMap() != null }
     }
 
@@ -515,7 +571,7 @@ private fun MapDefinitionsSection(modifier: Modifier = Modifier) {
                 version
 
                 for (entry in mapDefinitions) {
-                    val selectedMap = remember(version, tableDefinitions) {
+                    val selectedMap = remember(version, tableDefinitions, mapList) {
                         entry.preference.getSelectedMap()
                     }
                     val isConfigured = selectedMap != null
@@ -601,6 +657,7 @@ private fun MapDefinitionRow(
 
 @Composable
 private fun LogHeadersSection(modifier: Modifier = Modifier) {
+    val isMed17 = EcuPlatformPreference.platform == EcuPlatform.MED17
     var expanded by remember { mutableStateOf(false) }
     var headerVersion by remember { mutableStateOf(0) }
 
@@ -619,39 +676,56 @@ private fun LogHeadersSection(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 1.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = !expanded }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.KeyboardArrowUp
-                                     else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
-                        modifier = Modifier.size(20.dp)
-                    )
+        if (isMed17) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "ScorpionEFI / DS1 logs are auto-detected — signal names are matched " +
+                        "automatically from CSV headers. No manual log header configuration is needed.",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        } else {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = !expanded }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp
+                                         else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            modifier = Modifier.size(20.dp)
+                        )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
-                AnimatedVisibility(visible = expanded) {
-                    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                        for (header in Me7LogFileContract.Header.entries) {
-                            LogHeaderRow(header) { headerVersion++ }
+                    AnimatedVisibility(visible = expanded) {
+                        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                            for (header in Me7LogFileContract.Header.entries) {
+                                LogHeaderRow(header) { headerVersion++ }
+                            }
                         }
                     }
                 }

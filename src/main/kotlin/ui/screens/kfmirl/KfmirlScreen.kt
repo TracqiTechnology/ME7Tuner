@@ -19,15 +19,17 @@ import data.preferences.kfmiop.KfmiopPreferences
 import data.preferences.kfmirl.KfmirlPreferences
 import data.writer.BinWriter
 import domain.math.Inverse
+import domain.math.RescaleMap
 import domain.math.map.Map3d
+import data.model.EcuPlatform
+import data.preferences.platform.EcuPlatformPreference
 import kotlinx.coroutines.delay
-import ui.components.ChartSeries
-import ui.components.LineChart
 import ui.components.MapAxis
 import ui.components.MapPickerDialog
 import ui.components.MapTable
-import ui.theme.ChartRed
-import ui.theme.Primary
+import ui.components.ParameterField
+import ui.components.TimingCharts
+import ui.navigation.CalibrationTab
 
 private enum class WriteStatus { Idle, Success, Error }
 
@@ -59,61 +61,66 @@ fun KfmirlScreen() {
 
     val inputKfmiop = kfmiopPair?.second
 
-    // Editable X-axis for KFMIOP (user can change load breakpoints)
-    var editedXAxis by remember(inputKfmiop) {
+    // Detect scalar KFMIOP (DS1: 1×1 map with empty axes)
+    val kfmiopIsScalar = inputKfmiop != null && inputKfmiop.xAxis.isEmpty() && inputKfmiop.yAxis.isEmpty()
+
+    val platform = EcuPlatformPreference.platform
+    val kfmiopLabel = CalibrationTab.KFMIOP.labelFor(platform)
+    val kfmirlLabel = CalibrationTab.KFMIRL.labelFor(platform)
+
+    // --- DS1 scalar mode: target max load input ---
+    val kfmiopScalarValue = if (kfmiopIsScalar) {
+        inputKfmiop!!.zAxis.firstOrNull()?.firstOrNull() ?: 400.0
+    } else 0.0
+
+    var targetMaxLoad by remember(kfmiopScalarValue) {
+        mutableStateOf(kfmiopScalarValue.toString())
+    }
+
+    // --- ME7 / non-DS1 mode: editable KFMIOP xAxis ---
+    var editedXAxis by remember(inputKfmiop, kfmiopIsScalar) {
         mutableStateOf(
-            if (inputKfmiop != null) arrayOf(inputKfmiop.xAxis.copyOf())
+            if (!kfmiopIsScalar && inputKfmiop != null) arrayOf(inputKfmiop.xAxis.copyOf())
             else arrayOf(emptyArray<Double>())
         )
     }
 
-    // Editable input map (user can edit KFMIOP zAxis values)
-    var editedInputMap by remember(inputKfmiop) {
-        mutableStateOf(inputKfmiop?.let { Map3d(it) })
+    var editedInputMap by remember(inputKfmiop, kfmiopIsScalar) {
+        mutableStateOf(if (!kfmiopIsScalar) inputKfmiop?.let { Map3d(it) } else null)
     }
 
-    // Calculate KFMIRL as inverse of KFMIOP
-    val outputKfmirl = remember(editedInputMap, editedXAxis, kfmirlPair) {
-        val kfmiop = editedInputMap
+    // Calculate KFMIRL output — different path for scalar vs 2D KFMIOP
+    val outputKfmirl = remember(editedInputMap, editedXAxis, kfmirlPair, kfmiopIsScalar, targetMaxLoad) {
         val kfmirlBase = kfmirlPair?.second
-        if (kfmiop != null && kfmirlBase != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
-            val kfmiopWithNewXAxis = Map3d(editedXAxis[0], kfmiop.yAxis, kfmiop.zAxis)
-            val inverse = Inverse.calculateInverse(kfmiopWithNewXAxis, kfmirlBase)
-            // Preserve the first column from the original KFMIRL
-            for (i in inverse.zAxis.indices) {
-                if (inverse.zAxis[i].isNotEmpty() && kfmirlBase.zAxis[i].isNotEmpty()) {
-                    inverse.zAxis[i][0] = kfmirlBase.zAxis[i][0]
+
+        if (kfmiopIsScalar && kfmirlBase != null) {
+            // DS1 path: rescale KFMIRL's own xAxis to the target max load
+            val newMax = targetMaxLoad.toDoubleOrNull() ?: kfmiopScalarValue
+            RescaleMap.rescaleMapXAxis(kfmirlBase, newMax)
+        } else {
+            // ME7 path: inverse of KFMIOP
+            val kfmiop = editedInputMap
+            if (kfmiop != null && kfmirlBase != null && editedXAxis.isNotEmpty() && editedXAxis[0].isNotEmpty()) {
+                val kfmiopWithNewXAxis = Map3d(editedXAxis[0], kfmiop.yAxis, kfmiop.zAxis)
+                val inverse = Inverse.calculateInverse(kfmiopWithNewXAxis, kfmirlBase)
+                // Preserve the first column from the original KFMIRL
+                for (i in inverse.zAxis.indices) {
+                    if (inverse.zAxis[i].isNotEmpty() && kfmirlBase.zAxis[i].isNotEmpty()) {
+                        inverse.zAxis[i][0] = kfmirlBase.zAxis[i][0]
+                    }
                 }
-            }
-            inverse
-        } else null
+                inverse
+            } else null
+        }
     }
 
-    // Load comparison chart data — peak load per RPM
-    val loadChartData = remember(outputKfmirl, kfmirlPair) {
-        val originalKfmirl = kfmirlPair?.second
-        val calculatedKfmirl = outputKfmirl
-        if (originalKfmirl == null || calculatedKfmirl == null) {
-            return@remember Pair(emptyList<Pair<Double, Double>>(), emptyList<Pair<Double, Double>>())
-        }
-
-        val originalPeaks = originalKfmirl.yAxis.mapIndexed { i, rpm ->
-            val peakLoad = originalKfmirl.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakLoad)
-        }
-        val calculatedPeaks = calculatedKfmirl.yAxis.mapIndexed { i, rpm ->
-            val peakLoad = calculatedKfmirl.zAxis[i].maxOrNull() ?: 0.0
-            Pair(rpm, peakLoad)
-        }
-        Pair(originalPeaks, calculatedPeaks)
-    }
-
-    // Write prerequisites
+    // Write prerequisites — scalar mode only needs KFMIRL configured
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
     val kfmiopMapConfigured = kfmiopPair != null
     val kfmirlMapConfigured = kfmirlPair != null
-    val canWrite = binLoaded && kfmiopMapConfigured && kfmirlMapConfigured && outputKfmirl != null
+    val canWrite = binLoaded && kfmirlMapConfigured && outputKfmirl != null &&
+        (kfmiopIsScalar || kfmiopMapConfigured)
 
     var showWriteConfirmation by remember { mutableStateOf(false) }
     var writeStatus by remember { mutableStateOf(WriteStatus.Idle) }
@@ -129,7 +136,7 @@ fun KfmirlScreen() {
     // Dialogs
     if (showKfmiopPicker) {
         MapPickerDialog(
-            title = "Select KFMIOP Map",
+            title = "Select $kfmiopLabel Map",
             tableDefinitions = tableDefinitions,
             initialValue = kfmiopPair?.first,
             onSelected = { KfmiopPreferences.setSelectedMap(it) },
@@ -139,7 +146,7 @@ fun KfmirlScreen() {
 
     if (showKfmirlPicker) {
         MapPickerDialog(
-            title = "Select KFMIRL Map",
+            title = "Select $kfmirlLabel Map",
             tableDefinitions = tableDefinitions,
             initialValue = kfmirlPair?.first,
             onSelected = { KfmirlPreferences.setSelectedMap(it) },
@@ -150,8 +157,8 @@ fun KfmirlScreen() {
     if (showWriteConfirmation) {
         AlertDialog(
             onDismissRequest = { showWriteConfirmation = false },
-            title = { Text("Write KFMIRL") },
-            text = { Text("Are you sure you want to write KFMIRL to the binary?") },
+            title = { Text("Write $kfmirlLabel") },
+            text = { Text("Are you sure you want to write $kfmirlLabel to the binary?") },
             confirmButton = {
                 TextButton(onClick = {
                     showWriteConfirmation = false
@@ -178,33 +185,72 @@ fun KfmirlScreen() {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ConfigurationCard(
-            kfmiopMapName = kfmiopPair?.first?.tableName,
-            kfmirlMapName = kfmirlPair?.first?.tableName,
-            onSelectKfmiop = { showKfmiopPicker = true },
-            onSelectKfmirl = { showKfmirlPicker = true },
-            editedXAxis = editedXAxis,
-            onXAxisChanged = { newData ->
-                editedXAxis = newData
-                editedInputMap?.let { currentMap ->
-                    editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
-                }
+        // DS1 note for MED17 users
+        if (EcuPlatformPreference.platform == EcuPlatform.MED17) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (kfmiopIsScalar)
+                        "ℹ DS1 Note: $kfmiopLabel is a scalar on this ECU. " +
+                            "$kfmirlLabel will be rescaled to the target max load using its own axis."
+                    else
+                        "ℹ DS1 Note: DS1 reduces $kfmiopLabel/$kfmirlLabel to scalar values and bypasses " +
+                            "the native torque model. $kfmirlLabel here works as a simple inverse calculator " +
+                            "to convert between load and torque values.",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
             }
-        )
+        }
+
+        if (kfmiopIsScalar) {
+            // DS1 scalar mode: show target max load input
+            ScalarRescaleConfigCard(
+                kfmiopLabel = kfmiopLabel,
+                kfmirlLabel = kfmirlLabel,
+                currentMaxLoad = kfmiopScalarValue,
+                targetMaxLoad = targetMaxLoad,
+                onTargetMaxLoadChange = { targetMaxLoad = it }
+            )
+        } else {
+            // ME7 mode: full KFMIOP axis editor
+            ConfigurationCard(
+                kfmiopLabel = kfmiopLabel,
+                kfmirlLabel = kfmirlLabel,
+                kfmiopMapName = kfmiopPair?.first?.tableName,
+                kfmirlMapName = kfmirlPair?.first?.tableName,
+                onSelectKfmiop = { showKfmiopPicker = true },
+                onSelectKfmirl = { showKfmirlPicker = true },
+                editedXAxis = editedXAxis,
+                onXAxisChanged = { newData ->
+                    editedXAxis = newData
+                    editedInputMap?.let { currentMap ->
+                        editedInputMap = Map3d(newData[0], currentMap.yAxis, currentMap.zAxis)
+                    }
+                }
+            )
+        }
 
         ComparisonArea(
+            kfmiopLabel = kfmiopLabel,
+            kfmirlLabel = kfmirlLabel,
             modifier = Modifier.weight(1f),
             selectedTab = selectedTab,
             onTabSelected = { selectedTab = it },
             editedInputMap = editedInputMap,
             onInputMapChanged = { editedInputMap = it },
             originalKfmirl = kfmirlPair?.second,
-            outputKfmirl = outputKfmirl,
-            originalPeakLoad = loadChartData.first,
-            calculatedPeakLoad = loadChartData.second
+            outputKfmirl = outputKfmirl
         )
 
         WriteToBinarySection(
+            kfmiopLabel = kfmiopLabel,
+            kfmirlLabel = kfmirlLabel,
             binLoaded = binLoaded,
             binFileName = if (binLoaded) binFile.name else null,
             kfmiopMapConfigured = kfmiopMapConfigured,
@@ -219,7 +265,64 @@ fun KfmirlScreen() {
 }
 
 @Composable
+private fun ScalarRescaleConfigCard(
+    kfmiopLabel: String = "KFMIOP",
+    kfmirlLabel: String = "KFMIRL",
+    currentMaxLoad: Double,
+    targetMaxLoad: String,
+    onTargetMaxLoadChange: (String) -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "$kfmirlLabel — Rescale Load Axis",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Rescale $kfmirlLabel's load axis to match a new max load ceiling.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("$kfmiopLabel Value (current):", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "%.2f%%".format(currentMaxLoad),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                Text("Target Max Load:", style = MaterialTheme.typography.bodySmall)
+                ParameterField(
+                    value = targetMaxLoad,
+                    onValueChange = onTargetMaxLoadChange,
+                    label = "%",
+                    tooltip = "Target max load for $kfmirlLabel axis rescale. " +
+                        "Defaults to the $kfmiopLabel scalar. Increase for higher-power builds.",
+                    readOnly = false,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.width(130.dp).height(56.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ConfigurationCard(
+    kfmiopLabel: String = "KFMIOP",
+    kfmirlLabel: String = "KFMIRL",
     kfmiopMapName: String?,
     kfmirlMapName: String?,
     onSelectKfmiop: () -> Unit,
@@ -234,24 +337,24 @@ private fun ConfigurationCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "KFMIRL Calculator",
+                text = "$kfmirlLabel Calculator",
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = "Inverse torque-to-load mapping from KFMIOP",
+                text = "Inverse torque-to-load mapping from $kfmiopLabel",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
             MapSelectorRow(
-                label = "KFMIOP (Input):",
+                label = "$kfmiopLabel (Input):",
                 mapName = kfmiopMapName,
                 onSelectMap = onSelectKfmiop
             )
 
             MapSelectorRow(
-                label = "KFMIRL (Target):",
+                label = "$kfmirlLabel (Target):",
                 mapName = kfmirlMapName,
                 onSelectMap = onSelectKfmirl
             )
@@ -265,7 +368,7 @@ private fun ConfigurationCard(
                     modifier = Modifier.padding(bottom = 4.dp)
                 ) {
                     Text(
-                        text = "KFMIOP Load Axis (Editable)",
+                        text = "$kfmiopLabel Load Axis (Editable)",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -314,50 +417,56 @@ private fun MapSelectorRow(
 
 @Composable
 private fun ComparisonArea(
+    kfmiopLabel: String = "KFMIOP",
+    kfmirlLabel: String = "KFMIRL",
     modifier: Modifier = Modifier,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     editedInputMap: Map3d?,
     onInputMapChanged: (Map3d) -> Unit,
     originalKfmirl: Map3d?,
-    outputKfmirl: Map3d?,
-    originalPeakLoad: List<Pair<Double, Double>>,
-    calculatedPeakLoad: List<Pair<Double, Double>>
+    outputKfmirl: Map3d?
 ) {
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = selectedTab) {
             Tab(
                 selected = selectedTab == 0,
                 onClick = { onTabSelected(0) },
-                text = { Text("KFMIOP (Input)") }
+                text = { Text("$kfmiopLabel (Input)") }
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { onTabSelected(1) },
-                text = { Text("KFMIRL (Comparison)") }
+                text = { Text("$kfmirlLabel (Comparison)") }
             )
             Tab(
                 selected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                text = { Text("Load Comparison") }
+                text = { Text("Charts") }
             )
         }
 
         when (selectedTab) {
             0 -> EditableInputSection(
+                kfmiopLabel = kfmiopLabel,
                 editedInputMap = editedInputMap,
                 onInputMapChanged = onInputMapChanged,
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
             1 -> SideBySideTables(
+                kfmirlLabel = kfmirlLabel,
                 originalKfmirl = originalKfmirl,
                 calculatedKfmirl = outputKfmirl,
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
-            2 -> LoadComparisonChart(
-                originalPeakLoad = originalPeakLoad,
-                calculatedPeakLoad = calculatedPeakLoad,
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp)
+            2 -> TimingCharts(
+                originalMap = originalKfmirl,
+                calculatedMap = outputKfmirl,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                heatmapTitle = "Load Delta (Original − Calculated)",
+                sliceTitle = "Load vs RPM at Selected Torques",
+                sliceYLabel = "Load (%)",
+                contourTitle = "Load Contours"
             )
         }
     }
@@ -365,6 +474,7 @@ private fun ComparisonArea(
 
 @Composable
 private fun EditableInputSection(
+    kfmiopLabel: String = "KFMIOP",
     editedInputMap: Map3d?,
     onInputMapChanged: (Map3d) -> Unit,
     modifier: Modifier = Modifier
@@ -376,7 +486,7 @@ private fun EditableInputSection(
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
             Text(
-                text = "KFMIOP Values",
+                text = "$kfmiopLabel Values",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -402,17 +512,26 @@ private fun EditableInputSection(
 
 @Composable
 private fun SideBySideTables(
+    kfmirlLabel: String = "KFMIRL",
     originalKfmirl: Map3d?,
     calculatedKfmirl: Map3d?,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Side-by-side view of the original $kfmirlLabel from the binary and the calculated inverse. " +
+                "Differences highlight where the torque-to-load mapping will change.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Text(
-                text = "KFMIRL (Original)",
+                text = "$kfmirlLabel (Original)",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -428,7 +547,7 @@ private fun SideBySideTables(
 
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Text(
-                text = "KFMIRL (Calculated)",
+                text = "$kfmirlLabel (Calculated)",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -441,38 +560,14 @@ private fun SideBySideTables(
                 Text("No data", style = MaterialTheme.typography.bodyMedium)
             }
         }
-    }
-}
-
-@Composable
-private fun LoadComparisonChart(
-    originalPeakLoad: List<Pair<Double, Double>>,
-    calculatedPeakLoad: List<Pair<Double, Double>>,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier) {
-        LineChart(
-            series = listOf(
-                ChartSeries(
-                    name = "Original Peak Load",
-                    points = originalPeakLoad,
-                    color = Primary
-                ),
-                ChartSeries(
-                    name = "Calculated Peak Load",
-                    points = calculatedPeakLoad,
-                    color = ChartRed
-                )
-            ),
-            title = "Peak Load Comparison",
-            xAxisLabel = "RPM",
-            yAxisLabel = "Load (%)"
-        )
+        }
     }
 }
 
 @Composable
 private fun WriteToBinarySection(
+    kfmiopLabel: String = "KFMIOP",
+    kfmirlLabel: String = "KFMIRL",
     binLoaded: Boolean,
     binFileName: String?,
     kfmiopMapConfigured: Boolean,
@@ -502,13 +597,13 @@ private fun WriteToBinarySection(
             )
 
             PrerequisiteRow(
-                label = "KFMIOP map",
+                label = "$kfmiopLabel map",
                 detail = if (kfmiopMapConfigured) kfmiopMapName!! else "Not configured",
                 met = kfmiopMapConfigured
             )
 
             PrerequisiteRow(
-                label = "KFMIRL map",
+                label = "$kfmirlLabel map",
                 detail = if (kfmirlMapConfigured) kfmirlMapName!! else "Not configured",
                 met = kfmirlMapConfigured
             )
@@ -520,7 +615,7 @@ private fun WriteToBinarySection(
                     onClick = onWriteClick,
                     enabled = canWrite
                 ) {
-                    Text("Write KFMIRL")
+                    Text("Write $kfmirlLabel")
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -548,12 +643,12 @@ private fun WriteToBinarySection(
             if (!canWrite) {
                 val message = when {
                     !binLoaded && !kfmiopMapConfigured && !kfmirlMapConfigured ->
-                        "Load a BIN file and select both KFMIOP and KFMIRL map definitions."
+                        "Load a BIN file and select both $kfmiopLabel and $kfmirlLabel map definitions."
                     !binLoaded -> "Load a BIN file to write."
                     !kfmiopMapConfigured && !kfmirlMapConfigured ->
-                        "Select both KFMIOP and KFMIRL map definitions above."
-                    !kfmiopMapConfigured -> "Select the KFMIOP map definition above."
-                    !kfmirlMapConfigured -> "Select the KFMIRL map definition above."
+                        "Select both $kfmiopLabel and $kfmirlLabel map definitions above."
+                    !kfmiopMapConfigured -> "Select the $kfmiopLabel map definition above."
+                    !kfmirlMapConfigured -> "Select the $kfmirlLabel map definition above."
                     else -> "Configure all prerequisites above."
                 }
                 Text(

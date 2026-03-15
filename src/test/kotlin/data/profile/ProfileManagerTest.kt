@@ -60,7 +60,7 @@ class ProfileManagerTest {
     }
 
     @Test
-    fun `MED17 profile has exactly 30 med17LogHeaders`() {
+    fun `MED17 profile has med17LogHeaders matching enum size`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         assertEquals(
             Med17LogFileContract.Header.entries.size,
@@ -88,6 +88,16 @@ class ProfileManagerTest {
     fun `MED17 profile ecuPlatform is MED17`() {
         val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
         assertEquals("MED17", profile.ecuPlatform)
+    }
+
+    @Test
+    fun `MED17 profile has critical map definitions`() {
+        val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
+        val maps = profile.mapDefinitions.keys
+        val required = listOf("KFMIOP", "KFMIRL", "KFZWOP", "KFZW", "KFLDRL", "KFLDIMX")
+        for (key in required) {
+            assertTrue(key in maps, "Missing critical map definition: $key")
+        }
     }
 
     // ── 3. ME7 MBox profile regression ──────────────────────────────
@@ -240,5 +250,54 @@ class ProfileManagerTest {
         val expectedCount = index.count { it.isNotBlank() && it.endsWith(".me7profile.json") }
 
         assertEquals(expectedCount, profiles.size, "loadBundledProfiles should load all indexed profiles")
+    }
+
+    // ── 6. MED17 profile resolves against real 404E XDF ─────────────
+
+    @Test
+    fun `MED17 profile resolves all 14 maps against 404E Normal XDF`() {
+        val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
+        val projectRoot = java.io.File(System.getProperty("user.dir"))
+        val xdfFile = java.io.File(projectRoot, "technical/med17/Normal XDF/404E_normal.xdf")
+        if (!xdfFile.exists()) {
+            println("SKIP: 404E XDF not available at ${xdfFile.absolutePath}")
+            return
+        }
+
+        val (_, tableDefs) = data.parser.xdf.XdfParser.parseToList(java.io.FileInputStream(xdfFile))
+        assertTrue(tableDefs.isNotEmpty(), "XDF should produce table definitions")
+
+        val unresolved = mutableListOf<String>()
+        for ((key, ref) in profile.mapDefinitions) {
+            val exact = tableDefs.firstOrNull { def ->
+                ref.tableName == def.tableName &&
+                    ref.tableDescription == def.tableDescription &&
+                    ref.unit == def.zAxis.unit
+            }
+            if (exact == null) {
+                unresolved.add("$key: tableName='${ref.tableName}' desc='${ref.tableDescription}' unit='${ref.unit}'")
+            }
+        }
+
+        assertTrue(
+            unresolved.isEmpty(),
+            "All 14 MED17 profile maps should exact-match 404E XDF, but ${unresolved.size} failed:\n" +
+                unresolved.joinToString("\n  ", prefix = "  ")
+        )
+    }
+
+    @Test
+    fun `MED17 profile has all 14 expected map definition keys`() {
+        val profile = loadProfile("MED17_162_RS3_TTRS_2_5T.me7profile.json")
+        val expected = listOf(
+            "KRKTE_PFI", "KRKTE_GDI", "TVUB_PFI",
+            "KFMIOP", "KFMIRL", "KFZWOP", "KFZW",
+            "KFLDRL", "KFLDIMX", "KFLDIOPU",
+            "KFLDRQ0", "KFLDRQ1", "KFLDRQ2", "RKW"
+        )
+        for (key in expected) {
+            assertTrue(key in profile.mapDefinitions, "Profile should contain map definition '$key'")
+        }
+        assertEquals(14, profile.mapDefinitions.size, "Profile should have exactly 14 map definitions")
     }
 }

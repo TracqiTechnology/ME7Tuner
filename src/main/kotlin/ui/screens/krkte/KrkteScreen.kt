@@ -14,12 +14,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import data.model.EcuPlatform
 import data.preferences.bin.BinFilePreferences
 import data.preferences.krkte.KrktePreferences
+import data.preferences.krkte.KrktePfiPreferences
+import data.preferences.platform.EcuPlatformPreference
 import data.preferences.primaryfueling.PrimaryFuelingPreferences
 import data.writer.BinWriter
 import domain.math.map.Map3d
 import domain.model.krkte.KrkteCalculator
+import domain.model.presets.EnginePresets
+import domain.model.presets.FuelPreset
+import domain.model.presets.FuelPresets
 import kotlinx.coroutines.delay
 import ui.components.LabeledParameterRow
 import java.text.DecimalFormat
@@ -64,9 +70,12 @@ fun KrkteScreen() {
     val binFile by BinFilePreferences.file.collectAsState()
     val binLoaded = binFile.exists() && binFile.isFile
 
+    val krktePreference = if (EcuPlatformPreference.platform == EcuPlatform.MED17)
+        KrktePfiPreferences else KrktePreferences
+
     var mapVersion by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) { KrktePreferences.mapChanged.collect { mapVersion++ } }
-    val krkteMap = remember(mapVersion) { KrktePreferences.getSelectedMap() }
+    LaunchedEffect(Unit) { krktePreference.mapChanged.collect { mapVersion++ } }
+    val krkteMap = remember(mapVersion) { krktePreference.getSelectedMap() }
     val krkteMapConfigured = krkteMap != null
     val krkteMapName = krkteMap?.first?.tableName
 
@@ -161,7 +170,7 @@ fun KrkteScreen() {
                 TextButton(
                     onClick = {
                         showWriteConfirmation = false
-                        val krkteTable = KrktePreferences.getSelectedMap()
+                        val krkteTable = krktePreference.getSelectedMap()
                         if (krkteTable != null) {
                             try {
                                 val tableDefinition = krkteTable.first
@@ -237,6 +246,8 @@ private fun EngineParametersSection(
     onNumCylindersChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var engineDropdownExpanded by remember { mutableStateOf(false) }
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 1.dp,
@@ -253,6 +264,26 @@ private fun EngineParametersSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            // Engine preset dropdown
+            Box {
+                OutlinedButton(onClick = { engineDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Apply Engine Preset")
+                }
+                DropdownMenu(expanded = engineDropdownExpanded, onDismissRequest = { engineDropdownExpanded = false }) {
+                    EnginePresets.all.forEach { preset ->
+                        DropdownMenuItem(
+                            text = { Text(preset.name) },
+                            onClick = {
+                                onDisplacementChange((preset.displacementCc / 1000.0).toString())
+                                onNumCylindersChange(preset.cylinderCount.toString())
+                                engineDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             DerivedRow(
                 label = "Air Density",
@@ -294,6 +325,29 @@ private fun FuelPropertiesSection(
     onGasolineDensityChange: (String) -> Unit,
     onStoichiometricAfrChange: (String) -> Unit
 ) {
+    var fuelDropdownExpanded by remember { mutableStateOf(false) }
+    var blendSliderValue by remember { mutableStateOf(0f) }
+    var showBlendSlider by remember { mutableStateOf(false) }
+    var expertMode by remember { mutableStateOf(false) }
+
+    // E0/E100 endpoint state, loaded from preferences
+    var e0Density by remember { mutableStateOf(PrimaryFuelingPreferences.e0Density.toString()) }
+    var e0Afr by remember { mutableStateOf(PrimaryFuelingPreferences.e0Afr.toString()) }
+    var e100Density by remember { mutableStateOf(PrimaryFuelingPreferences.e100Density.toString()) }
+    var e100Afr by remember { mutableStateOf(PrimaryFuelingPreferences.e100Afr.toString()) }
+
+    fun applyBlend(ethPct: Float) {
+        val e0 = if (expertMode) FuelPreset(
+            "E0", e0Density.toDoubleOrNull() ?: 0.755, e0Afr.toDoubleOrNull() ?: 14.7
+        ) else FuelPresets.E0
+        val e100 = if (expertMode) FuelPreset(
+            "E100", e100Density.toDoubleOrNull() ?: 0.789, e100Afr.toDoubleOrNull() ?: 9.0
+        ) else FuelPresets.E100
+        val blended = FuelPresets.blend(ethPct.toDouble(), e0, e100)
+        onGasolineDensityChange(blended.densityGPerCc.toString())
+        onStoichiometricAfrChange(blended.stoichAfr.toString())
+    }
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 1.dp,
@@ -311,21 +365,154 @@ private fun FuelPropertiesSection(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            LabeledParameterRow(
-                label = "Gasoline Density",
-                value = gasolineDensity,
-                unit = "g/cc\u00B3",
-                tooltip = "Mass of gasoline per cubic centimetre (g/cc). Used in KRKTE fuel-mass calculation. Standard pump gasoline ≈ 0.745 g/cc at 20°C.",
-                onValueChange = onGasolineDensityChange
-            )
+            // Fuel preset dropdown
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { fuelDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Apply Fuel Preset")
+                    }
+                    DropdownMenu(expanded = fuelDropdownExpanded, onDismissRequest = { fuelDropdownExpanded = false }) {
+                        FuelPresets.all.forEach { preset ->
+                            DropdownMenuItem(
+                                text = { Text("${preset.name} (ρ=${preset.densityGPerCc}, AFR=${preset.stoichAfr})") },
+                                onClick = {
+                                    onGasolineDensityChange(preset.densityGPerCc.toString())
+                                    onStoichiometricAfrChange(preset.stoichAfr.toString())
+                                    fuelDropdownExpanded = false
+                                    showBlendSlider = false
+                                    expertMode = false
+                                    blendSliderValue = if (preset.name.contains("E85")) 85f else 0f
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Ethanol Blend (E0–E100 slider)") },
+                            onClick = {
+                                showBlendSlider = true
+                                fuelDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
-            LabeledParameterRow(
-                label = "Stoichiometric A/F Ratio",
-                value = stoichiometricAfr,
-                unit = "",
-                tooltip = "Mass ratio of air to fuel at complete combustion. Gasoline ≈ 14.7:1. Affects the calculated fuel mass per cycle in KRKTE.",
-                onValueChange = onStoichiometricAfrChange
-            )
+            if (showBlendSlider) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Ethanol Blend: E${blendSliderValue.toInt()}", style = MaterialTheme.typography.labelMedium)
+                Slider(
+                    value = blendSliderValue,
+                    onValueChange = {
+                        blendSliderValue = it
+                        applyBlend(it)
+                    },
+                    valueRange = 0f..100f,
+                    steps = 19
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Expert", style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Checkbox(
+                        checked = expertMode,
+                        onCheckedChange = {
+                            expertMode = it
+                            applyBlend(blendSliderValue)
+                        }
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = expertMode && showBlendSlider) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("E0 Endpoint", style = MaterialTheme.typography.labelLarge)
+                    LabeledParameterRow(
+                        label = "Gasoline Density",
+                        value = e0Density,
+                        unit = "g/cc",
+                        tooltip = "E0 (pure gasoline) density for flex fuel blending.",
+                        onValueChange = {
+                            e0Density = it
+                            it.toDoubleOrNull()?.let { v -> PrimaryFuelingPreferences.e0Density = v }
+                            applyBlend(blendSliderValue)
+                        }
+                    )
+                    LabeledParameterRow(
+                        label = "Stoichiometric AFR",
+                        value = e0Afr,
+                        unit = "",
+                        tooltip = "E0 (pure gasoline) stoichiometric air-fuel ratio.",
+                        onValueChange = {
+                            e0Afr = it
+                            it.toDoubleOrNull()?.let { v -> PrimaryFuelingPreferences.e0Afr = v }
+                            applyBlend(blendSliderValue)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("E100 Endpoint", style = MaterialTheme.typography.labelLarge)
+                    LabeledParameterRow(
+                        label = "Ethanol Density",
+                        value = e100Density,
+                        unit = "g/cc",
+                        tooltip = "E100 (pure ethanol) density for flex fuel blending.",
+                        onValueChange = {
+                            e100Density = it
+                            it.toDoubleOrNull()?.let { v -> PrimaryFuelingPreferences.e100Density = v }
+                            applyBlend(blendSliderValue)
+                        }
+                    )
+                    LabeledParameterRow(
+                        label = "Stoichiometric AFR",
+                        value = e100Afr,
+                        unit = "",
+                        tooltip = "E100 (pure ethanol) stoichiometric air-fuel ratio.",
+                        onValueChange = {
+                            e100Afr = it
+                            it.toDoubleOrNull()?.let { v -> PrimaryFuelingPreferences.e100Afr = v }
+                            applyBlend(blendSliderValue)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Current Blend (derived)", style = MaterialTheme.typography.labelLarge)
+                    DerivedRow(
+                        label = "Density",
+                        value = gasolineDensity,
+                        unit = "g/cc"
+                    )
+                    DerivedRow(
+                        label = "Stoichiometric AFR",
+                        value = stoichiometricAfr,
+                        unit = ""
+                    )
+                }
+            }
+
+            // Only show manual density/AFR fields when NOT in expert blend mode
+            if (!(expertMode && showBlendSlider)) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LabeledParameterRow(
+                    label = "Gasoline Density",
+                    value = gasolineDensity,
+                    unit = "g/cc\u00B3",
+                    tooltip = "Mass of gasoline per cubic centimetre (g/cc). Used in KRKTE fuel-mass calculation. Standard pump gasoline ≈ 0.745 g/cc at 20°C.",
+                    onValueChange = onGasolineDensityChange
+                )
+
+                LabeledParameterRow(
+                    label = "Stoichiometric A/F Ratio",
+                    value = stoichiometricAfr,
+                    unit = "",
+                    tooltip = "Mass ratio of air to fuel at complete combustion. Gasoline ≈ 14.7:1. Affects the calculated fuel mass per cycle in KRKTE.",
+                    onValueChange = onStoichiometricAfrChange
+                )
+            }
         }
     }
 }
